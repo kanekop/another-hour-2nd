@@ -1,0 +1,44 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar Sync Settings</title>
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/calendar-sync.css">
+</head>
+<body>
+  <main class="sync-container">
+    <h1>Calendar Sync Settings</h1>
+    
+    <section class="sync-section">
+      <h2>Google Calendar</h2>
+      <div class="connection-status">
+        <span id="googleStatus">Not connected</span>
+        <button id="googleConnect" class="btn">Connect</button>
+        <button id="googleDisconnect" class="btn btn-danger hidden">Disconnect</button>
+      </div>
+      
+      <div id="googleCalendarList" class="calendar-list hidden">
+        <h3>Your Calendars</h3>
+        <div class="calendar-items"></div>
+      </div>
+    </section>
+
+    <section class="sync-settings hidden" id="syncSettings">
+      <h2>Sync Preferences</h2>
+      <form id="syncPreferences">
+        <label>
+          <input type="checkbox" id="autoSync" checked>
+          Auto-sync every 5 minutes
+        </label>
+        <label>
+          <input type="checkbox" id="showNotifications" checked>
+          Show notifications for updates
+        </label>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

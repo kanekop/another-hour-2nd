@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AH Scheduler</title>
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/scheduler.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+</head>
+<body>
+  <main class="scheduler-container">
+    <header class="scheduler-header">
+      <h1>AH Scheduler</h1>
+      <div class="auth-status">
+        <span id="authStatus">Not connected</span>
+        <button id="connectCalendar" class="btn">Connect Calendar</button>
+      </div>
+    </header>
+    
+    <div class="calendar-container">
+      <div id="calendar"></div>
+    </div>
+
+    <div class="event-form hidden" id="eventForm">
+      <h2>Create Event</h2>
+      <form id="newEventForm">
+        <input type="text" id="eventTitle" placeholder="Event Title" required>
+        <input type="datetime-local" id="eventStart" required>
+        <input type="datetime-local" id="eventEnd" required>
+        <textarea id="eventDescription" placeholder="Description"></textarea>
+        <div class="form-actions">
+          <button type="submit" class="btn">Save</button>
+          <button type="button" class="btn btn-secondary" id="cancelEvent">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <script src="/shared/ah-time.js"></script>
+  <script src="/js/scheduler-ui.js"></script>
+</body>
+</html>
