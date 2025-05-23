@@ -1,45 +1,79 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AH Scheduler</title>
+  <title>AH Scheduler - Another Hour</title>
+  <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/scheduler.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&display=swap">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
 </head>
 <body>
+  <a href="/" class="back-link">Back</a>
+
   <main class="scheduler-container">
     <header class="scheduler-header">
       <h1>AH Scheduler</h1>
-      <div class="auth-status">
-        <span id="authStatus">Not connected</span>
-        <button id="connectCalendar" class="btn">Connect Calendar</button>
-      </div>
+      <p>Manage your schedule in Another Hour time</p>
     </header>
-    
-    <div class="calendar-container">
-      <div id="calendar"></div>
-    </div>
 
-    <div class="event-form hidden" id="eventForm">
-      <h2>Create Event</h2>
-      <form id="newEventForm">
-        <input type="text" id="eventTitle" placeholder="Event Title" required>
-        <input type="datetime-local" id="eventStart" required>
-        <input type="datetime-local" id="eventEnd" required>
-        <textarea id="eventDescription" placeholder="Description"></textarea>
-        <div class="form-actions">
-          <button type="submit" class="btn">Save</button>
-          <button type="button" class="btn btn-secondary" id="cancelEvent">Cancel</button>
-        </div>
-      </form>
-    </div>
+    <!-- Calendar View Section -->
+    <section class="calendar-section">
+      <div class="calendar-controls">
+        <button id="prev-week" class="nav-button">← Previous</button>
+        <h2 id="current-week-display">Week of [Date]</h2>
+        <button id="next-week" class="nav-button">Next →</button>
+      </div>
+
+      <div id="calendar-grid" class="calendar-grid">
+        <!-- Calendar will be rendered here -->
+      </div>
+    </section>
+
+    <!-- Time Display Section -->
+    <section class="time-display-section">
+      <div class="time-mode-toggle">
+        <label>
+          <input type="radio" name="time-mode" value="ah" checked>
+          <span>AH Time</span>
+        </label>
+        <label>
+          <input type="radio" name="time-mode" value="real">
+          <span>Real Time</span>
+        </label>
+        <label>
+          <input type="radio" name="time-mode" value="both">
+          <span>Both</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Event Details Section -->
+    <section class="event-details-section" id="event-details" style="display: none;">
+      <h3>Event Details</h3>
+      <div id="event-info">
+        <!-- Event details will be displayed here -->
+      </div>
+    </section>
+
+    <!-- Calendar Sync Status -->
+    <section class="sync-status-section">
+      <h3>Calendar Sync Status</h3>
+      <div id="sync-status">
+        <p class="sync-not-connected">
+          <span class="status-icon">⚠️</span>
+          No calendars connected
+        </p>
+        <button id="sync-calendar-btn" class="primary-button">
+          Connect Calendar
+        </button>
+      </div>
+    </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-  <script src="/shared/ah-time.js"></script>
-  <script src="/js/scheduler-ui.js"></script>
+  <script type="module" src="/js/scheduler-ui.js"></script>
 </body>
 </html>
