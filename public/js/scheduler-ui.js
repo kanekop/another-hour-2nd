@@ -5,7 +5,6 @@ import { getCurrentScalingInfo } from './scaling-utils.js';
 
 // Constants
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const HOURS_TO_DISPLAY = 24;
 
 // State
 const state = {
@@ -13,7 +12,9 @@ const state = {
   timeMode: 'ah', // 'ah', 'real', or 'both'
   events: [],
   selectedTimezone: null,
-  isAuthenticated: false
+  isAuthenticated: false,
+  normalAphDayDurationMinutes: 1380, // Default 23 hours
+  scaleFactor: 24/23
 };
 
 // DOM Elements
@@ -32,7 +33,16 @@ const elements = {
 // Initialize
 function initialize() {
   // Get user's timezone
-  state.selectedTimezone = moment.tz.guess() || 'UTC';
+  state.selectedTimezone = localStorage.getItem('personalizedAhSelectedTimezone') || moment.tz.guess() || 'UTC';
+
+  // Get AH duration from localStorage
+  const savedDuration = localStorage.getItem('personalizedAhDurationMinutes');
+  if (savedDuration) {
+    state.normalAphDayDurationMinutes = parseInt(savedDuration, 10);
+  }
+
+  // Calculate scale factor
+  updateScaleFactor();
 
   // Set current week
   const now = moment().tz(state.selectedTimezone);
@@ -49,6 +59,25 @@ function initialize() {
 
   // Update week display
   updateWeekDisplay();
+
+  // Listen for storage changes (when user updates AH duration in clock settings)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'personalizedAhDurationMinutes') {
+      state.normalAphDayDurationMinutes = parseInt(e.newValue, 10);
+      updateScaleFactor();
+      renderCalendar();
+    }
+  });
+}
+
+// Update scale factor based on AH duration
+function updateScaleFactor() {
+  const normalHours = state.normalAphDayDurationMinutes / 60;
+  if (normalHours === 0) {
+    state.scaleFactor = 1;
+  } else {
+    state.scaleFactor = 24 / normalHours;
+  }
 }
 
 // Set up event listeners
@@ -92,9 +121,93 @@ function updateWeekDisplay() {
   elements.currentWeekDisplay.textContent = `Week of ${weekStart} - ${weekEnd}`;
 }
 
+// Get time slots for display based on mode and AH settings
+function getTimeSlots() {
+  const slots = [];
+
+  if (state.timeMode === 'real') {
+    // Real time: simple 24 hours
+    for (let hour = 0; hour < 24; hour++) {
+      slots.push({
+        label: `${hour.toString().padStart(2, '0')}:00`,
+        realHour: hour,
+        isAH: false
+      });
+    }
+  } else {
+    // AH or Both mode: need to calculate based on AH settings
+    const normalDurationHours = state.normalAphDayDurationMinutes / 60;
+    const ahDurationHours = 24 - normalDurationHours;
+
+    // Scaled 24 hours (0-23)
+    for (let ahHour = 0; ahHour < 24; ahHour++) {
+      const realHour = ahHour / state.scaleFactor;
+      if (realHour < normalDurationHours) {
+        const label = state.timeMode === 'both' 
+          ? `AH ${ahHour}:00\n(${formatRealTime(realHour)})`
+          : `AH ${ahHour}:00`;
+
+        slots.push({
+          label: label,
+          realHour: realHour,
+          ahHour: ahHour,
+          isAH: false,
+          isScaled: true
+        });
+      }
+    }
+
+    // Another Hour period (24+)
+    if (ahDurationHours > 0) {
+      // Add AH 24 marker
+      slots.push({
+        label: state.timeMode === 'both' 
+          ? `AH 24:00\n(${formatRealTime(normalDurationHours)})`
+          : `AH 24:00`,
+        realHour: normalDurationHours,
+        ahHour: 24,
+        isAH: true,
+        isAHStart: true
+      });
+
+      // Add remaining AH hours
+      for (let i = 1; i < Math.floor(ahDurationHours); i++) {
+        const realHour = normalDurationHours + i;
+        const ahHour = 24 + i;
+        const label = state.timeMode === 'both' 
+          ? `AH ${ahHour}:00\n(${formatRealTime(realHour)})`
+          : `AH ${ahHour}:00`;
+
+        slots.push({
+          label: label,
+          realHour: realHour,
+          ahHour: ahHour,
+          isAH: true
+        });
+      }
+    }
+  }
+
+  return slots;
+}
+
+// Format real time from decimal hours
+function formatRealTime(decimalHours) {
+  const hours = Math.floor(decimalHours);
+  const minutes = Math.round((decimalHours - hours) * 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
 // Render calendar grid
 function renderCalendar() {
   elements.calendarGrid.innerHTML = '';
+
+  // Get time slots based on current mode
+  const timeSlots = getTimeSlots();
+
+  // Update grid template to accommodate variable height
+  const rowCount = timeSlots.length + 1; // +1 for header
+  elements.calendarGrid.style.gridTemplateRows = `auto repeat(${timeSlots.length}, minmax(40px, 1fr))`;
 
   // Add header row
   const headerRow = document.createElement('div');
@@ -112,22 +225,42 @@ function renderCalendar() {
   }
 
   // Add time slots and event cells
-  for (let hour = 0; hour < HOURS_TO_DISPLAY; hour++) {
+  timeSlots.forEach((slot, slotIndex) => {
     // Time slot
     const timeSlot = document.createElement('div');
     timeSlot.className = 'time-slot';
-    timeSlot.textContent = formatTimeSlot(hour);
+    if (slot.isAH) {
+      timeSlot.classList.add('ah-period');
+    }
+    if (slot.isAHStart) {
+      timeSlot.classList.add('ah-start');
+    }
+
+    // Handle multi-line labels for "both" mode
+    if (slot.label.includes('\n')) {
+      const lines = slot.label.split('\n');
+      timeSlot.innerHTML = `${lines[0]}<br><small>${lines[1]}</small>`;
+    } else {
+      timeSlot.textContent = slot.label;
+    }
+
     elements.calendarGrid.appendChild(timeSlot);
 
     // Event cells for each day
     for (let day = 0; day < 7; day++) {
       const eventCell = document.createElement('div');
       eventCell.className = 'event-cell';
-      eventCell.dataset.hour = hour;
+      if (slot.isAH) {
+        eventCell.classList.add('ah-period');
+      }
+      eventCell.dataset.realHour = slot.realHour;
       eventCell.dataset.day = day;
+      if (slot.ahHour !== undefined) {
+        eventCell.dataset.ahHour = slot.ahHour;
+      }
 
       // Add events for this time slot
-      const cellEvents = getEventsForCell(day, hour);
+      const cellEvents = getEventsForCell(day, slot.realHour);
       cellEvents.forEach(event => {
         const eventEl = createEventElement(event);
         eventCell.appendChild(eventEl);
@@ -135,46 +268,21 @@ function renderCalendar() {
 
       elements.calendarGrid.appendChild(eventCell);
     }
-  }
-}
-
-// Format time slot based on mode
-function formatTimeSlot(hour) {
-  const realTime = `${hour.toString().padStart(2, '0')}:00`;
-
-  if (state.timeMode === 'real') {
-    return realTime;
-  }
-
-  // Calculate AH time
-  const { scaleFactor, isAhPeriod } = getCurrentScalingInfo();
-  const date = new Date();
-  date.setHours(hour, 0, 0, 0);
-
-  const angles = getCustomAhAngles(
-    date,
-    state.selectedTimezone,
-    localStorage.getItem('personalizedAhDurationMinutes') || 1380
-  );
-
-  const ahTime = `${Math.floor(angles.aphHours).toString().padStart(2, '0')}:00`;
-
-  if (state.timeMode === 'ah') {
-    return `AH ${ahTime}`;
-  } else {
-    return `${realTime}\nAH ${ahTime}`;
-  }
+  });
 }
 
 // Get events for a specific cell
-function getEventsForCell(day, hour) {
-  const cellDate = state.currentWeekStart.clone().add(day, 'days').hour(hour);
+function getEventsForCell(day, realHour) {
+  const cellDate = state.currentWeekStart.clone().add(day, 'days');
+  const cellStart = cellDate.clone().add(realHour, 'hours');
+  const cellEnd = cellStart.clone().add(1, 'hours');
 
   return state.events.filter(event => {
     const eventStart = moment(event.start);
     const eventEnd = moment(event.end);
 
-    return cellDate.isSameOrAfter(eventStart) && cellDate.isBefore(eventEnd);
+    // Check if event overlaps with this cell
+    return eventStart.isBefore(cellEnd) && eventEnd.isAfter(cellStart);
   });
 }
 
@@ -182,12 +290,47 @@ function getEventsForCell(day, hour) {
 function createEventElement(event) {
   const eventEl = document.createElement('div');
   eventEl.className = 'calendar-event';
-  eventEl.textContent = event.title;
+
+  // Add time prefix if in AH mode
+  if (state.timeMode === 'ah' || state.timeMode === 'both') {
+    const eventStart = moment(event.start);
+    const startHour = eventStart.hour() + eventStart.minute() / 60;
+    const ahTime = convertRealToAH(startHour);
+    eventEl.classList.add('ah-time');
+    eventEl.innerHTML = `<small>AH ${Math.floor(ahTime)}:${Math.round((ahTime % 1) * 60).toString().padStart(2, '0')}</small><br>${event.title}`;
+  } else {
+    eventEl.textContent = event.title;
+  }
 
   // Add click handler
   eventEl.addEventListener('click', () => showEventDetails(event));
 
   return eventEl;
+}
+
+// Convert real hours to AH hours
+function convertRealToAH(realHours) {
+  const normalDurationHours = state.normalAphDayDurationMinutes / 60;
+
+  if (realHours < normalDurationHours) {
+    // In scaled period
+    return realHours * state.scaleFactor;
+  } else {
+    // In AH period
+    return 24 + (realHours - normalDurationHours);
+  }
+}
+
+// Convert AH hours to real hours
+function convertAHToReal(ahHours) {
+  if (ahHours < 24) {
+    // In scaled period
+    return ahHours / state.scaleFactor;
+  } else {
+    // In AH period
+    const normalDurationHours = state.normalAphDayDurationMinutes / 60;
+    return normalDurationHours + (ahHours - 24);
+  }
 }
 
 // Show event details
@@ -198,8 +341,10 @@ function showEventDetails(event) {
   const endTime = moment(event.end);
 
   // Calculate AH times
-  const { scaleFactor } = getCurrentScalingInfo();
-  // This is simplified - you'd need proper AH time conversion
+  const startHour = startTime.hour() + startTime.minute() / 60;
+  const endHour = endTime.hour() + endTime.minute() / 60;
+  const ahStartTime = convertRealToAH(startHour);
+  const ahEndTime = convertRealToAH(endHour);
 
   elements.eventInfo.innerHTML = `
     <div class="event-info-row">
@@ -212,7 +357,7 @@ function showEventDetails(event) {
     </div>
     <div class="event-info-row">
       <span class="event-info-label">AH Time:</span>
-      <span>[AH time calculation needed]</span>
+      <span>AH ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - AH ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}</span>
     </div>
     ${event.description ? `
     <div class="event-info-row">

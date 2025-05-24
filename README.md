@@ -282,10 +282,12 @@ We welcome contributions to make AH Scheduler even better!
 - [x] Responsive design
 
 ### 🔄 In Progress (Scheduler Development)
-- [ ] Google Calendar integration (OAuth + API)
-- [ ] Basic event display in AH time
+- [x] Google Calendar integration (OAuth + API) - Basic implementation done
+- [x] Basic event display in AH time - Working with dynamic time slots
 - [ ] Event creation and editing interface
 - [ ] Conflict resolution system
+- [ ] **Calendar UX refinement** - Improve visual design and interaction patterns
+- [ ] **Another Hour period time display finalization** - Determine the best way to show AH 24+ hours
 
 ### 🎯 Future Plans (Scheduler-Specific)
 - [ ] **Outlook Calendar Integration**: Microsoft Graph API support

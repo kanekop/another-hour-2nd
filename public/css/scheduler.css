@@ -59,12 +59,13 @@ body.inverted .calendar-controls {
 /* Calendar Grid */
 .calendar-grid {
   display: grid;
-  grid-template-columns: 100px repeat(7, 1fr);
+  grid-template-columns: 120px repeat(7, 1fr);
   gap: 1px;
   background: #ddd;
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
+  /* Dynamic grid rows are set by JavaScript */
 }
 
 body.inverted .calendar-grid {
@@ -81,10 +82,18 @@ body.inverted .calendar-grid {
 }
 
 body.inverted .calendar-header,
-body.inverted .time-slot,
-body.inverted .event-cell {
+body.inverted .time-slot:not(.ah-period),
+body.inverted .event-cell:not(.ah-period) {
   background: #1a1a1a;
   color: #e0e0e0;
+}
+
+.event-cell.ah-period {
+  background: #ffebee;
+}
+
+body.inverted .event-cell.ah-period {
+  background: #b71c1c;
 }
 
 .calendar-header {
@@ -102,10 +111,33 @@ body.inverted .calendar-header {
   font-size: 0.9em;
   color: #666;
   font-family: 'Roboto Mono', monospace;
+  padding-right: 8px;
+  white-space: pre-line;
+  line-height: 1.3;
+}
+
+.time-slot small {
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+.time-slot.ah-period {
+  background: #ffebee;
+  color: #d32f2f;
+  font-weight: 500;
+}
+
+.time-slot.ah-start {
+  border-top: 2px solid #d32f2f;
 }
 
 body.inverted .time-slot {
   color: #aaa;
+}
+
+body.inverted .time-slot.ah-period {
+  background: #b71c1c;
+  color: #ffcdd2;
 }
 
 /* Event Styles */
@@ -118,6 +150,15 @@ body.inverted .time-slot {
   cursor: pointer;
   font-size: 0.85em;
   transition: background-color 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-event small {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.9;
+  margin-bottom: 2px;
 }
 
 .calendar-event:hover {
@@ -261,7 +302,28 @@ body.inverted .sync-not-connected {
   color: #ffa726;
 }
 
-/* Primary Button */
+/* Add visual separator for AH period */
+.calendar-grid::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #d32f2f;
+  pointer-events: none;
+  display: none;
+}
+
+/* AH Period Indicator */
+.ah-period-label {
+  grid-column: 1 / -1;
+  background: #d32f2f;
+  color: white;
+  text-align: center;
+  padding: 8px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
 .primary-button {
   background: #2196f3;
   color: white;
