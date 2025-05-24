@@ -101,21 +101,21 @@ another-hour-scheduler/
 
 ## 🚀 **実装ロードマップ (Fork版)**
 
-### Phase 0: Fork準備 (2-3日)
+### Phase 0: Fork準備 (完了)
 - [x] **Replit Fork**: 既存プロジェクトをFork
 - [x] **依存関係確認**: 既存機能の動作確認
 - [x] **基本構造設計**: スケジューラー機能の配置計画
 - [x] **Secrets設定**: Google OAuth等の認証情報
 
-### Phase 1: コア拡張 (1週間)
-- [ ] **時間変換拡張**: イベント対応のAH時間変換
-- [ ] **基本UI追加**: スケジューラーの基本画面
-- [ ] **ナビゲーション**: 既存Clockとの連携
+### Phase 1: コア拡張 (完了)
+- [x] **時間変換拡張**: イベント対応のAH時間変換
+- [x] **基本UI追加**: スケジューラーの基本画面
+- [x] **ナビゲーション**: 既存Clockとの連携
 
-### Phase 2: Google Calendar統合 (1-2週間)
-- [ ] **OAuth実装**: Google認証フロー
-- [ ] **イベント同期**: カレンダーイベント取得・表示
-- [ ] **双方向変換**: Real time ↔ AH time表示
+### Phase 2: Google Calendar統合 (完了)
+- [x] **OAuth実装**: Google認証フロー
+- [x] **イベント同期**: カレンダーイベント取得・表示
+- [x] **双方向変換**: Real time ↔ AH time表示
 
 ### Phase 3: 高度な機能 (2-3週間)
 - [ ] **イベント管理**: 作成・編集・削除
@@ -126,6 +126,12 @@ another-hour-scheduler/
 - [ ] **UI/UX改善**: 既存Clockとの一貫性
 - [ ] **パフォーマンス最適化**: 
 - [ ] **デプロイメント**: Replit本番環境
+
+### 現在の課題
+- Multi-hour event display
+- All-day event handling
+- Event overlap layout
+
 
 ## 🔗 **既存Clock機能との連携**
 
@@ -181,13 +187,8 @@ const scheduler = new AHScheduler(ahSettings);
 - **選択肢**: 用途に応じてアプリを選択
 - **段階的採用**: 新機能を徐々に体験
 
-## 🎯 **結論: Fork & Extend が最適**
+## 📖 Related Documentation
 
-あなたの直感は正しかったです！Fork戦略により：
-
-- ✅ **既存システムの保護**
-- ✅ **新機能の自由な開発**
-- ✅ **ユーザーの選択肢確保**
-- ✅ **段階的な進化路線**
-
-この戦略で、安全かつ効率的にAnother Hour Schedulerを開発できます！
+- [README](../README.md) - プロジェクト概要
+- [Development Setup](DEVELOPMENT.md) - 開発環境
+- [Fork Strategy](fork_strategy.md) - フォーク戦略

@@ -7,9 +7,38 @@ export class GoogleCalendarService {
     this.clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
     // Replitの本番URLまたはローカル開発URL
-    const baseUrl = process.env.REPL_URL || 'http://localhost:3000';
+    // Replitの本番URLまたはローカル開発URL
+    let baseUrl;
+
+    // 明示的な環境変数が設定されている場合はそれを使用
+    if (process.env.REPLIT_URL) {
+      baseUrl = process.env.REPLIT_URL;
+    } else if (process.env.REPLIT_DEV_DOMAIN) {
+      // Replit開発環境の自動検出
+      baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+    } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+      // Replitデプロイ環境の自動検出
+      baseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+    } else {
+      // ローカル開発環境
+      baseUrl = 'http://localhost:3000';
+    }
+
+    // HTTPSを強制（Replitの場合）
+    if (baseUrl.includes('repl') && !baseUrl.startsWith('https://')) {
+      baseUrl = baseUrl.replace('http://', 'https://');
+    }
+
     this.redirectUri = `${baseUrl}/auth/google/callback`;
 
+    // デバッグ用ログ
+    console.log('Detected environment:', {
+      REPLIT_DEV_DOMAIN: process.env.REPLIT_DEV_DOMAIN,
+      REPL_SLUG: process.env.REPL_SLUG,
+      REPL_OWNER: process.env.REPL_OWNER,
+      baseUrl: baseUrl,
+      redirectUri: this.redirectUri
+    });
     // 必要なスコープ
     this.scopes = [
       'https://www.googleapis.com/auth/calendar.readonly',

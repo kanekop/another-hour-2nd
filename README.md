@@ -9,7 +9,7 @@ This is a **Fork & Extend** version of the original Another Hour Clock project, 
 ### 🔗 **Project Relationship**
 - **Original Project**: [Another Hour Clock](https://github.com/kanekop/another-hour-gen2-Claude) - Pure time experience
 - **This Project**: Another Hour Scheduler - Time experience + Calendar management
-- **Strategy**: Fork & Extend (see [fork_strategy.md](fork_strategy.md) for details)
+- **Strategy**: Fork & Extend (see [fork_strategy.md](docs/fork_strategy.md) for details)
 
 ## ✨ Key Concepts
 
@@ -192,6 +192,13 @@ realEventTime ↔ ahEventTime = timeConverter.convertEvent(event, scaleFactor)
 - **APIs**: Google Calendar API, Microsoft Graph API
 - **State Management**: localStorage + server-side sessions + calendar sync
 
+### Implementation Notes
+
+- **Time Slot Calculation**: Dynamic based on `normalAphDayDurationMinutes` from localStorage
+- **Event Rendering**: Currently renders per time slot (causes multi-hour event fragmentation)
+- **OAuth Flow**: Using server-side session storage for tokens
+- **Redirect URI Detection**: Automatic environment detection for Replit dev/deploy URLs
+
 ## 📱 Calendar Features
 
 ### Event Display
@@ -281,13 +288,29 @@ We welcome contributions to make AH Scheduler even better!
 - [x] Dark/light theme system
 - [x] Responsive design
 
-### 🔄 In Progress (Scheduler Development)
-- [x] Google Calendar integration (OAuth + API) - Basic implementation done
-- [x] Basic event display in AH time - Working with dynamic time slots
+### ✅ Phase 1 Completed (Basic Scheduler)
+- [x] Time conversion extension for events
+- [x] Basic scheduler UI
+- [x] Navigation between Clock and Scheduler
+- [x] Dynamic time slot calculation based on AH settings
+- [x] Visual distinction between Scaled 24 and AH periods
+
+### ✅ Phase 2 Completed (Google Calendar Integration)
+- [x] Google OAuth2 authentication flow
+- [x] Calendar list retrieval
+- [x] Event fetching and display
+- [x] AH time conversion for events
+- [x] Bidirectional time display (Real ↔ AH)
+
+### 🔄 In Progress (Scheduler Enhancement)
 - [ ] Event creation and editing interface
 - [ ] Conflict resolution system
 - [ ] **Calendar UX refinement** - Improve visual design and interaction patterns
 - [ ] **Another Hour period time display finalization** - Determine the best way to show AH 24+ hours
+- [ ] **Multi-hour event display** - Fix events that span multiple time slots to display continuously
+- [ ] **All-day event support** - Handle all-day events appropriately in AH time
+- [ ] **Fixed header on scroll** - Keep day headers visible while scrolling through times
+- [ ] **Overlapping event layout** - Display conflicting events side-by-side
 
 ### 🎯 Future Plans (Scheduler-Specific)
 - [ ] **Outlook Calendar Integration**: Microsoft Graph API support
@@ -298,6 +321,16 @@ We welcome contributions to make AH Scheduler even better!
 - [ ] **Time Analytics**: Insights into your AH time usage patterns
 - [ ] **Team Scheduling**: Coordinate AH time across team members
 - [ ] **Integration Hub**: Connect with more productivity tools
+
+## 📍 Current Development Status
+
+**Last Updated**: *2025-05-24*
+
+- **Phase 1 & 2**: ✅ Complete - Basic scheduler with Google Calendar integration
+- **Current Focus**: UI/UX improvements for event display
+- **Next Priority**: Multi-hour event continuous display
+- **Testing Environment**: Replit development instance
+
 
 ## 🆚 Comparison with Original
 
@@ -322,7 +355,9 @@ We welcome contributions to make AH Scheduler even better!
 - Google Calendar sync may take a few seconds for large calendars
 - Event time conversion precision depends on Scaled 24 duration settings
 - Outlook integration requires Microsoft work/school account for full features
-
+- **Multi-hour events appear disconnected** - Events spanning multiple time slots display as separate blocks
+- **All-day events not optimized** - Need proper handling for all-day events in AH time system
+- **Overlapping events stack vertically** - Conflicting events should display side-by-side for better visibility
 ## 🆘 Troubleshooting
 
 ### Calendar Sync Issues
@@ -349,6 +384,11 @@ We welcome contributions to make AH Scheduler even better!
 - Check your internet connection
 - Try syncing smaller date ranges
 - Clear browser cache and localStorage
+
+## 📚 Documentation
+
+- [Development Setup](docs/DEVELOPMENT.md) - 開発環境のセットアップ
+- [Fork Strategy](docs/fork_strategy.md) - プロジェクトのフォーク戦略
 
 ## 📄 License
 
