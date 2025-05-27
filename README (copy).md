@@ -24,9 +24,7 @@ This is a **Fork & Extend** version of the original Another Hour Clock project, 
 ### 📅 **AH Scheduler** (NEW - Core Feature)
 - **Dual-Time Calendar View**: See events in both real time and AH time
 - **Google Calendar Integration**: Full bidirectional sync with your Google Calendar
-- **Multi-hour Event Display**: Events spanning multiple hours display as continuous blocks
-- **Overlapping Event Layout**: Smart side-by-side display for conflicting events
-- **Fixed Header Scroll**: Day headers remain visible while scrolling through times
+- **Outlook Calendar Integration**: Seamless integration with Microsoft Outlook
 - **Event Time Conversion**: Automatically convert event times between real and AH time
 - **Smart Scheduling**: Create events that respect your AH time preferences
 - **Conflict Resolution**: Handle overlapping events across multiple calendars
@@ -145,15 +143,11 @@ another-hour-scheduler/
 3. **View Your Schedule**:
    - See events in both real time and AH time
    - Toggle between different time views
-   - Scroll through your week with fixed day headers
-4. **Event Display**:
-   - Multi-hour events show as continuous blocks
-   - Overlapping events display side-by-side
-   - Color coding by calendar source
-5. **Event Management** (Coming Soon):
    - Create new events in your preferred time format
+4. **Event Management**:
    - Edit existing events with automatic time conversion
-   - Delete events with confirmation
+   - Resolve conflicts between overlapping events
+   - Set AH-time-based reminders
 
 ### Enhanced Main Clock
 - **Calendar Integration**: View upcoming events directly on the clock
@@ -162,7 +156,7 @@ another-hour-scheduler/
 
 ### Calendar Synchronization
 - **Google Calendar**: Full bidirectional sync with read/write permissions
-- **Outlook Calendar**: Seamless integration with Microsoft Graph API (Coming Soon)
+- **Outlook Calendar**: Seamless integration with Microsoft Graph API
 - **Conflict Resolution**: Smart handling of overlapping events from different sources
 - **Privacy Control**: Choose which calendars to sync and what information to share
 
@@ -185,13 +179,13 @@ realEventTime ↔ ahEventTime = timeConverter.convertEvent(event, scaleFactor)
 
 ### Calendar Integration APIs
 - **Google Calendar API v3**: Full read/write access with OAuth 2.0
-- **Microsoft Graph API**: Outlook Calendar integration (In Development)
+- **Microsoft Graph API**: Outlook Calendar integration
 - **Replit Secrets**: Secure credential management
 - **Event Synchronization**: Real-time bidirectional sync
 
 ### Key Technologies (Extended)
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript (ES6 modules)
-- **Calendar UI**: Custom implementation with AH time support
+- **Calendar UI**: FullCalendar.js with custom AH time rendering
 - **Time Library**: Moment.js with Moment Timezone (inherited)
 - **Graphics**: SVG for analog clock rendering (inherited)
 - **Backend**: Node.js, Express.js (extended)
@@ -201,10 +195,9 @@ realEventTime ↔ ahEventTime = timeConverter.convertEvent(event, scaleFactor)
 ### Implementation Notes
 
 - **Time Slot Calculation**: Dynamic based on `normalAphDayDurationMinutes` from localStorage
-- **Event Rendering**: Absolute positioning with collision detection
+- **Event Rendering**: Currently renders per time slot (causes multi-hour event fragmentation)
 - **OAuth Flow**: Using server-side session storage for tokens
 - **Redirect URI Detection**: Automatic environment detection for Replit dev/deploy URLs
-- **Sticky Header**: CSS-based implementation for performance
 
 ## 📱 Calendar Features
 
@@ -213,10 +206,8 @@ realEventTime ↔ ahEventTime = timeConverter.convertEvent(event, scaleFactor)
 - **Visual Distinction**: Different colors for different calendar sources
 - **Time Period Awareness**: Events adapt display based on current AH period
 - **Responsive Design**: Calendar works seamlessly on mobile and desktop
-- **Multi-hour Events**: Continuous display across time slots
-- **Overlap Handling**: Up to 4 columns for simultaneous events
 
-### Event Management (In Development)
+### Event Management
 - **Create Events**: Add events in either real or AH time
 - **Edit & Delete**: Full event management with time conversion
 - **Recurring Events**: Support for repeating events across time systems
@@ -265,7 +256,7 @@ src/
 - `scheduler-ui.js`: Main calendar interface with AH time support
 - `calendar-sync.js`: Google/Outlook integration and OAuth handling
 - `GoogleCalendarService.js`: Google Calendar API wrapper
-- `OutlookCalendarService.js`: Microsoft Graph API wrapper (Coming Soon)
+- `OutlookCalendarService.js`: Microsoft Graph API wrapper
 - `clock-core.js`: Extended with event-aware time calculations
 
 ## 🤝 Contributing
@@ -311,24 +302,19 @@ We welcome contributions to make AH Scheduler even better!
 - [x] AH time conversion for events
 - [x] Bidirectional time display (Real ↔ AH)
 
-### ✅ Phase 2.5 Completed (UI/UX Improvements) - 2025-05-27
-- [x] **Multi-hour event display** - Events spanning multiple time slots now display continuously
-- [x] **Overlapping event layout** - Conflicting events display side-by-side with smart column allocation
-- [x] **Fixed header on scroll** - Day headers remain visible while scrolling through times
-- [x] **Multi-day event support** - Events spanning multiple days are properly segmented
-- [x] **Visual improvements** - Shadow effects, hover states, and better contrast
-
-### 🔄 In Progress (Event Management)
-- [ ] **Event creation interface** - Modal dialog with time picker
-- [ ] **Event editing** - Click to edit with inline updates
-- [ ] **Event deletion** - Confirmation and batch operations
-- [ ] **Drag and drop** - Reschedule events by dragging
+### 🔄 In Progress (Scheduler Enhancement)
+- [ ] Event creation and editing interface
+- [ ] Conflict resolution system
+- [ ] **Calendar UX refinement** - Improve visual design and interaction patterns
+- [ ] **Another Hour period time display finalization** - Determine the best way to show AH 24+ hours
+- [ ] **Multi-hour event display** - Fix events that span multiple time slots to display continuously
+- [ ] **All-day event support** - Handle all-day events appropriately in AH time
+- [ ] **Fixed header on scroll** - Keep day headers visible while scrolling through times
+- [ ] **Overlapping event layout** - Display conflicting events side-by-side
 
 ### 🎯 Future Plans (Scheduler-Specific)
 - [ ] **Outlook Calendar Integration**: Microsoft Graph API support
-- [ ] **All-day event support** - Special handling for 24-hour events in AH time
-- [ ] **Recurring Events**: Daily, weekly, monthly patterns with AH awareness
-- [ ] **Advanced Event Features**: Reminders, attachments, attendees
+- [ ] **Advanced Event Features**: Recurring events, reminders, attachments
 - [ ] **Calendar Sharing**: Share AH-time calendars with others
 - [ ] **Mobile Calendar App**: Native iOS/Android scheduling apps
 - [ ] **Smart Scheduling**: AI-powered optimal event placement
@@ -338,24 +324,23 @@ We welcome contributions to make AH Scheduler even better!
 
 ## 📍 Current Development Status
 
-**Last Updated**: *2025-05-27*
+**Last Updated**: *2025-05-24*
 
-- **Phase 1, 2, 2.5**: ✅ Complete - Full scheduler with Google Calendar integration and improved UI
-- **Current Focus**: Event management features (Create, Edit, Delete)
-- **Next Priority**: Outlook Calendar integration
+- **Phase 1 & 2**: ✅ Complete - Basic scheduler with Google Calendar integration
+- **Current Focus**: UI/UX improvements for event display
+- **Next Priority**: Multi-hour event continuous display
 - **Testing Environment**: Replit development instance
-- **Recent Achievement**: Fixed all major UI/UX issues with event display
+
 
 ## 🆚 Comparison with Original
 
 | Feature | Another Hour Clock | Another Hour Scheduler |
 |---------|-------------------|------------------------|
 | **Core Time System** | ✅ Full AH time experience | ✅ Inherited + Enhanced |
-| **Calendar Integration** | ❌ None | ✅ Google Calendar sync |
-| **Event Management** | ❌ Time-only focus | 🔄 In development |
+| **Calendar Integration** | ❌ None | ✅ Google + Outlook sync |
+| **Event Management** | ❌ Time-only focus | ✅ Full scheduling features |
 | **Multi-Calendar Support** | ❌ N/A | ✅ Multiple calendar sources |
 | **Event Time Conversion** | ❌ N/A | ✅ Real ↔ AH time events |
-| **UI Polish** | ✅ Clean interface | ✅ Enhanced with sticky headers |
 | **Project Focus** | 🎯 Pure time experience | 📅 Practical time management |
 | **Target Users** | Time philosophy enthusiasts | Busy professionals using AH time |
 
@@ -370,16 +355,9 @@ We welcome contributions to make AH Scheduler even better!
 - Google Calendar sync may take a few seconds for large calendars
 - Event time conversion precision depends on Scaled 24 duration settings
 - Outlook integration requires Microsoft work/school account for full features
-- Event creation/editing UI not yet implemented
-- Recurring events not yet supported
-
-### Recently Fixed Issues ✅
-- ~~Multi-hour events appear disconnected~~ → Fixed with continuous display
-- ~~All-day events not optimized~~ → Fixed with proper segmentation
-- ~~Overlapping events stack vertically~~ → Fixed with column-based layout
-- ~~Calendar appears gray/invisible~~ → Fixed CSS structure
-- ~~Multi-day events in wrong position~~ → Fixed positioning logic
-
+- **Multi-hour events appear disconnected** - Events spanning multiple time slots display as separate blocks
+- **All-day events not optimized** - Need proper handling for all-day events in AH time system
+- **Overlapping events stack vertically** - Conflicting events should display side-by-side for better visibility
 ## 🆘 Troubleshooting
 
 ### Calendar Sync Issues
@@ -394,11 +372,11 @@ We welcome contributions to make AH Scheduler even better!
 - Check your Scaled 24 duration settings
 - Verify timezone settings match your calendar
 - Try manual sync refresh
-- Clear browser cache if issues persist
 
 **Outlook Calendar issues?**
-- Feature not yet implemented
-- Check roadmap for expected release
+- Ensure Microsoft Graph API permissions are configured
+- Check if you're using a work/school vs. personal account
+- Verify tenant settings allow external app access
 
 ### Performance Issues
 
@@ -406,11 +384,10 @@ We welcome contributions to make AH Scheduler even better!
 - Check your internet connection
 - Try syncing smaller date ranges
 - Clear browser cache and localStorage
-- Limit to fewer calendars
 
 ## 📚 Documentation
 
-- [Development Setup](docs/DEVELOPMENT.md) - 開発環境のセットアップ (Updated: 2025-05-27)
+- [Development Setup](docs/DEVELOPMENT.md) - 開発環境のセットアップ
 - [Fork Strategy](docs/fork_strategy.md) - プロジェクトのフォーク戦略
 
 ## 📄 License
@@ -421,6 +398,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Original Another Hour Clock Project** for the innovative time concepts
 - **Moment.js Team** for excellent date/time handling
+- **FullCalendar.js Team** for the robust calendar interface
 - **Google & Microsoft** for comprehensive calendar APIs
 - **Replit Team** for the excellent development environment
 - **Open Source Community** for inspiration and tools

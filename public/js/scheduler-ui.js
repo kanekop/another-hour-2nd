@@ -198,22 +198,135 @@ function formatRealTime(decimalHours) {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 }
 
-// Render calendar grid
+// Process events to determine their layout positions
+function processEventsForLayout(events, dayIndex) {
+  // Sort events by start time, then by duration (longer events first)
+  const sortedEvents = events.sort((a, b) => {
+    const startDiff = moment(a.start).valueOf() - moment(b.start).valueOf();
+    if (startDiff !== 0) return startDiff;
+
+    // If start times are equal, put longer events first
+    const durationA = moment(a.end).valueOf() - moment(a.start).valueOf();
+    const durationB = moment(b.end).valueOf() - moment(b.start).valueOf();
+    return durationB - durationA;
+  });
+
+  // Create collision groups using a more sophisticated algorithm
+  const processedEvents = [];
+  const columns = []; // Array of arrays, each sub-array is a column
+
+  sortedEvents.forEach(event => {
+    const eventStart = moment(event.start).valueOf();
+    const eventEnd = moment(event.end).valueOf();
+
+    // Find the first available column for this event
+    let columnIndex = -1;
+    for (let i = 0; i < columns.length; i++) {
+      const column = columns[i];
+      let canFitInColumn = true;
+
+      // Check if this event collides with any event in this column
+      for (const existingEvent of column) {
+        const existingStart = moment(existingEvent.start).valueOf();
+        const existingEnd = moment(existingEvent.end).valueOf();
+
+        if (!(eventEnd <= existingStart || eventStart >= existingEnd)) {
+          canFitInColumn = false;
+          break;
+        }
+      }
+
+      if (canFitInColumn) {
+        columnIndex = i;
+        break;
+      }
+    }
+
+    // If no existing column can fit this event, create a new column
+    if (columnIndex === -1) {
+      columnIndex = columns.length;
+      columns.push([]);
+    }
+
+    // Add event to the column
+    columns[columnIndex].push(event);
+
+    // Store column information with the event
+    processedEvents.push({
+      ...event,
+      column: columnIndex,
+      totalColumns: 1 // Will be updated after all events are placed
+    });
+  });
+
+  // Now determine collision groups and update totalColumns
+  processedEvents.forEach((event, index) => {
+    const eventStart = moment(event.start).valueOf();
+    const eventEnd = moment(event.end).valueOf();
+
+    // Find all events that overlap with this event
+    const overlappingEvents = processedEvents.filter((other, otherIndex) => {
+      if (index === otherIndex) return false;
+      const otherStart = moment(other.start).valueOf();
+      const otherEnd = moment(other.end).valueOf();
+      return !(eventEnd <= otherStart || eventStart >= otherEnd);
+    });
+
+    // Find the maximum column index among overlapping events
+    let maxColumn = event.column;
+    overlappingEvents.forEach(other => {
+      maxColumn = Math.max(maxColumn, other.column);
+    });
+
+    // Total columns is the highest column index + 1
+    event.totalColumns = maxColumn + 1;
+  });
+
+  // Propagate totalColumns to all events in the same collision group
+  processedEvents.forEach(event => {
+    const eventStart = moment(event.start).valueOf();
+    const eventEnd = moment(event.end).valueOf();
+
+    processedEvents.forEach(other => {
+      const otherStart = moment(other.start).valueOf();
+      const otherEnd = moment(other.end).valueOf();
+
+      if (!(eventEnd <= otherStart || eventStart >= otherEnd)) {
+        other.totalColumns = Math.max(other.totalColumns, event.totalColumns);
+      }
+    });
+  });
+
+  return processedEvents;
+}
+
+// Render calendar grid with improved event layout
 function renderCalendar() {
+  // Clear existing content
   elements.calendarGrid.innerHTML = '';
+
+  // Create wrapper structure for sticky header
+  const scrollWrapper = document.createElement('div');
+  scrollWrapper.className = 'calendar-scroll-wrapper';
+
+  const headerRow = document.createElement('div');
+  headerRow.className = 'calendar-header-row';
+
+  const contentArea = document.createElement('div');
+  contentArea.className = 'calendar-content';
 
   // Get time slots based on current mode
   const timeSlots = getTimeSlots();
 
-  // Update grid template to accommodate variable height
-  const rowCount = timeSlots.length + 1; // +1 for header
-  elements.calendarGrid.style.gridTemplateRows = `auto repeat(${timeSlots.length}, minmax(40px, 1fr))`;
+  // Update grid template for content area
+  const rowCount = timeSlots.length;
+  contentArea.style.gridTemplateRows = `repeat(${rowCount}, minmax(40px, 1fr))`;
 
-  // Add header row
-  const headerRow = document.createElement('div');
-  headerRow.className = 'calendar-header';
-  headerRow.textContent = 'Time';
-  elements.calendarGrid.appendChild(headerRow);
+  // Add headers to header row
+  const timeHeader = document.createElement('div');
+  timeHeader.className = 'calendar-header';
+  timeHeader.textContent = 'Time';
+  headerRow.appendChild(timeHeader);
 
   // Add day headers
   for (let i = 0; i < 7; i++) {
@@ -221,10 +334,10 @@ function renderCalendar() {
     dayHeader.className = 'calendar-header';
     const dayDate = state.currentWeekStart.clone().add(i, 'days');
     dayHeader.innerHTML = `${DAYS_OF_WEEK[i]}<br>${dayDate.format('M/D')}`;
-    elements.calendarGrid.appendChild(dayHeader);
+    headerRow.appendChild(dayHeader);
   }
 
-  // Add time slots and event cells
+  // Add time slots and event cells to content area
   timeSlots.forEach((slot, slotIndex) => {
     // Time slot
     const timeSlot = document.createElement('div');
@@ -244,7 +357,7 @@ function renderCalendar() {
       timeSlot.textContent = slot.label;
     }
 
-    elements.calendarGrid.appendChild(timeSlot);
+    contentArea.appendChild(timeSlot);
 
     // Event cells for each day
     for (let day = 0; day < 7; day++) {
@@ -255,57 +368,248 @@ function renderCalendar() {
       }
       eventCell.dataset.realHour = slot.realHour;
       eventCell.dataset.day = day;
+      eventCell.dataset.slotIndex = slotIndex;
       if (slot.ahHour !== undefined) {
         eventCell.dataset.ahHour = slot.ahHour;
       }
 
-      // Add events for this time slot
-      const cellEvents = getEventsForCell(day, slot.realHour);
-      cellEvents.forEach(event => {
-        const eventEl = createEventElement(event);
-        eventCell.appendChild(eventEl);
-      });
+      contentArea.appendChild(eventCell);
+    }
+  });
 
-      elements.calendarGrid.appendChild(eventCell);
+  // Assemble the structure
+  scrollWrapper.appendChild(headerRow);
+  scrollWrapper.appendChild(contentArea);
+
+  // Replace calendar grid content
+  elements.calendarGrid.appendChild(scrollWrapper);
+
+  // Add scroll event listener for shadow effect
+  scrollWrapper.addEventListener('scroll', () => {
+    if (scrollWrapper.scrollTop > 0) {
+      scrollWrapper.classList.add('scrolled');
+    } else {
+      scrollWrapper.classList.remove('scrolled');
+    }
+  });
+
+  // Store reference to content area for event rendering
+  elements.calendarContent = contentArea;
+
+  // Render all events after grid is complete
+  renderAllEvents(timeSlots);
+}
+
+// Render all events with proper multi-hour support
+function renderAllEvents(timeSlots) {
+  // Process all events, including multi-day events
+  state.events.forEach(event => {
+    const eventStart = moment(event.start);
+    const eventEnd = moment(event.end);
+    const weekStart = state.currentWeekStart;
+    const weekEnd = state.currentWeekStart.clone().endOf('week');
+
+    // Skip events outside current week
+    if (eventEnd.isBefore(weekStart) || eventStart.isAfter(weekEnd)) {
+      return;
+    }
+
+    // Calculate actual start and end within the week
+    const displayStart = moment.max(eventStart, weekStart);
+    const displayEnd = moment.min(eventEnd, weekEnd);
+
+    // Check if event spans multiple days
+    const startDay = displayStart.diff(weekStart, 'days');
+    const endDay = displayEnd.diff(weekStart, 'days');
+
+    if (startDay === endDay) {
+      // Single day event
+      if (startDay >= 0 && startDay < 7) {
+        renderMultiHourEvent({
+          ...event,
+          displayStart: displayStart.toISOString(),
+          displayEnd: displayEnd.toISOString()
+        }, startDay, timeSlots);
+      }
+    } else {
+      // Multi-day event - split into daily segments
+      for (let day = startDay; day <= endDay && day < 7; day++) {
+        if (day < 0) continue;
+
+        const dayStart = weekStart.clone().add(day, 'days').startOf('day');
+        const dayEnd = dayStart.clone().endOf('day');
+
+        const segmentStart = day === startDay ? displayStart : dayStart;
+        const segmentEnd = day === endDay ? displayEnd : dayEnd;
+
+        renderMultiHourEvent({
+          ...event,
+          displayStart: segmentStart.toISOString(),
+          displayEnd: segmentEnd.toISOString(),
+          isMultiDay: true,
+          isFirstDay: day === startDay,
+          isLastDay: day === endDay
+        }, day, timeSlots);
+      }
     }
   });
 }
 
-// Get events for a specific cell
-function getEventsForCell(day, realHour) {
-  const cellDate = state.currentWeekStart.clone().add(day, 'days');
-  const cellStart = cellDate.clone().add(realHour, 'hours');
-  const cellEnd = cellStart.clone().add(1, 'hours');
+// Render a single event that may span multiple hours
+function renderMultiHourEvent(event, dayIndex, timeSlots) {
+  // Use display times if available (for multi-day events)
+  const eventStart = moment(event.displayStart || event.start);
+  const eventEnd = moment(event.displayEnd || event.end);
 
-  return state.events.filter(event => {
-    const eventStart = moment(event.start);
-    const eventEnd = moment(event.end);
+  // Find start and end slot indices
+  const startHour = eventStart.hour() + eventStart.minute() / 60;
+  const endHour = eventEnd.hour() + eventEnd.minute() / 60;
 
-    // Check if event overlaps with this cell
-    return eventStart.isBefore(cellEnd) && eventEnd.isAfter(cellStart);
+  let startSlotIndex = -1;
+  let endSlotIndex = -1;
+
+  // Find the slots this event spans
+  timeSlots.forEach((slot, index) => {
+    if (startSlotIndex === -1 && slot.realHour <= startHour && 
+        (index === timeSlots.length - 1 || timeSlots[index + 1].realHour > startHour)) {
+      startSlotIndex = index;
+    }
+    if (slot.realHour < endHour) {
+      endSlotIndex = index;
+    }
   });
-}
 
-// Create event element
-function createEventElement(event) {
+  // Handle all-day or events starting at midnight
+  if (startSlotIndex === -1 && startHour === 0) {
+    startSlotIndex = 0;
+  }
+
+  // Handle events ending at midnight
+  if (endSlotIndex === -1 && endHour === 0) {
+    endSlotIndex = timeSlots.length - 1;
+  }
+
+  if (startSlotIndex === -1 || endSlotIndex === -1) {
+    console.warn('Could not find time slot for event:', event.title, { startHour, endHour, startSlotIndex, endSlotIndex });
+    return;
+  }
+
+  // Create the event element
   const eventEl = document.createElement('div');
-  eventEl.className = 'calendar-event';
+  eventEl.className = 'calendar-event multi-hour-event';
 
-  // Add time prefix if in AH mode
+  // Add multi-day class if applicable
+  if (event.isMultiDay) {
+    eventEl.classList.add('multi-day-event');
+    if (event.isFirstDay) eventEl.classList.add('first-day');
+    if (event.isLastDay) eventEl.classList.add('last-day');
+  }
+
+  // Add column class for styling
+  if (event.totalColumns > 1) {
+    eventEl.classList.add(`columns-${event.totalColumns}`);
+    eventEl.classList.add(`column-${event.column}`);
+  }
+
+  // Find the cells for positioning
+  const startCell = document.querySelector(
+    `.event-cell[data-day="${dayIndex}"][data-slot-index="${startSlotIndex}"]`
+  );
+  const endCell = document.querySelector(
+    `.event-cell[data-day="${dayIndex}"][data-slot-index="${endSlotIndex}"]`
+  );
+
+  if (!startCell || !endCell) {
+    console.error('Could not find cells for event:', event.title, { dayIndex, startSlotIndex, endSlotIndex });
+    return;
+  }
+
+  // Position the event absolutely within the calendar grid
+  const contentArea = elements.calendarContent || elements.calendarGrid;
+  const gridRect = contentArea.getBoundingClientRect();
+  const startRect = startCell.getBoundingClientRect();
+  const endRect = endCell.getBoundingClientRect();
+
+  // Calculate position based on column
+  const cellWidth = startRect.width;
+  const eventWidth = cellWidth / (event.totalColumns || 1);
+  const leftOffset = eventWidth * (event.column || 0);
+
+  // Apply some padding between events
+  const padding = 2;
+
+  eventEl.style.position = 'absolute';
+  eventEl.style.top = `${startRect.top - gridRect.top}px`;
+  eventEl.style.left = `${startRect.left - gridRect.left + leftOffset + padding}px`;
+  eventEl.style.width = `${eventWidth - (padding * 2)}px`;
+  eventEl.style.height = `${endRect.bottom - startRect.top}px`;
+
+  // Calculate if we need to show abbreviated content based on height
+  const eventHeight = endRect.bottom - startRect.top;
+  const isCompact = eventHeight < 50;
+
+  // Format time display
+  let timeDisplay = '';
   if (state.timeMode === 'ah' || state.timeMode === 'both') {
-    const eventStart = moment(event.start);
-    const startHour = eventStart.hour() + eventStart.minute() / 60;
-    const ahTime = convertRealToAH(startHour);
+    const ahStartTime = convertRealToAH(startHour);
+    const ahEndTime = convertRealToAH(endHour);
     eventEl.classList.add('ah-time');
-    eventEl.innerHTML = `<small>AH ${Math.floor(ahTime)}:${Math.round((ahTime % 1) * 60).toString().padStart(2, '0')}</small><br>${event.title}`;
+
+    if (event.isMultiDay) {
+      if (event.isFirstDay) {
+        timeDisplay = `AH ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} →`;
+      } else if (event.isLastDay) {
+        timeDisplay = `→ AH ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
+      } else {
+        timeDisplay = '→ All Day →';
+      }
+    } else {
+      timeDisplay = `AH ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
+    }
   } else {
-    eventEl.textContent = event.title;
+    if (event.isMultiDay) {
+      if (event.isFirstDay) {
+        timeDisplay = `${eventStart.format('h:mm A')} →`;
+      } else if (event.isLastDay) {
+        timeDisplay = `→ ${eventEnd.format('h:mm A')}`;
+      } else {
+        timeDisplay = '→ All Day →';
+      }
+    } else {
+      timeDisplay = `${eventStart.format('h:mm A')} - ${eventEnd.format('h:mm A')}`;
+    }
+  }
+
+  // Add content
+  if (isCompact) {
+    eventEl.innerHTML = `
+      <div class="event-content-compact">
+        <span class="event-time-compact">${timeDisplay.split(' - ')[0]}</span>
+        <span class="event-title-compact">${event.title}</span>
+      </div>
+    `;
+  } else {
+    eventEl.innerHTML = `
+      <small>${timeDisplay}</small>
+      <div class="event-title">${event.title}</div>
+    `;
+  }
+
+  // Add background color if provided
+  if (event.backgroundColor) {
+    eventEl.style.backgroundColor = event.backgroundColor;
+    eventEl.style.borderLeftColor = event.foregroundColor || event.backgroundColor;
   }
 
   // Add click handler
   eventEl.addEventListener('click', () => showEventDetails(event));
 
-  return eventEl;
+  // Make calendar content area position relative for absolute positioning
+  if (contentArea.style.position !== 'relative') {
+    contentArea.style.position = 'relative';
+  }
+
+  contentArea.appendChild(eventEl);
 }
 
 // Convert real hours to AH hours
