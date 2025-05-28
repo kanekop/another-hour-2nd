@@ -591,7 +591,7 @@ function updatePersonalizedClock() {
   const remainingTimeDisplayElement = elements.digitalAphRemaining;
 
   if (aphTimeDisplayElement) {
-    aphTimeDisplayElement.textContent = `Scaled 24: ${String(aphHours).padStart(2, "0")}:${String(aphMinutes).padStart(2, "0")}:${String(Math.floor(aphSeconds)).padStart(2, "0")}`;
+    aphTimeDisplayElement.textContent = `Designed 24: ${String(aphHours).padStart(2, "0")}:${String(aphMinutes).padStart(2, "0")}:${String(Math.floor(aphSeconds)).padStart(2, "0")}`;
   }
   if (actualTimeDisplayElement) {
     actualTimeDisplayElement.textContent = `Actual: ${localTime.format("HH:mm:ss")}`;

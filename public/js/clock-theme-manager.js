@@ -66,7 +66,7 @@ export function applyClockFace(theme) {
 /**
  * Apply color theme based on period
  * @param {boolean} isAHPeriod - Whether currently in AH period
- * @param {string} scaled24Theme - Color theme for scaled 24 period
+ * @param {string} scaled24Theme - Color theme for Designed 24 period
  * @param {string} ahTheme - Color theme for AH period
  */
 export function applyColorTheme(isAHPeriod, scaled24Theme, ahTheme) {
@@ -87,7 +87,7 @@ export function applyColorTheme(isAHPeriod, scaled24Theme, ahTheme) {
 
 /**
  * Save color theme preferences
- * @param {string} scaled24Theme - Color theme for scaled 24 period
+ * @param {string} scaled24Theme - Color theme for Designed 24 period
  * @param {string} ahTheme - Color theme for AH period
  */
 export function saveColorPreferences(scaled24Theme, ahTheme) {
@@ -143,7 +143,7 @@ export function createThemeSettingsUI() {
       </div>
 
       <div class="setting-group">
-        <label>Scaled 24 Period Color</label>
+        <label>Designed 24 Period Color</label>
         <select id="color-scaled24-select" class="theme-select">
           <option value="${COLOR_THEMES.DEFAULT}">Default (Light Gray)</option>
           <option value="${COLOR_THEMES.BLUE}">Blue</option>

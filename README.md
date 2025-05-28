@@ -1,6 +1,6 @@
 # Another Hour Scheduler
 
-Another Hour Scheduler is an advanced web-based scheduling application that extends the unique time concepts of Another Hour Clock. This application allows you to manage your calendar and events using the **"Scaled 24"** and **"Another Hour" (AH)** time system, while seamlessly integrating with your existing Google Calendar and Outlook Calendar.
+Another Hour Scheduler is an advanced web-based scheduling application that extends the unique time concepts of Another Hour Clock. This application allows you to manage your calendar and events using the **"Designed 24"** and **"Another Hour" (AH)** time system, while seamlessly integrating with your existing Google Calendar and Outlook Calendar.
 
 ## 📅 About This Project
 
