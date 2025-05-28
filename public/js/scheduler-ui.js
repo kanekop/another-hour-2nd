@@ -139,7 +139,7 @@ function getTimeSlots() {
     const normalDurationHours = state.normalAphDayDurationMinutes / 60;
     const ahDurationHours = 24 - normalDurationHours;
 
-    // Scaled 24 hours (0-23)
+    // Designed 24 hours (0-23)
     for (let ahHour = 0; ahHour < 24; ahHour++) {
       const realHour = ahHour / state.scaleFactor;
       if (realHour < normalDurationHours) {
@@ -617,7 +617,7 @@ function convertRealToAH(realHours) {
   const normalDurationHours = state.normalAphDayDurationMinutes / 60;
 
   if (realHours < normalDurationHours) {
-    // In scaled period
+    // In designed period
     return realHours * state.scaleFactor;
   } else {
     // In AH period
@@ -628,7 +628,7 @@ function convertRealToAH(realHours) {
 // Convert AH hours to real hours
 function convertAHToReal(ahHours) {
   if (ahHours < 24) {
-    // In scaled period
+    // In designed period
     return ahHours / state.scaleFactor;
   } else {
     // In AH period

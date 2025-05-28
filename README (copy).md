@@ -13,9 +13,9 @@ This is a **Fork & Extend** version of the original Another Hour Clock project, 
 
 ## ✨ Key Concepts
 
-- **Scaled 24 Period**: Your customizable conceptual 24-hour day that can last anywhere from 0 to 24 real hours
+- **Designed 24 Period**: Your customizable conceptual 24-hour day that can last anywhere from 0 to 24 real hours
 - **Another Hour (AH) Period**: The remaining real time in a 24-hour day, running at normal speed
-- **Time Scaling**: During the "Scaled 24" period, time runs at a customized pace to fit 24 conceptual hours into your chosen real-time duration
+- **Time Scaling**: During the "Designed 24" period, time runs at a customized pace to fit 24 conceptual hours into your chosen real-time duration
 - **Dual-Time Calendar**: View and manage events in both real time and AH time simultaneously
 - **Calendar Synchronization**: Bidirectional sync with Google Calendar and Outlook Calendar
 
@@ -30,10 +30,10 @@ This is a **Fork & Extend** version of the original Another Hour Clock project, 
 - **Conflict Resolution**: Handle overlapping events across multiple calendars
 
 ### 🎯 **Enhanced Main Clock** (Inherited & Extended)
-- **Custom Duration Control**: Set your "Scaled 24" period anywhere from 0 to 24 real hours
+- **Custom Duration Control**: Set your "Designed 24" period anywhere from 0 to 24 real hours
 - **Calendar-Aware Display**: Clock shows upcoming events in your preferred time format
 - **Integrated Event Preview**: Quick glance at your schedule from the main clock
-- **Dynamic Time Scaling**: Time runs faster or slower during your "Scaled 24" period
+- **Dynamic Time Scaling**: Time runs faster or slower during your "Designed 24" period
 - **Theme Switching**: Automatically switches to dark theme during AH periods
 - **Timezone Support**: Full timezone selection with major world cities
 
@@ -168,12 +168,12 @@ The scheduler extends the original time scaling with event-aware calculations:
 
 ```javascript
 // Enhanced scaling formula for events
-scaleFactor = 24 / scaled24Hours
+scaleFactor = 24 / designed24Hours
 
 // Event time conversion
 realEventTime ↔ ahEventTime = timeConverter.convertEvent(event, scaleFactor)
 
-// During Scaled 24 period: events scale with time
+// During Designed 24 period: events scale with time
 // During AH period: events display in real time
 ```
 
@@ -293,7 +293,7 @@ We welcome contributions to make AH Scheduler even better!
 - [x] Basic scheduler UI
 - [x] Navigation between Clock and Scheduler
 - [x] Dynamic time slot calculation based on AH settings
-- [x] Visual distinction between Scaled 24 and AH periods
+- [x] Visual distinction between Designed 24 and AH periods
 
 ### ✅ Phase 2 Completed (Google Calendar Integration)
 - [x] Google OAuth2 authentication flow
