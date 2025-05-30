@@ -107,7 +107,7 @@ export function updateAphAxisLabels(aphAxisLabelContainerElement, aphGraphContai
     // --- AH 24 インジケーターラベル ---
     const ah24Label = document.createElement('div');
     ah24Label.classList.add('dynamic-aph-axis-label');
-    ah24Label.textContent = 'AH 24';
+    ah24Label.textContent = 'D_24';
     ah24Label.style.position = 'absolute';
     ah24Label.style.top = `${ah24PositionPercent}%`;
     ah24Label.style.left = `calc(100% + 5px)`; // ラベルコンテナの右外側
@@ -132,10 +132,10 @@ export function updateAphAxisLabels(aphAxisLabelContainerElement, aphGraphContai
 
     // --- AH 0, 6, 12, 18 のラベル ---
     const aphMilestones = [
-        { aphHour: 0, text: "AH 0" },
-        { aphHour: 6, text: "AH 6" },
-        { aphHour: 12, text: "AH 12" },
-        { aphHour: 18, text: "AH 18" },
+        { aphHour: 0, text: "D__0" },
+        { aphHour: 6, text: "D__6" },
+        { aphHour: 12, text: "D_12" },
+        { aphHour: 18, text: "D_18" },
     ];
 
     aphMilestones.forEach(milestone => {

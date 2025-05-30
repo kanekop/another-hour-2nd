@@ -254,10 +254,10 @@ input[type="range"]#normal-duration-slider::-webkit-slider-runnable-track {
   width: 100%;
   height: 10px;
   background: linear-gradient(to right,
-    var(--slider-normal-color, #6e8bc4) 0%,
-    var(--slider-normal-color, #6e8bc4) var(--slider-progress-percent, 95.83%),
-    var(--slider-aph-color, #ffc107) var(--slider-progress-percent, 95.83%),
-    var(--slider-aph-color, #ffc107) 100%
+    var(--slider-normal-color, #ffc107) 0%,
+    var(--slider-normal-color, #ffc107) var(--slider-progress-percent, 95.83%),
+    var(--slider-aph-color, #b30000) var(--slider-progress-percent, 95.83%),
+    var(--slider-aph-color, #b30000) 100%
   );
   border-radius: 5px;
 }
@@ -265,10 +265,10 @@ input[type="range"]#normal-duration-slider::-moz-range-track {
   width: 100%;
   height: 10px;
    background: linear-gradient(to right,
-    var(--slider-normal-color, #6e8bc4) 0%,
-    var(--slider-normal-color, #6e8bc4) var(--slider-progress-percent, 95.83%),
-    var(--slider-aph-color, #ffc107) var(--slider-progress-percent, 95.83%),
-    var(--slider-aph-color, #ffc107) 100%
+    var(--slider-normal-color, #ffc107) 0%,
+    var(--slider-normal-color, #ffc107) var(--slider-progress-percent, 95.83%),
+    var(--slider-aph-color, #b30000) var(--slider-progress-percent, 95.83%),
+    var(--slider-aph-color, #b30000) 100%
   );
   border-radius: 5px;
   border: none;
@@ -281,7 +281,9 @@ input[type="range"]#normal-duration-slider::-webkit-slider-thumb {
   height: 20px; /* Thumb size adjustment */
   width: 10px;
   border-radius: 2px;
-  background: #b30000; /* Darker red for thumb */
+  background: #b30000; /* きょう */
+  background: #0d350e; /* Changed from #c00000 to green */
+
   margin-top: -5px; /* (thumb height - track height) / 2 */
   position: relative;
   z-index: 2;
@@ -292,6 +294,7 @@ input[type="range"]#normal-duration-slider::-moz-range-thumb {
   width: 10px;
   border-radius: 2px;
   background: #b30000;
+  background: #0d350e; /* Changed from #c00000 to green */
   position: relative;
   z-index: 2;
 }
@@ -314,13 +317,15 @@ input[type="range"]#normal-duration-slider::-moz-range-thumb {
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-bottom: 8px solid #b30000; /* Match thumb color */
+  border-bottom: 8px solid #b30000; /* きょう */
+  border-bottom: #0d350e; /* Changed from #c00000 to green */
   margin-bottom: 2px;
 }
 
 .slider-real-time-text {
   font-size: 0.8em;
   color: #b30000;
+  color: #0d350e; /*きょう */
   background-color: rgba(255, 255, 255, 0.85);
   padding: 1px 4px;
   border-radius: 2px;

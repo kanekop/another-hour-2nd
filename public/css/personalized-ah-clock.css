@@ -99,7 +99,8 @@ input[type="range"]#normal-duration-slider::-webkit-slider-thumb {
   height: 24px; /* つまみの高さ */
   width: 12px;  /* つまみの幅 */
   border-radius: 3px;
-  background: #c00000;
+  /* background: #c00000; きょう */
+  background: #4CAF50; /* Changed from #c00000 to green */
   margin-top: -6px; /* (つまみの高さ - トラックの高さ) / 2 の負の値 */
   position: relative; /* z-indexを有効にするため */
   z-index: 2; /* ▲マークより手前に表示 */
@@ -111,7 +112,8 @@ input[type="range"]#normal-duration-slider::-moz-range-thumb {
   height: 24px;
   width: 12px;
   border-radius: 3px;
-  background: #c00000;
+  /* background: #c00000; きょう */
+  background: #4CAF50; /* Changed from #c00000 to green */
   position: relative;
   z-index: 2;
 }
