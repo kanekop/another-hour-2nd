@@ -27,7 +27,11 @@ const elements = {
   syncCalendarBtn: document.getElementById('sync-calendar-btn'),
   eventDetails: document.getElementById('event-details'),
   eventInfo: document.getElementById('event-info'),
-  timeModeRadios: document.querySelectorAll('input[name="time-mode"]')
+  timeModeRadios: document.querySelectorAll('input[name="time-mode"]'),
+  // モーダル関連の要素を追加
+  eventModalOverlay: document.getElementById('event-modal-overlay'),
+  eventModalContent: document.getElementById('event-modal-content'),
+  eventModalClose: document.getElementById('event-modal-close')
 };
 
 // Initialize
@@ -102,6 +106,24 @@ function setupEventListeners() {
     } else {
       // Start OAuth flow
       initiateGoogleAuth();
+    }
+  });
+
+  // モーダルを閉じる処理
+  elements.eventModalClose?.addEventListener('click', () => {
+    elements.eventModalOverlay.classList.remove('active');
+  });
+
+  elements.eventModalOverlay?.addEventListener('click', (e) => {
+    if (e.target === elements.eventModalOverlay) {
+      elements.eventModalOverlay.classList.remove('active');
+    }
+  });
+
+  // ESCキーでモーダルを閉じる
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && elements.eventModalOverlay?.classList.contains('active')) {
+      elements.eventModalOverlay.classList.remove('active');
     }
   });
 }
@@ -402,6 +424,9 @@ function renderCalendar() {
 
 // Render all events with proper multi-hour support
 function renderAllEvents(timeSlots) {
+  // Group events by day
+  const eventsByDay = Array(7).fill(null).map(() => []);
+
   // Process all events, including multi-day events
   state.events.forEach(event => {
     const eventStart = moment(event.start);
@@ -425,11 +450,11 @@ function renderAllEvents(timeSlots) {
     if (startDay === endDay) {
       // Single day event
       if (startDay >= 0 && startDay < 7) {
-        renderMultiHourEvent({
+        eventsByDay[startDay].push({
           ...event,
           displayStart: displayStart.toISOString(),
           displayEnd: displayEnd.toISOString()
-        }, startDay, timeSlots);
+        });
       }
     } else {
       // Multi-day event - split into daily segments
@@ -442,15 +467,25 @@ function renderAllEvents(timeSlots) {
         const segmentStart = day === startDay ? displayStart : dayStart;
         const segmentEnd = day === endDay ? displayEnd : dayEnd;
 
-        renderMultiHourEvent({
+        eventsByDay[day].push({
           ...event,
           displayStart: segmentStart.toISOString(),
           displayEnd: segmentEnd.toISOString(),
           isMultiDay: true,
           isFirstDay: day === startDay,
           isLastDay: day === endDay
-        }, day, timeSlots);
+        });
       }
+    }
+  });
+
+  // Process and render events for each day
+  eventsByDay.forEach((dayEvents, dayIndex) => {
+    if (dayEvents.length > 0) {
+      const processedEvents = processEventsForLayout(dayEvents, dayIndex);
+      processedEvents.forEach(event => {
+        renderMultiHourEvent(event, dayIndex, timeSlots);
+      });
     }
   });
 }
@@ -538,9 +573,13 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
   // Apply some padding between events
   const padding = 2;
 
+  // Store cell left position for CSS custom property
+  const cellLeft = startRect.left - gridRect.left;
+  eventEl.style.setProperty('--cell-left', `${cellLeft}px`);
+
   eventEl.style.position = 'absolute';
   eventEl.style.top = `${startRect.top - gridRect.top}px`;
-  eventEl.style.left = `${startRect.left - gridRect.left + leftOffset + padding}px`;
+  eventEl.style.left = `${cellLeft + leftOffset + padding}px`;
   eventEl.style.width = `${eventWidth - (padding * 2)}px`;
   eventEl.style.height = `${endRect.bottom - startRect.top}px`;
 
@@ -614,8 +653,23 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
     eventEl.style.borderLeftColor = event.foregroundColor || event.backgroundColor;
   }
 
-  // Add click handler
-  eventEl.addEventListener('click', () => showEventDetails(event));
+  // ダブルクリック処理を追加
+  let clickTimer = null;
+  eventEl.addEventListener('click', (e) => {
+    if (clickTimer) {
+      // ダブルクリック
+      clearTimeout(clickTimer);
+      clickTimer = null;
+      e.stopPropagation();
+      showEventDetailsModal(event);
+    } else {
+      // シングルクリック
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        showEventDetails(event);
+      }, 300);
+    }
+  });
 
   // Make calendar content area position relative for absolute positioning
   if (contentArea.style.position !== 'relative') {
@@ -693,6 +747,62 @@ function showEventDetails(event) {
     </div>
     ` : ''}
   `;
+}
+
+// 新しい関数：モーダルで詳細を表示
+function showEventDetailsModal(event) {
+  if (!elements.eventModalOverlay || !elements.eventModalContent) {
+    console.warn('Modal elements not found');
+    return;
+  }
+
+  const startTime = moment(event.start);
+  const endTime = moment(event.end);
+
+  // Calculate AH times
+  const startHour = startTime.hour() + startTime.minute() / 60;
+  const endHour = endTime.hour() + endTime.minute() / 60;
+  const ahStartTime = convertRealToAH(startHour);
+  const ahEndTime = convertRealToAH(endHour);
+
+  // 期間の判定
+  const startPrefix = ahStartTime < 24 ? 'Designed' : 'AH';
+  const endPrefix = ahEndTime < 24 ? 'Designed' : 'AH';
+
+  elements.eventModalContent.innerHTML = `
+    <div class="event-info-row">
+      <span class="event-info-label">Title:</span>
+      <span>${event.title}</span>
+    </div>
+    <div class="event-info-row">
+      <span class="event-info-label">Real Time:</span>
+      <span>${startTime.format('MMM D, h:mm A')} - ${endTime.format('h:mm A')}</span>
+    </div>
+    <div class="event-info-row">
+      <span class="event-info-label">AH Time:</span>
+      <span>${startPrefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${endPrefix} ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}</span>
+    </div>
+    ${event.description ? `
+    <div class="event-info-row">
+      <span class="event-info-label">Description:</span>
+      <span>${event.description}</span>
+    </div>
+    ` : ''}
+    ${event.location ? `
+    <div class="event-info-row">
+      <span class="event-info-label">Location:</span>
+      <span>${event.location}</span>
+    </div>
+    ` : ''}
+    ${event.calendar ? `
+    <div class="event-info-row">
+      <span class="event-info-label">Calendar:</span>
+      <span>${event.calendar}</span>
+    </div>
+    ` : ''}
+  `;
+
+  elements.eventModalOverlay.classList.add('active');
 }
 
 // Check authentication status

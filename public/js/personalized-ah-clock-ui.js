@@ -648,7 +648,7 @@ function updatePersonalizedClock() {
       elements.ahSector.style.display = "block";
     }
     if (elements.personalizedAhTitle) {
-      elements.personalizedAhTitle.textContent = "You are now in APH Period.";
+      elements.personalizedAhTitle.textContent = "You are now enjoying Another Hour.";
     }
     // Remove manual inverted class - now handled by theme manager
     // document.body.classList.add("inverted");
