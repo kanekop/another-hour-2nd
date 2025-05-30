@@ -18,7 +18,7 @@ export function getCurrentScalingInfo() {
 
     // 値のバリデーション (0分から1440分)
     normalAphDayDurationMinutes = Math.max(0, Math.min(normalAphDayDurationMinutes, 1440));
-    console.log('Normal APH day duration (minutes):', normalAphDayDurationMinutes);
+    console.log('Designed 24 duration (minutes):', normalAphDayDurationMinutes);
 
     // Moment.jsが利用可能かチェック
     if (typeof moment === 'undefined' || typeof moment.tz === 'undefined') {

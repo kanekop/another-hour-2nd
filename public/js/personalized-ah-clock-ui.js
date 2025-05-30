@@ -111,7 +111,7 @@ function updateSliderRelatedDisplays() {
 
   const normalAphDayMinutes = parseInt(elements.normalDurationSlider.value, 10);
 
-  elements.normalDurationDisplay.textContent = `Normal APH Day: ${formatDuration(normalAphDayMinutes)}`;
+  elements.normalDurationDisplay.textContent = `Designed 24 Duration: ${formatDuration(normalAphDayMinutes)}`;
   const totalRealMinutesInDay = 24 * 60;
   const aphDurationMinutes = totalRealMinutesInDay - normalAphDayMinutes;
   elements.anotherHourDurationDisplay.textContent = `${formatDuration(aphDurationMinutes)}`;
