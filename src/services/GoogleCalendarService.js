@@ -7,7 +7,6 @@ export class GoogleCalendarService {
     this.clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
     // Replitの本番URLまたはローカル開発URL
-    // Replitの本番URLまたはローカル開発URL
     let baseUrl;
 
     // 明示的な環境変数が設定されている場合はそれを使用
@@ -18,7 +17,7 @@ export class GoogleCalendarService {
       baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
     } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
       // Replitデプロイ環境の自動検出
-      baseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+      baseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.app`;
     } else {
       // ローカル開発環境
       baseUrl = 'http://localhost:3000';
