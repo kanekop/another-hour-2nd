@@ -1,4 +1,4 @@
-// public/js/scheduler-ui.js
+// public/js/scheduler-ui(copy).js
 
 import { getCustomAhAngles } from '../clock-core.js';
 import { getCurrentScalingInfo } from './scaling-utils.js';
@@ -139,13 +139,13 @@ function getTimeSlots() {
     const normalDurationHours = state.normalAphDayDurationMinutes / 60;
     const ahDurationHours = 24 - normalDurationHours;
 
-    // Designed 24 hours (0-23) - ここを修正
+    // Designed 24 hours (0-23)
     for (let ahHour = 0; ahHour < 24; ahHour++) {
       const realHour = ahHour / state.scaleFactor;
       if (realHour < normalDurationHours) {
         const label = state.timeMode === 'both' 
-          ? `Designed ${ahHour}:00\n(${formatRealTime(realHour)})`  // "AH" を "Designed" に変更
-          : `Designed ${ahHour}:00`;  // "AH" を "Designed" に変更
+          ? `AH ${ahHour}:00\n(${formatRealTime(realHour)})`
+          : `AH ${ahHour}:00`;
 
         slots.push({
           label: label,
@@ -157,7 +157,7 @@ function getTimeSlots() {
       }
     }
 
-    // Another Hour period (24+) - ここはそのままAHを保持
+    // Another Hour period (24+)
     if (ahDurationHours > 0) {
       // Add AH 24 marker
       slots.push({
@@ -548,7 +548,7 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
   const eventHeight = endRect.bottom - startRect.top;
   const isCompact = eventHeight < 50;
 
-  // Format time display - ここも修正
+  // Format time display
   let timeDisplay = '';
   if (state.timeMode === 'ah' || state.timeMode === 'both') {
     const ahStartTime = convertRealToAH(startHour);
@@ -557,27 +557,14 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
 
     if (event.isMultiDay) {
       if (event.isFirstDay) {
-        // Designed期間内かAH期間内かを判定
-        const prefix = ahStartTime < 24 ? 'Designed' : 'AH';
-        timeDisplay = `${prefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} →`;
+        timeDisplay = `AH ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} →`;
       } else if (event.isLastDay) {
-        const prefix = ahEndTime < 24 ? 'Designed' : 'AH';
-        timeDisplay = `→ ${prefix} ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
+        timeDisplay = `→ AH ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
       } else {
         timeDisplay = '→ All Day →';
       }
     } else {
-      // 開始時間と終了時間で期間を判定
-      const startPrefix = ahStartTime < 24 ? 'Designed' : 'AH';
-      const endPrefix = ahEndTime < 24 ? 'Designed' : 'AH';
-
-      if (startPrefix === endPrefix) {
-        // 同じ期間内の場合
-        timeDisplay = `${startPrefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
-      } else {
-        // 期間をまたがる場合
-        timeDisplay = `${startPrefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${endPrefix} ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
-      }
+      timeDisplay = `AH ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
     }
   } else {
     if (event.isMultiDay) {
@@ -650,7 +637,7 @@ function convertAHToReal(ahHours) {
   }
 }
 
-// Show event details - ここも修正
+// Show event details
 function showEventDetails(event) {
   elements.eventDetails.style.display = 'block';
 
@@ -663,10 +650,6 @@ function showEventDetails(event) {
   const ahStartTime = convertRealToAH(startHour);
   const ahEndTime = convertRealToAH(endHour);
 
-  // 期間の判定
-  const startPrefix = ahStartTime < 24 ? 'Designed' : 'AH';
-  const endPrefix = ahEndTime < 24 ? 'Designed' : 'AH';
-
   elements.eventInfo.innerHTML = `
     <div class="event-info-row">
       <span class="event-info-label">Title:</span>
@@ -678,7 +661,7 @@ function showEventDetails(event) {
     </div>
     <div class="event-info-row">
       <span class="event-info-label">AH Time:</span>
-      <span>${startPrefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${endPrefix} ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}</span>
+      <span>AH ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - AH ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}</span>
     </div>
     ${event.description ? `
     <div class="event-info-row">
