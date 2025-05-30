@@ -112,13 +112,23 @@ function updateSliderRelatedDisplays() {
   const normalAphDayMinutes = parseInt(elements.normalDurationSlider.value, 10);
 
   elements.normalDurationDisplay.textContent = `Designed 24 Duration: ${formatDuration(normalAphDayMinutes)}`;
+
   const totalRealMinutesInDay = 24 * 60;
   const aphDurationMinutes = totalRealMinutesInDay - normalAphDayMinutes;
   elements.anotherHourDurationDisplay.textContent = `${formatDuration(aphDurationMinutes)}`;
 
-  const realTimeHourEquivalent = Math.floor(normalAphDayMinutes / 60);
-  const realTimeMinuteEquivalent = normalAphDayMinutes % 60;
-  elements.sliderRealTimeLabel.textContent = `${String(realTimeHourEquivalent).padStart(2, "0")}:${String(realTimeMinuteEquivalent).padStart(2, "0")}`;
+  // Another Hour の時間を表示（既に計算済みの aphDurationMinutes を使用）
+  const aphHourEquivalent = Math.floor(aphDurationMinutes / 60);
+  const aphMinuteEquivalent = aphDurationMinutes % 60;
+  elements.sliderRealTimeLabel.textContent = `${String(aphHourEquivalent).padStart(2, "0")}:${String(aphMinuteEquivalent).padStart(2, "0")}`;
+  
+  // const totalRealMinutesInDay = 24 * 60;
+  // const aphDurationMinutes = totalRealMinutesInDay - normalAphDayMinutes;
+  // elements.anotherHourDurationDisplay.textContent = `${formatDuration(aphDurationMinutes)}`;
+
+  // const realTimeHourEquivalent = Math.floor(normalAphDayMinutes / 60);
+  // const realTimeMinuteEquivalent = normalAphDayMinutes % 60;
+  // elements.sliderRealTimeLabel.textContent = `${String(realTimeHourEquivalent).padStart(2, "0")}:${String(realTimeMinuteEquivalent).padStart(2, "0")}`;
 
   const sliderMin = parseInt(elements.normalDurationSlider.min, 10);
   const sliderMax = parseInt(elements.normalDurationSlider.max, 10);
