@@ -8,7 +8,7 @@
 - **Auto-deploy**: Enabled for `.replit.app` domain
 
 ### Development URLs
-- **Development**: `https://46b78144-9d6c-484e-bef9-4e129353b236-00-3bnds5q3qxkdu.pike.replit.dev`
+- **Development**: Dynamic URL (check Replit Webview for current URL)
 - **Deployment**: `https://another-hour-scheduler.replit.app`
 
 ### Testing Environment
@@ -31,7 +31,7 @@
 - **Authorized Redirect URIs**:
   1. `http://localhost:3000/auth/google/callback`
   2. `https://another-hour-scheduler.replit.app/auth/google/callback`
-  3. `https://46b78144-9d6c-484e-bef9-4e129353b236-00-3bnds5q3qxkdu.pike.replit.dev/auth/google/callback`
+  3. Dynamic Replit dev URLs (automatically detected by GoogleCalendarService)
 
 ## 📋 Development Workflow
 
@@ -56,7 +56,7 @@ npm start
 2. Follow steps 1-5 in order
 3. Check console logs for debugging
 
-## 🚀 Current Development Status (2025-05-30)
+## 🚀 Current Development Status (2025-01-26)
 
 ### ✅ Completed Features
 
@@ -78,7 +78,7 @@ npm start
    - Proper z-index management for layering
    - Responsive design adjustments
 
-#### Phase 2.6: Event Detail Modal (COMPLETED) ✅ - 2025-05-30
+#### Phase 2.6: Event Detail Modal (COMPLETED) ✅ - 2025-01-26
 1. **Double-click Event Modal** ✅
    - Double-click on any event to show details in a modal popup
    - Maintains single-click functionality for bottom panel display
@@ -91,6 +91,18 @@ npm start
    - Calendar source information
    - Smooth animations and transitions
    - Dark mode support
+
+#### Phase 2.7: Google Calendar Integration (COMPLETED) ✅ - 2025-01-26
+1. **Google OAuth Implementation** ✅
+   - Dynamic redirect URI detection for Replit environment
+   - Secure token management with refresh capability
+   - Environment variable configuration through Replit Secrets
+
+2. **Calendar Data Sync** ✅
+   - Fetch events from multiple Google calendars
+   - Real-time event display in AH scheduler
+   - Event creation, editing, and deletion support
+   - Automatic token refresh handling
 
 ### 🔧 Technical Implementation Details
 
@@ -142,47 +154,52 @@ eventEl.addEventListener('click', (e) => {
 
 ### 🎯 Next Development Tasks
 
-#### Priority 1: Event Management
+#### Priority 1: Event Management UI Enhancement
 1. **Event Creation Interface**
-   - Modal dialog for new events
+   - Modal dialog for new events with Google Calendar integration
    - Time picker with AH/Real time toggle
    - Date range selection
-   - Calendar selection dropdown
+   - Calendar selection dropdown (from connected Google calendars)
 
-2. **Event Editing**
+2. **Event Editing Enhancement**
    - Add "Edit" button to event detail modal
    - Inline editing for quick changes
-   - Drag-and-drop to reschedule
+   - Drag-and-drop to reschedule with Google Calendar sync
+   - Conflict detection and resolution
 
-3. **Event Deletion**
+3. **Event Deletion Enhancement**
    - Add "Delete" button to event detail modal
-   - Confirmation dialog
+   - Confirmation dialog with Google Calendar sync
    - Batch deletion support
 
-#### Priority 2: Advanced Features
+#### Priority 2: Advanced Event Features
 1. **All-day Event Support**
    - Special rendering for all-day events
    - AH time interpretation for 24-hour events
+   - Google Calendar all-day event sync
 
 2. **Recurring Events**
    - Basic recurrence patterns
    - AH-aware recurrence calculation
+   - Google Calendar recurring event display
 
 3. **Event Search & Filter**
    - Search by title, time, or description
-   - Filter by calendar source
+   - Filter by calendar source (Google calendars)
    - Time range filters
+   - AH/Real time search modes
 
-#### Priority 3: Calendar Sync Enhancement
+#### Priority 3: Multi-Calendar Integration
 1. **Outlook Integration**
    - Microsoft Graph API setup
-   - OAuth flow implementation
-   - Event sync logic
+   - OAuth flow implementation (similar to Google)
+   - Event sync logic with existing Google integration
 
-2. **Sync Conflict Resolution**
-   - Duplicate detection
-   - Merge strategies
-   - User preference settings
+2. **Calendar Management**
+   - Multiple calendar account support
+   - Sync conflict resolution between services
+   - Unified event display from multiple sources
+   - User preference settings for sync behavior
 
 ## 🔍 Code Structure Reference
 
@@ -218,8 +235,9 @@ eventEl.addEventListener('click', (e) => {
 - **Next**: Add Outlook endpoints
 
 #### `/src/services/GoogleCalendarService.js`
-- **Current State**: Fully functional
-- **Next**: Add batch operations support
+- **Current State**: Fully functional with dynamic Replit URL detection
+- **Features**: OAuth flow, token management, CRUD operations, calendar list fetching
+- **Next**: Add batch operations support and Outlook service parallel implementation
 
 ## 📝 Development Notes
 
@@ -293,5 +311,5 @@ Before committing changes:
 
 ---
 
-*Last updated: 2025-05-30*
-*Last session: Event detail modal feature completed successfully*
+*Last updated: 2025-01-26*
+*Last session: Google Calendar integration completed with dynamic URL detection*
