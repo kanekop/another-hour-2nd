@@ -52,6 +52,10 @@ export class SolarMode extends BaseMode {
   }
 
   getSunTimes(city, date = new Date()) {
+    if (typeof SunCalc === 'undefined') {
+      console.error('SunCalc.js library is not loaded. Solar Mode cannot function.');
+      return null;
+    }
     const coords = CITIES[city];
     if (!coords) return null;
     return SunCalc.getTimes(date, coords.lat, coords.lon);
