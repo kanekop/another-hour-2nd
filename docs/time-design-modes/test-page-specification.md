@@ -95,22 +95,23 @@ Time Design Test Page（`/time-design-test.html`）は、Another Hour の新し�
 
 ### Solar Mode
 **設定項目**:
-- Location: 場所選択（プリセットまたはカスタム）
-- Latitude/Longitude: 緯度経度
+- City: 場所選択（Tokyo, Kumamoto, New York, Londonなど）
 - Day Hours: 昼の時間（1〜23時間）
 
 **期待動作**:
-1. 実際の日の出・日没時刻に基づいて計算
+1. 選択した都市の実際の日の出・日没時刻に基づいて計算
 2. 昼と夜で異なるスケールファクター
-3. 季節による変化（夏は昼が長い）
+3. Day Hoursスライダーで昼夜の時間の長さを変更可能
 4. 位置情報による正確な太陽時刻
 
 **テスト手順**:
 1. Solar Modeを選択
-2. Tokyo を選択（または緯度35.6762、経度139.6503）
-3. Day Hours を12に設定
+2. City プルダウンから "Tokyo" を選択
+3. Day Hours スライダーを12に設定
 4. 現在が昼か夜かで異なるScale Factorを確認
-5. Solar Info に日の出・日没時刻が表示されることを確認
+5. City プルダウンから "London" を選択
+6. Scale Factorと時間表示が東京とは異なる値に変わることを確認
+7. 時計が滑らかに動くことを確認
 
 ## 📊 共通のテスト項目
 

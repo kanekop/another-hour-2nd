@@ -2,6 +2,13 @@
 
 import { BaseMode } from './BaseMode.js';
 
+export const CITIES = {
+  'tokyo': { name: 'Tokyo', lat: 35.6895, lon: 139.6917 },
+  'kumamoto': { name: 'Kumamoto', lat: 32.8032, lon: 130.7079 },
+  'new-york': { name: 'New York', lat: 40.7128, lon: -74.0060 },
+  'london': { name: 'London', lat: 51.5074, lon: -0.1278 },
+};
+
 /**
  * SolarMode - Time synchronized with sunrise and sunset cycles
  * This is a placeholder implementation.
@@ -14,8 +21,7 @@ export class SolarMode extends BaseMode {
       'Solar Mode',
       'Time synchronized with sunrise and sunset cycles. (Location features coming soon)',
       {
-        latitude: { type: 'number', label: 'Latitude', default: 35.68, disabled: true },
-        longitude: { type: 'number', label: 'Longitude', default: 139.76, disabled: true },
+        location: { type: 'select', label: 'City', options: CITIES, default: 'tokyo' },
         dayHours: { type: 'number', label: 'Day Hours', min: 1, max: 23, default: 12 },
       }
     );
@@ -23,8 +29,7 @@ export class SolarMode extends BaseMode {
 
   getDefaultConfig() {
     return {
-      latitude: 35.68, // Tokyo
-      longitude: 139.76,
+      location: 'tokyo',
       dayHours: 12,
     };
   }
@@ -34,21 +39,32 @@ export class SolarMode extends BaseMode {
     if (config.dayHours === undefined || typeof config.dayHours !== 'number' || config.dayHours < 1 || config.dayHours > 23) {
       errors.push('Day Hours must be a number between 1 and 23.');
     }
+    if (config.location === undefined || !CITIES[config.location]) {
+      errors.push('Invalid location selected.');
+    }
     return { valid: errors.length === 0, errors };
   }
 
   // This is a simplified placeholder. A real implementation would use a library
   // like SunCalc.js or an API call.
   _getSunriseSunset(date, lat, lon) {
-    // Placeholder: Fixed sunrise/sunset for simplicity
-    // March equinox-ish times
-    const sunrise = 6 * 60; // 6:00 AM
-    const sunset = 18 * 60; // 6:00 PM
+    if (typeof SunCalc === 'undefined') {
+      console.warn('SunCalc.js is not loaded. Using fallback sunrise/sunset times.');
+      // Fallback: Fixed sunrise/sunset for simplicity
+      const sunrise = 6 * 60; // 6:00 AM
+      const sunset = 18 * 60; // 6:00 PM
+      return { sunrise, sunset };
+    }
+
+    const times = SunCalc.getTimes(date, lat, lon);
+    const sunrise = this.getMinutesSinceMidnight(times.sunrise, 'UTC'); // SunCalc returns UTC dates
+    const sunset = this.getMinutesSinceMidnight(times.sunset, 'UTC');
     return { sunrise, sunset };
   }
 
   _buildSegments(config, date) {
-    const { sunrise, sunset } = this._getSunriseSunset(date, config.latitude, config.longitude);
+    const city = CITIES[config.location] || CITIES['tokyo'];
+    const { sunrise, sunset } = this._getSunriseSunset(date, city.lat, city.lon);
     const dayDuration = sunset - sunrise;
     const nightDuration = 1440 - dayDuration;
 

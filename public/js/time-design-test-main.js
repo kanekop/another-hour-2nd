@@ -106,6 +106,9 @@ function loadModeConfig() {
         case 'solar':
             configContent.innerHTML = generateSolarConfig(current.config);
             break;
+        case 'wake-based':
+            configContent.innerHTML = generateWakeBasedConfig(current.config);
+            break;
         default:
             configContent.innerHTML = '<p>Configuration not available for this mode</p>';
     }
@@ -137,21 +140,63 @@ function generateCoreTimeConfig(config) {
 }
 
 function generateSolarConfig(config) {
-    return `
-        <div class="config-group">
-            <label>Daylight Duration (scaled)</label>
-            <input type="range" id="dayHours" min="1" max="23" value="${config.dayHours || 12}" oninput="updateRangeValue(this)">
-            <div class="range-value">${config.dayHours || 12} hours</div>
-        </div>
-        <div class="config-group disabled">
-            <label>Latitude</label>
-            <input type="text" value="${config.latitude}" disabled>
-        </div>
-        <div class="config-group disabled">
-            <label>Longitude</label>
-            <input type="text" value="${config.longitude}" disabled>
-        </div>
-    `;
+    let html = '';
+    const schema = timeDesignManager.registry.get('solar').configSchema;
+
+    for (const key in schema) {
+        const item = schema[key];
+        const value = config[key];
+        switch (item.type) {
+            case 'number':
+                html += generateRangeConfig({ id: key, ...item }, value);
+                break;
+            case 'select':
+                html += generateSelectConfig({ id: key, ...item }, value);
+                break;
+        }
+    }
+    return html;
+}
+
+function generateWakeBasedConfig(config) {
+    let html = '';
+    const schema = timeDesignManager.registry.get('wake-based').configSchema;
+
+    for (const key in schema) {
+        const item = schema[key];
+        const value = config[key];
+        switch (item.type) {
+            case 'time':
+                html += `<div class="config-group"><label>${item.label}</label><input type="time" id="${key}" value="${value}"></div>`;
+                break;
+            case 'number':
+                html += generateRangeConfig({ id: key, ...item }, value);
+                break;
+        }
+    }
+    return html;
+}
+
+function generateRangeConfig(item, value) {
+    const hours = Math.floor(value / 60);
+    const minutes = value % 60;
+    let displayValue = `${value}`;
+    if (item.id === 'designed24Duration') {
+        displayValue = `${hours}h ${minutes}m`;
+    } else if (item.id === 'dayHours') {
+        displayValue = `${value} hours`;
+    } else {
+        displayValue = `${value} min`;
+    }
+
+    return `<div class="config-group"><label>${item.label}</label><input type="range" id="${item.id}" min="${item.min}" max="${item.max}" value="${value}" oninput="updateRangeValue(this)"><div class="range-value">${displayValue}</div></div>`;
+}
+
+function generateSelectConfig(item, value) {
+    const options = Object.keys(item.options).map(key =>
+        `<option value="${key}" ${key === value ? 'selected' : ''}>${item.options[key].name}</option>`
+    ).join('');
+    return `<div class="config-group"><label>${item.label}</label><select id="${item.id}">${options}</select></div>`;
 }
 
 function updateDisplay() {
@@ -197,19 +242,23 @@ async function saveConfig() {
         const current = timeDesignManager.getCurrentMode();
         if (!current) return;
         let newConfig = { ...current.config };
-        switch (current.id) {
-            case 'classic':
-                newConfig.designed24Duration = parseInt(document.getElementById('designed24Duration').value);
-                break;
-            case 'core-time':
-                newConfig.morningAH_start = document.getElementById('morningStart').value;
-                newConfig.morningAH_duration = parseInt(document.getElementById('morningDuration').value);
-                newConfig.eveningAH_duration = parseInt(document.getElementById('eveningDuration').value);
-                break;
-            case 'solar':
-                newConfig.dayHours = parseInt(document.getElementById('dayHours').value);
-                break;
+
+        const schema = timeDesignManager.registry.get(current.id).configSchema;
+        for (const key in schema) {
+            const el = document.getElementById(key);
+            if (el) {
+                switch (schema[key].type) {
+                    case 'number':
+                        newConfig[key] = parseInt(el.value);
+                        break;
+                    case 'select':
+                    case 'time':
+                        newConfig[key] = el.value;
+                        break;
+                }
+            }
         }
+
         await timeDesignManager.setMode(current.id, newConfig);
         showStatus('Configuration saved successfully!', 'success');
         debug('Configuration saved:', newConfig);

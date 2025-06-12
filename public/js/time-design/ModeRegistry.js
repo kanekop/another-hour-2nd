@@ -2,7 +2,7 @@
 
 import { ClassicMode } from './modes/ClassicMode.js';
 import { CoreTimeMode } from './modes/CoreTimeMode.js';
-// import { WakeBasedMode } from './modes/WakeBasedMode.js';
+import { WakeBasedMode } from './modes/WakeBasedMode.js';
 import { SolarMode } from './modes/SolarMode.js';
 
 export class ModeRegistry {
@@ -19,9 +19,9 @@ export class ModeRegistry {
       if (typeof CoreTimeMode !== 'undefined') {
         this.register(new CoreTimeMode());
       }
-      // if (typeof WakeBasedMode !== 'undefined') {
-      //   this.register(new WakeBasedMode());
-      // }
+      if (typeof WakeBasedMode !== 'undefined') {
+        this.register(new WakeBasedMode());
+      }
       if (typeof SolarMode !== 'undefined') {
         this.register(new SolarMode());
       }

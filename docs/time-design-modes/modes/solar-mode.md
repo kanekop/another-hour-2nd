@@ -1,5 +1,5 @@
- # Solar Mode
- # Solar Mode
+# Solar Mode
+# Solar Mode
 
 ## 📋 Overview
 
@@ -116,36 +116,27 @@ Phase: ☀️ Daylight (4h 26m until sunset)
 
 ### 太陽位置の計算
 
+実際の時間計算は、軽量で高精度な`SunCalc.js`ライブラリに依存しています。これにより、複雑な天文計算を自前で実装することなく、正確な日の出・日の入り時刻を取得できます。
+
 ```javascript
-function calculateSolarTimes(date, latitude, longitude) {
-  // 簡略化されたアルゴリズム（実際はもっと複雑）
-  const J2000 = 2451545.0;
-  const julianDate = dateToJulian(date);
-  const n = julianDate - J2000 - longitude / 360;
+// SunCalc.jsを使って太陽時刻を取得する例
+// (実際のコードは public/js/time-design/modes/SolarMode.js を参照)
+
+function getSunriseSunset(date, lat, lon) {
+  // SunCalcライブラリがロードされているか確認
+  if (typeof SunCalc === 'undefined') {
+    // フォールバックとして固定値を返す
+    return { sunrise: 6 * 60, sunset: 18 * 60 };
+  }
+
+  // SunCalc.getTimesはUTCの日付オブジェクトを返す
+  const times = SunCalc.getTimes(date, lat, lon);
   
-  // 太陽の平均近点角
-  const M = (357.5291 + 0.98560028 * n) % 360;
+  // BaseModeのユーティリティ関数で「分」に変換
+  const sunriseMinutes = this.getMinutesSinceMidnight(times.sunrise, 'UTC');
+  const sunsetMinutes = this.getMinutesSinceMidnight(times.sunset, 'UTC');
   
-  // 太陽の真近点角
-  const C = 1.9148 * sin(M * DEG_TO_RAD) + 
-            0.0200 * sin(2 * M * DEG_TO_RAD);
-  
-  // 黄経
-  const λ = (M + C + 180 + 102.9372) % 360;
-  
-  // 日の出・日の入り時刻の計算
-  const Jtransit = J2000 + n + 0.0053 * sin(M * DEG_TO_RAD) - 
-                   0.0069 * sin(2 * λ * DEG_TO_RAD);
-  
-  // 時角の計算
-  const δ = asin(sin(λ * DEG_TO_RAD) * sin(23.44 * DEG_TO_RAD));
-  const ω = acos(-tan(latitude * DEG_TO_RAD) * tan(δ));
-  
-  return {
-    sunrise: Jtransit - ω / (2 * PI) * 24,
-    sunset: Jtransit + ω / (2 * PI) * 24,
-    solarNoon: Jtransit
-  };
+  return { sunrise: sunriseMinutes, sunset: sunsetMinutes };
 }
 ```
 
@@ -182,23 +173,17 @@ function calculateSolarScale(currentTime, solarTimes, dayNightRatio) {
 
 ### 位置情報の設定
 
+テストページでは、以下のようなシンプルなUIで主要都市を切り替えられます。
+
 ```
 ┌─────────────────────────────────────┐
 │       🌍 Set Your Location          │
 ├─────────────────────────────────────┤
-│  ○ Use current location             │
-│    (Requires permission)            │
-│                                     │
-│  ○ Select city:                    │
+│  City:                             │
 │    [Tokyo, Japan        ▼]         │
 │                                     │
-│  ○ Enter coordinates:               │
-│    Latitude:  [35.6762]°          │
-│    Longitude: [139.6503]°          │
-│                                     │
-│  Preview:                           │
-│  Today's sunrise: 5:32 AM          │
-│  Today's sunset: 6:48 PM           │
+│  Daylight Duration (scaled):       │
+│  <  1h ------------------ 12h --- 23h > │
 └─────────────────────────────────────┘
 ```
 
@@ -227,9 +212,7 @@ function calculateSolarScale(currentTime, solarTimes, dayNightRatio) {
 ### 外部依存
 
 1. **太陽計算ライブラリ**:
-   - SunCalc.js - 軽量で正確
-   - Astronomy Engine - より高精度
-   - NOAA Solar Calculator - 公式アルゴリズム
+   - **SunCalc.js**: テストページで実際に使用している軽量で正確なライブラリ。
 
 2. **位置情報サービス**:
    - ブラウザGeolocation API
@@ -238,30 +221,7 @@ function calculateSolarScale(currentTime, solarTimes, dayNightRatio) {
 
 ### パフォーマンス最適化
 
-```javascript
-class SolarCache {
-  private cache = new Map();
-  
-  getSolarTimes(date, location) {
-    const key = `${date.toDateString()}-${location.lat}-${location.lng}`;
-    
-    if (this.cache.has(key)) {
-      return this.cache.get(key);
-    }
-    
-    const times = calculateSolarTimes(date, location.lat, location.lng);
-    this.cache.set(key, times);
-    
-    // 古いエントリを削除
-    if (this.cache.size > 365) {
-      const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
-    }
-    
-    return times;
-  }
-}
-```
+日の出・日の入り時刻は一日に一度計算すれば十分なため、`SolarMode`のインスタンス内で一度計算した結果をキャッシュするなどの最適化が考えられます。現在のテストページの実装では、表示更新ごとに計算していますが、本番環境ではより高度なキャッシュ戦略が推奨されます。
 
 ## 🎯 Success Metrics
 
