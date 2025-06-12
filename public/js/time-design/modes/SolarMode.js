@@ -11,12 +11,23 @@
 import { BaseMode } from './BaseMode.js';
 
 export class SolarMode extends BaseMode {
+    static getDefaultConfig() {
+        return {
+            location: {
+                lat: 35.6762,
+                lng: 139.6503,
+                name: 'Tokyo',
+                timezone: 'Asia/Tokyo'
+            },
+            autoAdjust: true
+        };
+    }
     constructor() {
         super();
         this.id = 'solar';
         this.name = 'Solar Mode';
         this.description = 'Time flows with the sun - solar noon is always 12:00';
-        
+
         // Default configuration
         this.defaultConfig = {
             location: {
@@ -28,14 +39,14 @@ export class SolarMode extends BaseMode {
             designedDayHours: 12,  // Will be updated based on actual daylight
             autoAdjust: true       // Auto-adjust to actual daylight hours
         };
-        
+
         // Solar calculation cache
         this.solarCache = {
             date: null,
             times: null,
             scaleFactors: null
         };
-        
+
         // City presets
         this.cities = {
             tokyo: { name: 'Tokyo', lat: 35.6762, lng: 139.6503, tz: 'Asia/Tokyo' },
@@ -55,7 +66,7 @@ export class SolarMode extends BaseMode {
     initialize(config = {}) {
         this.config = { ...this.defaultConfig, ...config };
         this.updateSolarTimes(new Date());
-        
+
         // Set up daily update at midnight
         this.scheduleDailyUpdate();
     }
@@ -65,32 +76,32 @@ export class SolarMode extends BaseMode {
      */
     updateSolarTimes(date) {
         const dateKey = date.toDateString();
-        
+
         // Use cache if available for the same date
         if (this.solarCache.date === dateKey && this.solarCache.times) {
             return this.solarCache.times;
         }
-        
+
         // Calculate new solar times using SunCalc
         const times = SunCalc.getTimes(date, this.config.location.lat, this.config.location.lng);
-        
+
         // Calculate solar noon (midpoint between sunrise and sunset)
         const solarNoon = new Date((times.sunrise.getTime() + times.sunset.getTime()) / 2);
-        
+
         // Calculate daylight and night durations
         const daylightMinutes = (times.sunset - times.sunrise) / 60000;
         const nightMinutes = 1440 - daylightMinutes;
-        
+
         // Auto-adjust designed day hours if enabled
         if (this.config.autoAdjust) {
             this.config.designedDayHours = Math.round(daylightMinutes / 60);
         }
-        
+
         // Calculate scale factors
         const designedNightHours = 24 - this.config.designedDayHours;
         const dayScaleFactor = this.config.designedDayHours / (daylightMinutes / 60);
         const nightScaleFactor = designedNightHours / (nightMinutes / 60);
-        
+
         // Cache the results
         this.solarCache = {
             date: dateKey,
@@ -106,7 +117,7 @@ export class SolarMode extends BaseMode {
                 night: Math.max(0.1, Math.min(10, nightScaleFactor))
             }
         };
-        
+
         return this.solarCache.times;
     }
 
@@ -115,11 +126,11 @@ export class SolarMode extends BaseMode {
      */
     getCurrentSegment(now = new Date()) {
         this.updateSolarTimes(now);
-        
+
         const { times, scaleFactors } = this.solarCache;
         const todayStart = new Date(now);
         todayStart.setHours(0, 0, 0, 0);
-        
+
         // Determine current phase
         if (now < times.sunrise) {
             // Night phase (after midnight)
@@ -163,13 +174,13 @@ export class SolarMode extends BaseMode {
     realToAnotherHour(realTime) {
         const date = new Date(realTime);
         this.updateSolarTimes(date);
-        
+
         const { times } = this.solarCache;
         const segment = this.getCurrentSegment(date);
-        
+
         // Calculate Another Hour time based on phase
         let ahTime;
-        
+
         if (date < times.sunrise) {
             // Night: 0:00 to 6:00
             const progress = (date - segment.startTime) / (segment.endTime - segment.startTime);
@@ -187,12 +198,12 @@ export class SolarMode extends BaseMode {
             const progress = (date - times.sunset) / (segment.endTime - times.sunset);
             ahTime = 18 + (progress * 6); // 18 to 24 hours
         }
-        
+
         // Convert to time components
         const hours = Math.floor(ahTime);
         const minutes = Math.floor((ahTime - hours) * 60);
         const seconds = Math.floor(((ahTime - hours) * 60 - minutes) * 60);
-        
+
         return {
             hours: hours,
             minutes: minutes,
@@ -209,10 +220,10 @@ export class SolarMode extends BaseMode {
     anotherHourToReal(ahHours, ahMinutes = 0, referenceDate = new Date()) {
         this.updateSolarTimes(referenceDate);
         const { times } = this.solarCache;
-        
+
         const ahTotalHours = ahHours + (ahMinutes / 60);
         let realTime;
-        
+
         if (ahTotalHours < 6) {
             // Night phase (0:00 to 6:00 AH)
             const progress = ahTotalHours / 6;
@@ -235,7 +246,7 @@ export class SolarMode extends BaseMode {
             nextMidnight.setHours(0, 0, 0, 0);
             realTime = new Date(times.sunset.getTime() + progress * (nextMidnight - times.sunset));
         }
-        
+
         return realTime;
     }
 
@@ -244,7 +255,7 @@ export class SolarMode extends BaseMode {
      */
     getVisualizationData() {
         const { times, scaleFactors } = this.solarCache;
-        
+
         return {
             mode: 'solar',
             solarTimes: {
@@ -303,7 +314,7 @@ export class SolarMode extends BaseMode {
             // Use custom coordinates
             this.config.location = location;
         }
-        
+
         // Clear cache to force recalculation
         this.solarCache.date = null;
         this.updateSolarTimes(new Date());
@@ -315,7 +326,7 @@ export class SolarMode extends BaseMode {
     setDesignedDayHours(hours) {
         this.config.designedDayHours = Math.max(1, Math.min(23, hours));
         this.config.autoAdjust = false; // Disable auto-adjust when manually set
-        
+
         // Recalculate scale factors
         this.updateSolarTimes(new Date());
     }
@@ -328,9 +339,9 @@ export class SolarMode extends BaseMode {
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(0, 0, 1, 0); // 1 second after midnight
-        
+
         const msUntilMidnight = tomorrow - now;
-        
+
         setTimeout(() => {
             this.updateSolarTimes(new Date());
             this.scheduleDailyUpdate(); // Schedule next update
@@ -384,9 +395,9 @@ export class SolarMode extends BaseMode {
     findCityKey() {
         const currentLat = this.config.location.lat;
         const currentLng = this.config.location.lng;
-        
+
         for (const [key, city] of Object.entries(this.cities)) {
-            if (Math.abs(city.lat - currentLat) < 0.01 && 
+            if (Math.abs(city.lat - currentLat) < 0.01 &&
                 Math.abs(city.lng - currentLng) < 0.01) {
                 return key;
             }
