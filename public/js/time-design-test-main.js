@@ -337,12 +337,12 @@ function showStatus(message, type) {
     setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
 }
 
-function formatTime(h, m, s) { 
-    return [h, m, s].map(v => String(Math.floor(v)).padStart(2, '0')).join(':'); 
+function formatTime(h, m, s) {
+    return [h, m, s].map(v => String(Math.floor(v)).padStart(2, '0')).join(':');
 }
 
-function formatDuration(m) { 
-    return m > 60 ? `${Math.floor(m / 60)}h ${Math.floor(m % 60)}m` : `${Math.floor(m)}m`; 
+function formatDuration(m) {
+    return m > 60 ? `${Math.floor(m / 60)}h ${Math.floor(m % 60)}m` : `${Math.floor(m)}m`;
 }
 
 function initializeCoreTimeSlider(config) {
@@ -395,10 +395,10 @@ function initializeSolarMode(config) {
             step: 0.5,
             connect: [true, false],
             range: { 'min': 1, 'max': 23 },
-            pips: { 
-                mode: 'values', 
-                values: [1, 6, 12, 18, 23], 
-                density: 4 
+            pips: {
+                mode: 'values',
+                values: [1, 6, 12, 18, 23],
+                density: 4
             },
         });
 
@@ -412,24 +412,40 @@ function initializeSolarMode(config) {
     updateSolarInfo(config.city);
 }
 
-function updateSolarInfo(city) {
-    const solarMode = timeDesignManager.registry.get('solar');
+function updateSolarInfo(cityKey) {
+    const solarMode = timeDesignManager.modes.solar;
     if (!solarMode) return;
 
-    const sunInfo = solarMode.getSunInfo(city);
-    if (sunInfo) {
-        const format = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        document.getElementById('sunrise-time').textContent = format(sunInfo.sunrise);
-        document.getElementById('sunset-time').textContent = format(sunInfo.sunset);
+    const cityData = solarMode.getCityData(cityKey);
+    if (!cityData) {
+        console.error(`No data for city: ${cityKey}`);
+        return;
+    }
 
-        const durationHours = Math.floor(sunInfo.daylightHours);
-        const durationMins = Math.floor((sunInfo.daylightHours % 1) * 60);
+    const sunTimes = solarMode.getSunTimes(cityKey);
+    if (sunTimes) {
+        const format = (date) => new Intl.DateTimeFormat('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: cityData.tz,
+            hour12: true,
+        }).format(date);
+
+        const sunriseTimeEl = document.getElementById('sunrise-time');
+        const sunsetTimeEl = document.getElementById('sunset-time');
+
+        sunriseTimeEl.textContent = format(sunTimes.sunrise);
+        sunsetTimeEl.textContent = format(sunTimes.sunset);
+
+        const durationMs = sunTimes.sunset - sunTimes.sunrise;
+        const durationHours = Math.floor(durationMs / 3600000);
+        const durationMins = Math.floor((durationMs % 3600000) / 60000);
         document.getElementById('daylight-duration').textContent = `${durationHours}h ${durationMins}m`;
 
-        // Set the slider to the actual daylight hours as the default
-        const dayHoursSlider = document.getElementById('solar-day-hours-slider');
-        if (dayHoursSlider && dayHoursSlider.noUiSlider) {
-            dayHoursSlider.noUiSlider.set(sunInfo.daylightHours);
+        const solarDayHoursSlider = document.getElementById('solar-day-hours-slider');
+        if (solarDayHoursSlider) {
+            // Set the slider to the actual daylight hours as the default
+            solarDayHoursSlider.noUiSlider.set(sunTimes.daylightHours);
         }
     }
 }

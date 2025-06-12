@@ -2,12 +2,12 @@
 
 import { BaseMode } from './BaseMode.js';
 
-// City coordinates
+// City coordinates including IANA timezone names
 const CITIES = {
-  tokyo: { lat: 35.6895, lon: 139.6917, name: 'Tokyo' },
-  kumamoto: { lat: 32.8032, lon: 130.7079, name: 'Kumamoto' },
-  newyork: { lat: 40.7128, lon: -74.0060, name: 'New York' },
-  london: { lat: 51.5074, lon: -0.1278, name: 'London' },
+  tokyo: { lat: 35.6895, lon: 139.6917, name: 'Tokyo', tz: 'Asia/Tokyo' },
+  kumamoto: { lat: 32.8032, lon: 130.7079, name: 'Kumamoto', tz: 'Asia/Tokyo' },
+  newyork: { lat: 40.7128, lon: -74.0060, name: 'New York', tz: 'America/New_York' },
+  london: { lat: 51.5074, lon: -0.1278, name: 'London', tz: 'Europe/London' },
 };
 
 /**
@@ -26,12 +26,12 @@ export class SolarMode extends BaseMode {
           options: Object.entries(CITIES).map(([key, value]) => ({ value: key, text: value.name })),
           default: 'tokyo'
         },
-        dayHours: { 
-          type: 'number', 
-          label: 'Day Hours', 
-          min: 1, 
-          max: 23, 
-          default: 12 
+        dayHours: {
+          type: 'number',
+          label: 'Day Hours',
+          min: 1,
+          max: 23,
+          default: 12
         },
       }
     );
@@ -55,6 +55,36 @@ export class SolarMode extends BaseMode {
     return { valid: errors.length === 0, errors };
   }
 
+  _getMinutesInTimezone(date, timezone) {
+    try {
+      // Use en-GB for 24-hour format which is easier to parse
+      const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: timezone,
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(date);
+      const hourPart = parts.find(p => p.type === 'hour');
+      const minutePart = parts.find(p => p.type === 'minute');
+
+      // In some locales, hour can be '24', which needs to be handled as 0 for calculations.
+      let hour = parseInt(hourPart.value, 10);
+      if (hour === 24) hour = 0;
+
+      const minute = parseInt(minutePart.value, 10);
+      return hour * 60 + minute;
+    } catch (e) {
+      console.error(`Failed to format time for timezone ${timezone}:`, e);
+      // Fallback to local time if Intl fails
+      return date.getHours() * 60 + date.getMinutes();
+    }
+  }
+
+  getCityData(cityKey) {
+    return CITIES[cityKey];
+  }
+
   getSunTimes(city, date = new Date()) {
     if (typeof SunCalc === 'undefined') {
       console.error('SunCalc.js library is not loaded. Solar Mode cannot function.');
@@ -65,12 +95,15 @@ export class SolarMode extends BaseMode {
     return SunCalc.getTimes(date, coords.lat, coords.lon);
   }
 
-  _buildSegments(config, date = new Date()) {
-    const sunTimes = this.getSunTimes(config.city, date);
+  _buildSegments(config) {
+    const city = CITIES[config.city];
+    if (!city) return [];
+
+    const sunTimes = this.getSunTimes(config.city);
     if (!sunTimes) return [];
 
-    const sunriseMinutes = sunTimes.sunrise.getHours() * 60 + sunTimes.sunrise.getMinutes();
-    const sunsetMinutes = sunTimes.sunset.getHours() * 60 + sunTimes.sunset.getMinutes();
+    const sunriseMinutes = this._getMinutesInTimezone(sunTimes.sunrise, city.tz);
+    const sunsetMinutes = this._getMinutesInTimezone(sunTimes.sunset, city.tz);
 
     const actualDayDuration = sunsetMinutes - sunriseMinutes;
     const actualNightDuration = 1440 - actualDayDuration;
@@ -80,19 +113,19 @@ export class SolarMode extends BaseMode {
     const designedDayDuration = config.dayHours * 60;
     const designedNightDuration = (24 - config.dayHours) * 60;
 
-    const dayScaleFactor = designedDayDuration / actualDayDuration;
-    const nightScaleFactor = designedNightDuration / actualNightDuration;
+    const dayScaleFactor = actualDayDuration > 0 ? designedDayDuration / actualDayDuration : 1;
+    const nightScaleFactor = actualNightDuration > 0 ? designedNightDuration / actualNightDuration : 1;
 
     return [
-      this.createSegment('night', 0, sunriseMinutes, nightScaleFactor, 'Night (Before Dawn)'),
+      this.createSegment('night', 0, sunriseMinutes, nightScaleFactor, 'Night'),
       this.createSegment('day', sunriseMinutes, sunsetMinutes, dayScaleFactor, 'Day'),
-      this.createSegment('night', sunsetMinutes, 1440, nightScaleFactor, 'Night (After Dusk)'),
+      this.createSegment('night', sunsetMinutes, 1440, nightScaleFactor, 'Night'),
     ].filter(s => s.duration > 0);
   }
 
   calculate(date, timezone, config) {
-    const realMinutes = this.getMinutesSinceMidnight(date, timezone);
-    const segments = this._buildSegments(config, date);
+    const realMinutes = this._getMinutesInTimezone(date, timezone);
+    const segments = this._buildSegments(config);
     const activeSegment = this.findActiveSegment(realMinutes, segments);
 
     if (!activeSegment) {
@@ -137,12 +170,12 @@ export class SolarMode extends BaseMode {
       seconds: displaySeconds,
       scaleFactor: activeSegment.scaleFactor,
       isAnotherHour: false,
-      segmentInfo: { 
-        type: activeSegment.type, 
-        label: activeSegment.label, 
-        progress, 
+      segmentInfo: {
+        type: activeSegment.type,
+        label: activeSegment.label,
+        progress,
         remaining,
-        duration: activeSegment.duration 
+        duration: activeSegment.duration
       },
       periodName: activeSegment.label,
     };
