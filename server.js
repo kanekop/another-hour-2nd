@@ -31,6 +31,14 @@ app.use('/pages', express.static(join(__dirname, 'public/pages')));
 app.use('/shared', express.static(join(__dirname, 'src/shared')));
 app.use(express.json());
 
+// Set proper MIME type for ES6 modules
+app.use((req, res, next) => {
+  if (req.path.endsWith('.js')) {
+    res.type('application/javascript');
+  }
+  next();
+});
+
 // API routes
 // app.use('/api/stopwatch', stopwatchRouter);
 // app.use('/api/timer', timerRouter);

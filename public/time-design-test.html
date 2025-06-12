@@ -3,806 +3,456 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Design Modes - Test Page</title>
+    <title>Time Design Modes Test - Another Hour</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        .container {
+        .test-container {
             max-width: 1200px;
             margin: 0 auto;
-        }
-
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        /* Mode Selector Panel */
-        .mode-selector-panel {
-            background: white;
-            border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            height: fit-content;
         }
-
-        .mode-selector-panel h2 {
-            font-size: 1.3em;
-            margin-bottom: 20px;
-            color: #34495e;
-        }
-
-        .mode-option {
-            display: block;
-            padding: 15px;
-            margin-bottom: 10px;
-            background: #f8f9fa;
-            border: 2px solid transparent;
+        .mode-selector {
+            background: white;
             border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .mode-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
-
-        .mode-option:hover {
-            background: #e9ecef;
-            transform: translateX(5px);
+        .mode-card:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
         }
-
-        .mode-option.active {
-            background: #3498db;
-            color: white;
-            border-color: #2980b9;
+        .mode-card.active {
+            border-color: #007bff;
+            background-color: #e3f2fd;
         }
-
-        .mode-option h3 {
-            font-size: 1.1em;
-            margin-bottom: 5px;
-        }
-
-        .mode-option p {
-            font-size: 0.85em;
-            opacity: 0.8;
-        }
-
-        /* Time Display Panel */
-        .time-display-panel {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .current-time {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .time-value {
-            font-size: 4em;
-            font-weight: 300;
-            color: #2c3e50;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .time-label {
-            font-size: 1.2em;
-            color: #7f8c8d;
-            margin-top: 10px;
-        }
-
-        .time-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .info-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .info-card h4 {
-            color: #34495e;
-            margin-bottom: 10px;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .info-card .value {
-            font-size: 1.8em;
-            color: #2c3e50;
-            font-weight: 500;
-        }
-
-        .info-card .subvalue {
-            font-size: 0.9em;
-            color: #7f8c8d;
-            margin-top: 5px;
-        }
-
-        /* Configuration Panel */
         .config-panel {
             background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-
-        .config-panel h2 {
-            font-size: 1.5em;
+            border-radius: 8px;
+            padding: 20px;
             margin-bottom: 20px;
-            color: #34495e;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        .config-group {
-            margin-bottom: 25px;
+        .clock-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
         }
-
-        .config-group label {
+        .clock-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .analog-clock {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 15px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            position: relative;
+        }
+        .clock-hand {
+            position: absolute;
+            background: #333;
+            transform-origin: bottom center;
+            left: 50%;
+            border-radius: 2px;
+        }
+        .hour-hand {
+            width: 4px;
+            height: 60px;
+            bottom: 50%;
+            margin-left: -2px;
+        }
+        .minute-hand {
+            width: 2px;
+            height: 80px;
+            bottom: 50%;
+            margin-left: -1px;
+        }
+        .second-hand {
+            width: 1px;
+            height: 90px;
+            bottom: 50%;
+            margin-left: -0.5px;
+            background: red;
+        }
+        .center-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #333;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .config-input {
+            margin: 10px 0;
+        }
+        .config-input label {
             display: block;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: #555;
-        }
-
-        .config-group input[type="range"] {
-            width: 100%;
             margin-bottom: 5px;
         }
-
-        .config-group input[type="time"],
-        .config-group input[type="number"],
-        .config-group select {
+        .config-input input, .config-input select {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 1em;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
-
-        .range-value {
-            text-align: right;
-            color: #3498db;
-            font-weight: 500;
-        }
-
-        /* Buttons */
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: #3498db;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #2980b9;
-        }
-
-        .btn-secondary {
-            background: #95a5a6;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #7f8c8d;
-        }
-
-        /* Status Messages */
-        .status-message {
+        .status-display {
+            background: #f8f9fa;
+            border-radius: 8px;
             padding: 15px;
-            border-radius: 6px;
             margin-top: 20px;
-            display: none;
         }
-
-        .status-message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-message.error {
+        .error {
+            color: #dc3545;
             background: #f8d7da;
-            color: #721c24;
             border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
         }
 
-        /* Debug Panel */
-        .debug-panel {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 20px;
-            border-radius: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            white-space: pre-wrap;
-            max-height: 300px;
-            overflow-y: auto;
+        /* Clock tick marks */
+        .clock-ticks {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
         }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .time-value {
-                font-size: 3em;
-            }
+        .tick {
+            position: absolute;
+            background: #666;
+            transform-origin: bottom center;
         }
-
-        /* Loading State */
-        .loading {
-            text-align: center;
-            padding: 50px;
-            color: #7f8c8d;
+        .tick.major {
+            width: 2px;
+            height: 15px;
+            background: #333;
         }
-
-        .loading::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-
-        @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
+        .tick.minor {
+            width: 1px;
+            height: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>⏰ Time Design Modes Test</h1>
+    <div class="test-container">
+        <h1>Time Design Modes Test</h1>
 
-        <div class="main-grid">
-            <!-- Mode Selector -->
-            <div class="mode-selector-panel">
-                <h2>Select Mode</h2>
-                <div id="modeList">
-                    <div class="loading">Loading modes</div>
-                </div>
-            </div>
-
-            <!-- Time Display -->
-            <div class="time-display-panel">
-                <div class="current-time">
-                    <div class="time-value" id="timeDisplay">--:--:--</div>
-                    <div class="time-label" id="periodLabel">Initializing...</div>
-                </div>
-
-                <div class="time-info-grid">
-                    <div class="info-card">
-                        <h4>Scale Factor</h4>
-                        <div class="value" id="scaleFactor">-</div>
-                    </div>
-                    <div class="info-card">
-                        <h4>Real Time</h4>
-                        <div class="value" id="realTime">--:--</div>
-                    </div>
-                    <div class="info-card">
-                        <h4>Progress</h4>
-                        <div class="value" id="progress">-</div>
-                        <div class="subvalue" id="remaining">-</div>
-                    </div>
-                    <div class="info-card">
-                        <h4>Current Phase</h4>
-                        <div class="value" id="phase">-</div>
-                        <div class="subvalue" id="phaseInfo">-</div>
-                    </div>
-                </div>
+        <!-- Mode Selector -->
+        <div class="mode-selector">
+            <h2>Select Time Design Mode</h2>
+            <div id="mode-grid" class="mode-grid">
+                <!-- Modes will be populated by JavaScript -->
             </div>
         </div>
 
         <!-- Configuration Panel -->
-        <div class="config-panel" id="configPanel">
-            <h2>Mode Configuration</h2>
-            <div id="configContent">
-                <p>Select a mode to configure...</p>
+        <div id="config-panel" class="config-panel">
+            <h2>Configuration</h2>
+            <div id="config-inputs">
+                <!-- Config inputs will be populated based on selected mode -->
             </div>
         </div>
 
-        <!-- Debug Panel -->
-        <div class="config-panel">
-            <h2>Debug Output</h2>
-            <div class="debug-panel" id="debugOutput">
-                Waiting for Time Design Manager initialization...
+        <!-- Clock Display -->
+        <div class="clock-display">
+            <div class="clock-container">
+                <h3>Standard Time</h3>
+                <div class="analog-clock" id="standard-clock">
+                    <div class="clock-ticks" id="standard-ticks"></div>
+                    <div class="clock-hand hour-hand" id="standard-hour"></div>
+                    <div class="clock-hand minute-hand" id="standard-minute"></div>
+                    <div class="clock-hand second-hand" id="standard-second"></div>
+                    <div class="center-dot"></div>
+                </div>
+                <div id="standard-time">--:--:--</div>
             </div>
+
+            <div class="clock-container">
+                <h3>Another Hour Time</h3>
+                <div class="analog-clock" id="ah-clock">
+                    <div class="clock-ticks" id="ah-ticks"></div>
+                    <div class="clock-hand hour-hand" id="ah-hour"></div>
+                    <div class="clock-hand minute-hand" id="ah-minute"></div>
+                    <div class="clock-hand second-hand" id="ah-second"></div>
+                    <div class="center-dot"></div>
+                </div>
+                <div id="ah-time">--:--:--</div>
+            </div>
+        </div>
+
+        <!-- Status Display -->
+        <div id="status-display" class="status-display">
+            <h3>Current Mode Status</h3>
+            <div id="mode-info">No mode selected</div>
+            <div id="error-messages"></div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script type="module">
-        // Import Time Design modules
-        import { timeDesignManager } from './js/time-design/TimeDesignManager.js';
+        import { TimeDesignManager } from '/js/time-design/TimeDesignManager.js';
 
-        // Global variables
-        let updateInterval;
-        let currentMode = null;
+        class TimeDesignTest {
+            constructor() {
+                this.manager = new TimeDesignManager();
+                this.currentMode = null;
+                this.updateInterval = null;
 
-        // Debug logger
-        function debug(message, data = null) {
-            const debugPanel = document.getElementById('debugOutput');
-            const timestamp = new Date().toISOString().split('T')[1].substring(0, 8);
-            let output = `[${timestamp}] ${message}`;
-            if (data) {
-                output += '\n' + JSON.stringify(data, null, 2);
+                this.initializeUI();
+                this.setupEventListeners();
+                this.startClock();
             }
-            debugPanel.textContent = output + '\n\n' + debugPanel.textContent;
 
-            // Keep only last 1000 characters
-            if (debugPanel.textContent.length > 1000) {
-                debugPanel.textContent = debugPanel.textContent.substring(0, 1000) + '...';
+            initializeUI() {
+                this.renderModeSelector();
+                this.setupClockTicks();
             }
-        }
 
-        // Initialize the system
-        async function initialize() {
-            try {
-                debug('Initializing Time Design Manager...');
-                await timeDesignManager.initialize();
-                debug('Time Design Manager initialized successfully');
+            renderModeSelector() {
+                const modeGrid = document.getElementById('mode-grid');
+                const availableModes = this.manager.getAvailableModes();
 
-                // Load available modes
-                loadModes();
+                modeGrid.innerHTML = '';
+                availableModes.forEach(mode => {
+                    const modeCard = document.createElement('div');
+                    modeCard.className = 'mode-card';
+                    modeCard.dataset.mode = mode.name;
 
-                // Set up update interval
-                startTimeUpdate();
+                    modeCard.innerHTML = `
+                        <h4>${mode.displayName}</h4>
+                        <p>${mode.description}</p>
+                    `;
 
-                // Listen for mode changes
-                timeDesignManager.subscribe((event) => {
-                    debug('Mode changed event:', event);
-                    updateDisplay();
-                    loadModeConfig();
+                    modeCard.addEventListener('click', () => {
+                        this.selectMode(mode.name);
+                    });
+
+                    modeGrid.appendChild(modeCard);
+                });
+            }
+
+            selectMode(modeName) {
+                // Update UI
+                document.querySelectorAll('.mode-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                document.querySelector(`[data-mode="${modeName}"]`).classList.add('active');
+
+                // Set mode in manager
+                if (this.manager.setMode(modeName)) {
+                    this.currentMode = modeName;
+                    this.renderConfigPanel();
+                    this.updateStatus();
+                } else {
+                    this.showError(`Failed to set mode: ${modeName}`);
+                }
+            }
+
+            renderConfigPanel() {
+                const configInputs = document.getElementById('config-inputs');
+                const modeInfo = this.manager.getCurrentModeInfo();
+
+                if (!modeInfo) {
+                    configInputs.innerHTML = '<p>No mode selected</p>';
+                    return;
+                }
+
+                const schema = this.manager.getAvailableModes().find(m => m.name === modeInfo.name)?.configSchema || {};
+                const currentConfig = this.manager.getConfig();
+
+                configInputs.innerHTML = '';
+
+                Object.entries(schema).forEach(([key, fieldConfig]) => {
+                    const div = document.createElement('div');
+                    div.className = 'config-input';
+
+                    const label = document.createElement('label');
+                    label.textContent = fieldConfig.label || key;
+
+                    let input;
+                    if (fieldConfig.type === 'select') {
+                        input = document.createElement('select');
+                        fieldConfig.options.forEach(option => {
+                            const optionEl = document.createElement('option');
+                            optionEl.value = option.value;
+                            optionEl.textContent = option.label;
+                            input.appendChild(optionEl);
+                        });
+                    } else {
+                        input = document.createElement('input');
+                        input.type = fieldConfig.type || 'text';
+                        if (fieldConfig.min !== undefined) input.min = fieldConfig.min;
+                        if (fieldConfig.max !== undefined) input.max = fieldConfig.max;
+                        if (fieldConfig.step !== undefined) input.step = fieldConfig.step;
+                    }
+
+                    input.value = currentConfig[key] !== undefined ? currentConfig[key] : (fieldConfig.default || '');
+                    input.addEventListener('change', () => {
+                        this.updateConfig(key, input.value);
+                    });
+
+                    div.appendChild(label);
+                    div.appendChild(input);
+                    configInputs.appendChild(div);
                 });
 
-            } catch (error) {
-                debug('Initialization error:', error.message);
-                console.error('Failed to initialize:', error);
+                if (Object.keys(schema).length === 0) {
+                    configInputs.innerHTML = '<p>No configuration options for this mode</p>';
+                }
             }
-        }
 
-        // Load and display available modes
-        function loadModes() {
-            const modeList = document.getElementById('modeList');
-            const modes = timeDesignManager.getAvailableModes();
+            updateConfig(key, value) {
+                const schema = this.manager.getAvailableModes().find(m => m.name === this.currentMode)?.configSchema || {};
+                const fieldConfig = schema[key];
 
-            debug('Available modes:', modes);
+                // Type conversion
+                if (fieldConfig) {
+                    if (fieldConfig.type === 'number') {
+                        value = parseFloat(value);
+                    } else if (fieldConfig.type === 'checkbox') {
+                        value = value === 'true' || value === true;
+                    }
+                }
 
-            modeList.innerHTML = modes.map(mode => `
-                <div class="mode-option" data-mode="${mode.id}">
-                    <h3>${mode.name}</h3>
-                    <p>${mode.description}</p>
-                </div>
-            `).join('');
-
-            // Add click handlers
-            modeList.querySelectorAll('.mode-option').forEach(option => {
-                option.addEventListener('click', () => selectMode(option.dataset.mode));
-            });
-
-            // Select current mode
-            const current = timeDesignManager.getCurrentMode();
-            if (current) {
-                modeList.querySelector(`[data-mode="${current.id}"]`)?.classList.add('active');
+                this.manager.updateConfig({ [key]: value });
+                this.updateStatus();
             }
-        }
 
-        // Select a mode
-        async function selectMode(modeId) {
-            try {
-                debug(`Selecting mode: ${modeId}`);
+            setupClockTicks() {
+                ['standard-ticks', 'ah-ticks'].forEach(ticksId => {
+                    const ticks = document.getElementById(ticksId);
+                    ticks.innerHTML = '';
 
-                // Update UI immediately
-                document.querySelectorAll('.mode-option').forEach(el => {
-                    el.classList.toggle('active', el.dataset.mode === modeId);
+                    for (let i = 0; i < 60; i++) {
+                        const tick = document.createElement('div');
+                        tick.className = `tick ${i % 5 === 0 ? 'major' : 'minor'}`;
+                        tick.style.transform = `rotate(${i * 6}deg)`;
+                        tick.style.top = '10px';
+                        tick.style.left = '50%';
+                        tick.style.marginLeft = '-1px';
+                        ticks.appendChild(tick);
+                    }
                 });
-
-                // Set the mode
-                await timeDesignManager.setMode(modeId);
-                currentMode = modeId;
-
-                debug(`Mode set successfully: ${modeId}`);
-
-                // Load configuration UI
-                loadModeConfig();
-
-            } catch (error) {
-                debug(`Error setting mode: ${error.message}`);
-                console.error('Failed to set mode:', error);
-            }
-        }
-
-        // Load mode-specific configuration
-        function loadModeConfig() {
-            const configContent = document.getElementById('configContent');
-            const current = timeDesignManager.getCurrentMode();
-
-            if (!current) {
-                configContent.innerHTML = '<p>No mode selected</p>';
-                return;
             }
 
-            debug('Loading config for mode:', current.id);
-
-            // Generate configuration UI based on mode
-            switch (current.id) {
-                case 'classic':
-                    configContent.innerHTML = generateClassicConfig(current.config);
-                    break;
-                case 'core-time':
-                    configContent.innerHTML = generateCoreTimeConfig(current.config);
-                    break;
-                case 'wake-based':
-                    configContent.innerHTML = generateWakeBasedConfig(current.config);
-                    break;
-                case 'solar':
-                    configContent.innerHTML = generateSolarConfig(current.config);
-                    break;
-                default:
-                    configContent.innerHTML = '<p>Configuration not available for this mode</p>';
+            setupEventListeners() {
+                this.manager.addListener((modeInfo) => {
+                    this.updateStatus();
+                });
             }
 
-            // Add save button
-            configContent.innerHTML += `
-                <div class="button-group">
-                    <button class="btn-primary" onclick="saveConfig()">Save Configuration</button>
-                    <button class="btn-secondary" onclick="resetConfig()">Reset to Default</button>
-                </div>
-                <div class="status-message" id="statusMessage"></div>
-            `;
-        }
+            startClock() {
+                this.updateInterval = setInterval(() => {
+                    this.updateClocks();
+                }, 100);
+            }
 
-        // Configuration generators for each mode
-        function generateClassicConfig(config) {
-            const hours = Math.floor(config.designed24Duration / 60);
-            const minutes = config.designed24Duration % 60;
-
-            return `
-                <div class="config-group">
-                    <label>Designed 24 Duration</label>
-                    <input type="range" id="designed24Duration" 
-                           min="0" max="1440" value="${config.designed24Duration}"
-                           oninput="updateRangeValue(this)">
-                    <div class="range-value">${hours}h ${minutes}m</div>
-                </div>
-            `;
-        }
-
-        function generateCoreTimeConfig(config) {
-            return `
-                <div class="config-group">
-                    <label>Morning Another Hour Start</label>
-                    <input type="time" id="morningStart" 
-                           value="${minutesToTime(config.morningAH.start)}">
-                </div>
-                <div class="config-group">
-                    <label>Morning Another Hour Duration (minutes)</label>
-                    <input type="range" id="morningDuration" 
-                           min="0" max="360" value="${config.morningAH.duration}"
-                           oninput="updateRangeValue(this)">
-                    <div class="range-value">${config.morningAH.duration} min</div>
-                </div>
-                <div class="config-group">
-                    <label>Evening Another Hour Duration (minutes)</label>
-                    <input type="range" id="eveningDuration" 
-                           min="0" max="360" value="${config.eveningAH.duration}"
-                           oninput="updateRangeValue(this)">
-                    <div class="range-value">${config.eveningAH.duration} min</div>
-                </div>
-            `;
-        }
-
-        function generateWakeBasedConfig(config) {
-            return `
-                <div class="config-group">
-                    <label>Today's Wake Time</label>
-                    <input type="time" id="wakeTime" 
-                           value="${config.wakeTime ? new Date(config.wakeTime.time).toTimeString().substring(0,5) : ''}">
-                    <button class="btn-secondary" onclick="setWakeTimeNow()">Use Current Time</button>
-                </div>
-                <div class="config-group">
-                    <label>Another Hour Duration (minutes)</label>
-                    <input type="range" id="anotherHourDuration" 
-                           min="0" max="360" value="${config.anotherHourDuration}"
-                           oninput="updateRangeValue(this)">
-                    <div class="range-value">${config.anotherHourDuration} min</div>
-                </div>
-                <div class="config-group">
-                    <label>Default Wake Time</label>
-                    <input type="time" id="defaultWakeTime" 
-                           value="${minutesToTime(config.defaultWakeTime)}">
-                </div>
-            `;
-        }
-
-        function generateSolarConfig(config) {
-            return `
-                <div class="config-group">
-                    <label>Location</label>
-                    <select id="locationPreset" onchange="updateLocation(this.value)">
-                        <option value="custom">Custom</option>
-                        <option value="tokyo">Tokyo, Japan</option>
-                        <option value="newyork">New York, USA</option>
-                        <option value="london">London, UK</option>
-                        <option value="sydney">Sydney, Australia</option>
-                    </select>
-                </div>
-                <div class="config-group">
-                    <label>Latitude</label>
-                    <input type="number" id="latitude" 
-                           min="-90" max="90" step="0.0001"
-                           value="${config.location.latitude}">
-                </div>
-                <div class="config-group">
-                    <label>Longitude</label>
-                    <input type="number" id="longitude" 
-                           min="-180" max="180" step="0.0001"
-                           value="${config.location.longitude}">
-                </div>
-                <div class="config-group">
-                    <label>Day Hours (Solar)</label>
-                    <input type="range" id="dayHours" 
-                           min="1" max="23" value="${config.dayNightRatio.day}"
-                           oninput="updateSolarRatio(this)">
-                    <div class="range-value">${config.dayNightRatio.day}h day / ${config.dayNightRatio.night}h night</div>
-                </div>
-            `;
-        }
-
-        // Update time display
-        function updateDisplay() {
-            try {
+            updateClocks() {
                 const now = new Date();
-                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const result = timeDesignManager.calculate(now, timezone);
 
-                // Update main time
-                document.getElementById('timeDisplay').textContent = 
-                    formatTime(result.hours, result.minutes, result.seconds);
+                // Update standard clock
+                this.updateStandardClock(now);
 
-                // Update period label
-                document.getElementById('periodLabel').textContent = result.periodName;
-
-                // Update info cards
-                document.getElementById('scaleFactor').textContent = 
-                    result.scaleFactor.toFixed(2) + 'x';
-                document.getElementById('realTime').textContent = 
-                    now.toTimeString().substring(0, 8);
-                document.getElementById('progress').textContent = 
-                    Math.round(result.segmentInfo.progress) + '%';
-                document.getElementById('remaining').textContent = 
-                    formatDuration(result.segmentInfo.remaining);
-                document.getElementById('phase').textContent = 
-                    result.segmentInfo.type === 'designed' ? 'Designed' : 'Another Hour';
-                document.getElementById('phaseInfo').textContent = 
-                    result.segmentInfo.label;
-
-                // Mode-specific info
-                if (result.wakeBasedInfo) {
-                    document.getElementById('phaseInfo').textContent += 
-                        ` (${result.wakeBasedInfo.hoursAwake.toFixed(1)}h awake)`;
+                // Update AH clock if mode is active
+                if (this.currentMode) {
+                    this.updateAHClock(now);
                 }
+            }
 
-                if (result.solarInfo) {
-                    document.getElementById('phaseInfo').textContent = 
-                        `${result.solarInfo.location}`;
+            updateStandardClock(date) {
+                const hours = date.getHours() % 12;
+                const minutes = date.getMinutes();
+                const seconds = date.getSeconds();
+
+                const hourAngle = (hours * 30) + (minutes * 0.5);
+                const minuteAngle = minutes * 6;
+                const secondAngle = seconds * 6;
+
+                document.getElementById('standard-hour').style.transform = `rotate(${hourAngle}deg)`;
+                document.getElementById('standard-minute').style.transform = `rotate(${minuteAngle}deg)`;
+                document.getElementById('standard-second').style.transform = `rotate(${secondAngle}deg)`;
+
+                document.getElementById('standard-time').textContent = date.toLocaleTimeString();
+            }
+
+            updateAHClock(date) {
+                try {
+                    const angles = this.manager.getTimeAngles(date, 'UTC');
+
+                    if (angles) {
+                        document.getElementById('ah-hour').style.transform = `rotate(${angles.hourAngle || 0}deg)`;
+                        document.getElementById('ah-minute').style.transform = `rotate(${angles.minuteAngle || 0}deg)`;
+                        document.getElementById('ah-second').style.transform = `rotate(${angles.secondAngle || 0}deg)`;
+
+                        // Format AH time
+                        const ahTime = `${String(angles.aphHours || 0).padStart(2, '0')}:${String(angles.aphMinutes || 0).padStart(2, '0')}:${String(Math.floor(angles.aphSeconds || 0)).padStart(2, '0')}`;
+                        document.getElementById('ah-time').textContent = ahTime;
+
+                        this.clearError();
+                    }
+                } catch (error) {
+                    this.showError(`Clock update error: ${error.message}`);
                 }
+            }
 
-            } catch (error) {
-                debug('Update error:', error.message);
+            updateStatus() {
+                const modeInfo = this.manager.getCurrentModeInfo();
+                const modeInfoDiv = document.getElementById('mode-info');
+
+                if (modeInfo) {
+                    modeInfoDiv.innerHTML = `
+                        <strong>Active Mode:</strong> ${modeInfo.displayName}<br>
+                        <strong>Description:</strong> ${modeInfo.description}<br>
+                        <strong>Configuration:</strong> ${JSON.stringify(modeInfo.config, null, 2)}
+                    `;
+                } else {
+                    modeInfoDiv.textContent = 'No mode selected';
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('error-messages');
+                errorDiv.innerHTML = `<div class="error">${message}</div>`;
+                console.error('TimeDesignTest:', message);
+            }
+
+            clearError() {
+                const errorDiv = document.getElementById('error-messages');
+                errorDiv.innerHTML = '';
             }
         }
 
-        // Start time update loop
-        function startTimeUpdate() {
-            updateDisplay();
-            updateInterval = setInterval(updateDisplay, 100); // Update 10 times per second
-        }
-
-        // Helper functions
-        function formatTime(hours, minutes, seconds) {
-            return [hours, minutes, seconds]
-                .map(v => String(Math.floor(v)).padStart(2, '0'))
-                .join(':');
-        }
-
-        function formatDuration(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = Math.floor(minutes % 60);
-            if (hours > 0) {
-                return `${hours}h ${mins}m`;
-            }
-            return `${mins}m`;
-        }
-
-        function minutesToTime(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-        }
-
-        function timeToMinutes(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return hours * 60 + minutes;
-        }
-
-        // UI helper functions
-        window.updateRangeValue = function(input) {
-            const valueDiv = input.nextElementSibling;
-            if (input.id === 'designed24Duration') {
-                const hours = Math.floor(input.value / 60);
-                const minutes = input.value % 60;
-                valueDiv.textContent = `${hours}h ${minutes}m`;
-            } else {
-                valueDiv.textContent = `${input.value} min`;
-            }
-        };
-
-        window.updateSolarRatio = function(input) {
-            const dayHours = parseInt(input.value);
-            const nightHours = 24 - dayHours;
-            input.nextElementSibling.textContent = `${dayHours}h day / ${nightHours}h night`;
-        };
-
-        window.updateLocation = function(preset) {
-            const locations = {
-                tokyo: { lat: 35.6762, lng: 139.6503 },
-                newyork: { lat: 40.7128, lng: -74.0060 },
-                london: { lat: 51.5074, lng: -0.1278 },
-                sydney: { lat: -33.8688, lng: 151.2093 }
-            };
-
-            if (locations[preset]) {
-                document.getElementById('latitude').value = locations[preset].lat;
-                document.getElementById('longitude').value = locations[preset].lng;
-            }
-        };
-
-        window.setWakeTimeNow = function() {
-            const now = new Date();
-            document.getElementById('wakeTime').value = 
-                now.toTimeString().substring(0, 5);
-        };
-
-        // Save configuration
-        window.saveConfig = async function() {
+        // Initialize the test page
+        window.addEventListener('DOMContentLoaded', () => {
             try {
-                const current = timeDesignManager.getCurrentMode();
-                if (!current) return;
-
-                let newConfig = { ...current.config };
-
-                // Update config based on mode
-                switch (current.id) {
-                    case 'classic':
-                        newConfig.designed24Duration = 
-                            parseInt(document.getElementById('designed24Duration').value);
-                        break;
-
-                    case 'core-time':
-                        newConfig.morningAH.start = 
-                            timeToMinutes(document.getElementById('morningStart').value);
-                        newConfig.morningAH.duration = 
-                            parseInt(document.getElementById('morningDuration').value);
-                        newConfig.eveningAH.duration = 
-                            parseInt(document.getElementById('eveningDuration').value);
-                        break;
-
-                    case 'wake-based':
-                        const wakeTimeStr = document.getElementById('wakeTime').value;
-                        if (wakeTimeStr) {
-                            const [hours, minutes] = wakeTimeStr.split(':').map(Number);
-                            const wakeTime = new Date();
-                            wakeTime.setHours(hours, minutes, 0, 0);
-
-                            // Use the mode's recordWakeTime method
-                            const mode = timeDesignManager.registry.get('wake-based');
-                            newConfig = mode.recordWakeTime(wakeTime, newConfig);
-                        }
-                        newConfig.anotherHourDuration = 
-                            parseInt(document.getElementById('anotherHourDuration').value);
-                        newConfig.defaultWakeTime = 
-                            timeToMinutes(document.getElementById('defaultWakeTime').value);
-                        break;
-
-                    case 'solar':
-                        newConfig.location.latitude = 
-                            parseFloat(document.getElementById('latitude').value);
-                        newConfig.location.longitude = 
-                            parseFloat(document.getElementById('longitude').value);
-                        newConfig.dayNightRatio.day = 
-                            parseInt(document.getElementById('dayHours').value);
-                        newConfig.dayNightRatio.night = 24 - newConfig.dayNightRatio.day;
-                        break;
-                }
-
-                // Apply new configuration
-                await timeDesignManager.setMode(current.id, newConfig);
-
-                // Show success message
-                showStatus('Configuration saved successfully!', 'success');
-                debug('Configuration saved:', newConfig);
-
+                new TimeDesignTest();
             } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
-                debug('Save error:', error.message);
-            }
-        };
-
-        // Reset configuration
-        window.resetConfig = async function() {
-            try {
-                const current = timeDesignManager.getCurrentMode();
-                if (!current) return;
-
-                await timeDesignManager.setMode(current.id);
-                loadModeConfig();
-                showStatus('Configuration reset to default', 'success');
-
-            } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
-            }
-        };
-
-        // Show status message
-        function showStatus(message, type) {
-            const statusEl = document.getElementById('statusMessage');
-            statusEl.textContent = message;
-            statusEl.className = `status-message ${type}`;
-            statusEl.style.display = 'block';
-
-            setTimeout(() => {
-                statusEl.style.display = 'none';
-            }, 3000);
-        }
-
-        // Initialize on load
-        window.addEventListener('load', initialize);
-
-        // Clean up on unload
-        window.addEventListener('unload', () => {
-            if (updateInterval) {
-                clearInterval(updateInterval);
+                console.error('Failed to initialize Time Design Test:', error);
+                document.getElementById('error-messages').innerHTML = 
+                    `<div class="error">Failed to initialize: ${error.message}</div>`;
             }
         });
     </script>
