@@ -39,10 +39,13 @@ class TimeDesignManager {
       throw new Error(`Mode '${modeId}' not found`);
     }
 
-    let modeConfig = config || mode.getDefaultConfig();
+    // Combine loaded config with defaults to ensure all keys are present for validation.
+    const defaultConfig = mode.getDefaultConfig();
+    const modeConfig = { ...defaultConfig, ...(config || {}) };
 
     // HACK: Migrate legacy config from localStorage to prevent validation errors.
-    if (modeId === 'classic' && modeConfig.designed24Minutes !== undefined && modeConfig.designed24Duration === undefined) {
+    // This handles the renaming of 'designed24Minutes' to 'designed24Duration'.
+    if (modeId === 'classic' && modeConfig.designed24Minutes !== undefined) {
       modeConfig.designed24Duration = modeConfig.designed24Minutes;
       delete modeConfig.designed24Minutes;
     }
