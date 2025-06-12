@@ -356,20 +356,60 @@
     
     <!-- Load modules in order -->
     <script>
-        // Check if required libraries are loaded
-        if (typeof moment === 'undefined') {
-            console.error('Moment.js is not loaded');
-            document.getElementById('debugOutput').textContent = 'Error: Moment.js is not loaded. Please check your internet connection.';
+        // Wait for moment.js to load before proceeding
+        function waitForMoment() {
+            return new Promise((resolve) => {
+                if (typeof moment !== 'undefined') {
+                    resolve();
+                } else {
+                    setTimeout(() => waitForMoment().then(resolve), 100);
+                }
+            });
+        }
+        
+        async function loadScripts() {
+            try {
+                await waitForMoment();
+                console.log('Moment.js loaded successfully');
+                
+                // Load scripts in sequence
+                const scripts = [
+                    './clock-core.js',
+                    'js/time-design/modes/BaseMode.js',
+                    'js/time-design/modes/ClassicMode.js',
+                    'js/time-design/modes/CoreTimeMode.js',
+                    'js/time-design/modes/WakeBasedMode.js',
+                    'js/time-design/modes/SolarMode.js',
+                    'js/time-design/ModeRegistry.js',
+                    'js/time-design/TimeDesignManager.js'
+                ];
+                
+                for (const scriptSrc of scripts) {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = scriptSrc;
+                        script.onload = resolve;
+                        script.onerror = () => reject(new Error(`Failed to load ${scriptSrc}`));
+                        document.head.appendChild(script);
+                    });
+                }
+                
+                // Initialize after all scripts are loaded
+                initialize();
+                
+            } catch (error) {
+                console.error('Script loading error:', error);
+                document.getElementById('debugOutput').textContent = `Script loading error: ${error.message}`;
+            }
+        }
+        
+        // Start loading when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadScripts);
+        } else {
+            loadScripts();
         }
     </script>
-    <script src="./clock-core.js"></script>
-    <script src="js/time-design/modes/BaseMode.js"></script>
-    <script src="js/time-design/modes/ClassicMode.js"></script>
-    <script src="js/time-design/modes/CoreTimeMode.js"></script>
-    <script src="js/time-design/modes/WakeBasedMode.js"></script>
-    <script src="js/time-design/modes/SolarMode.js"></script>
-    <script src="js/time-design/ModeRegistry.js"></script>
-    <script src="js/time-design/TimeDesignManager.js"></script>
     
     <script>
 
@@ -835,9 +875,6 @@
                 statusEl.style.display = 'none';
             }, 3000);
         }
-
-        // Initialize on load
-        window.addEventListener('load', initialize);
 
         // Clean up on unload
         window.addEventListener('unload', () => {

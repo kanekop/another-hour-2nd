@@ -63,8 +63,5 @@ class ModeRegistry {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { ModeRegistry };
 } else {
-  // Only declare if not already declared
-  if (typeof window.ModeRegistry === 'undefined') {
-    window.ModeRegistry = ModeRegistry;
-  }
+  window.ModeRegistry = ModeRegistry;
 }

@@ -88,8 +88,5 @@ class BaseMode {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { BaseMode };
 } else {
-  // Only declare if not already declared
-  if (typeof window.BaseMode === 'undefined') {
-    window.BaseMode = BaseMode;
-  }
+  window.BaseMode = BaseMode;
 }
