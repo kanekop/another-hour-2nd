@@ -185,6 +185,7 @@ function generateSolarConfig(config) {
     } else {
         solarDetailsHtml = `
             <p><strong>Sun Rise:</strong> <span id="sunrise-time">${formatTime(solarInfo.sunrise)}</span></p>
+            <p><strong>Solar Noon:</strong> <span id="solarnoon-time">${formatTime(solarInfo.solarNoon)}</span></p>
             <p><strong>Sun Set:</strong> <span id="sunset-time">${formatTime(solarInfo.sunset)}</span></p>
             <p><strong>Daytime:</strong> <span id="daylight-duration">${formatDuration(solarInfo.daylightMinutes)}</span></p>
         `;
@@ -262,38 +263,36 @@ function updateDisplay() {
         let realTimeString = now.toTimeString().substring(0, 8); // Default to browser time
 
         if (currentMode && currentMode.id === 'solar') {
-            const solarMode = timeDesignManager.registry.get('solar');
-            const cityData = solarMode.getCityData(currentMode.config.city);
-            if (cityData && cityData.tz) {
+            const location = currentMode.config.location;
+            if (location && location.timezone) {
                 try {
                     realTimeString = new Intl.DateTimeFormat('en-GB', {
-                        timeZone: cityData.tz,
+                        timeZone: location.timezone,
                         hour: 'numeric',
                         minute: 'numeric',
                         second: 'numeric',
                         hour12: false
                     }).format(now);
                 } catch (e) {
-                    console.error(`Could not format real time for timezone ${cityData.tz}`, e);
+                    console.error(`Could not format real time for timezone ${location.timezone}`, e);
                 }
             }
         }
         document.getElementById('realTime').textContent = realTimeString;
 
-        document.getElementById('progress').textContent = Math.round(result.segmentInfo.progress) + '%';
-        document.getElementById('remaining').textContent = formatDuration(result.segmentInfo.remaining);
-        document.getElementById('phase').textContent = result.segmentInfo.type === 'designed' ? 'Designed' : 'Another Hour';
-        document.getElementById('phaseInfo').textContent = result.segmentInfo.label;
-
-        // Core Time Duration Display
-        const coreTimeInfoCard = document.getElementById('coreTimeInfoCard');
-        if (currentMode && currentMode.id === 'core-time') {
-            const config = currentMode.config;
-            const coreTimeMinutes = config.coreTimeEnd - config.coreTimeStart;
-            document.getElementById('coreTimeDuration').textContent = formatDuration(coreTimeMinutes);
-            coreTimeInfoCard.style.display = 'block';
-        } else if (coreTimeInfoCard) {
-            coreTimeInfoCard.style.display = 'none';
+        // --- PROGRESS display logic ---
+        const progressContainer = document.getElementById('progressDisplay');
+        if (result.segmentInfo && result.segmentInfo.progress !== undefined) {
+            const progress = result.segmentInfo.progress * 100;
+            const remaining = result.segmentInfo.remaining;
+            progressContainer.innerHTML = `
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${progress.toFixed(2)}%;"></div>
+                </div>
+                <div class="progress-label">${formatDuration(remaining)} remaining in phase</div>
+            `;
+        } else {
+            progressContainer.innerHTML = '-';
         }
 
     } catch (error) {
@@ -432,13 +431,21 @@ function initializeSolarMode(config) {
         const newCityKey = e.target.value;
         debug(`City changed to: ${newCityKey}`);
 
+        const current = timeDesignManager.getCurrentMode();
         const solarMode = timeDesignManager.registry.get('solar');
-        const newLocation = solarMode.cities[newCityKey];
+        const newCityData = solarMode.cities[newCityKey];
 
-        await timeDesignManager.updateConfig({
-            location: { ...newLocation, lng: newLocation.lon } // lon -> lng mapping if needed
-        });
-        // Config change will trigger a re-render via subscription
+        const newConfig = {
+            ...current.config,
+            location: {
+                lat: newCityData.lat,
+                lng: newCityData.lng,
+                name: newCityData.name,
+                timezone: newCityData.tz
+            }
+        };
+
+        await timeDesignManager.setMode('solar', newConfig);
     });
 
     // Day Hours Slider
@@ -447,6 +454,10 @@ function initializeSolarMode(config) {
 
     // Assuming a slider library like noUiSlider is used
     if (typeof noUiSlider !== 'undefined') {
+        if (dayHoursSlider.noUiSlider) {
+            dayHoursSlider.noUiSlider.destroy();
+        }
+
         noUiSlider.create(dayHoursSlider, {
             start: [config.designedDayHours],
             connect: [true, false],
@@ -463,7 +474,13 @@ function initializeSolarMode(config) {
 
         dayHoursSlider.noUiSlider.on('set', async (values) => {
             const newDayHours = Number(values[0]);
-            await timeDesignManager.updateConfig({ designedDayHours: newDayHours });
+            const current = timeDesignManager.getCurrentMode();
+            const newConfig = {
+                ...current.config,
+                designedDayHours: newDayHours,
+                autoAdjust: false // Manual change disables auto-adjust
+            };
+            await timeDesignManager.setMode('solar', newConfig);
         });
     }
 }
