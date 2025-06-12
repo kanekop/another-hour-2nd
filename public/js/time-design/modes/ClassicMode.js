@@ -1,6 +1,7 @@
 // public/js/time-design/modes/ClassicMode.js
 
 import { BaseMode } from './BaseMode.js';
+import { getCustomAhAngles } from '../../../clock-core.js';
 
 /**
  * ClassicMode - The original Another Hour time design
@@ -11,7 +12,16 @@ export class ClassicMode extends BaseMode {
     super(
       'classic',
       'Classic Mode',
-      'Original Another Hour with time at the end of day'
+      'Original Another Hour with time at the end of day. A single slider controls the length of your Designed 24.',
+      {
+        designed24Minutes: {
+          type: 'number',
+          label: 'Designed 24 Duration (minutes)',
+          min: 1,
+          max: 1440,
+          default: 1380
+        }
+      }
     );
   }
 
@@ -20,12 +30,7 @@ export class ClassicMode extends BaseMode {
    */
   getDefaultConfig() {
     return {
-      designed24Duration: 1380, // 23 hours in minutes
-      startHour: 0, // Start at midnight
-      metadata: {
-        created: new Date().toISOString(),
-        modified: new Date().toISOString()
-      }
+      designed24Minutes: 1380 // 23 hours
     };
   }
 
@@ -34,19 +39,13 @@ export class ClassicMode extends BaseMode {
    */
   validate(config) {
     const errors = [];
+    const duration = config.designed24Minutes;
 
-    // Check designed24Duration
-    if (!config.designed24Duration || typeof config.designed24Duration !== 'number') {
-      errors.push('designed24Duration must be a number');
-    } else if (config.designed24Duration < 0 || config.designed24Duration > 1440) {
-      errors.push('designed24Duration must be between 0 and 1440 minutes (24 hours)');
+    if (typeof duration !== 'number' || isNaN(duration)) {
+      errors.push('Duration must be a number.');
     }
-
-    // Check startHour
-    if (config.startHour !== undefined) {
-      if (typeof config.startHour !== 'number' || config.startHour < 0 || config.startHour > 23) {
-        errors.push('startHour must be between 0 and 23');
-      }
+    if (duration < 1 || duration > 1440) {
+      errors.push('Duration must be between 1 and 1440 minutes.');
     }
 
     return {
@@ -59,57 +58,23 @@ export class ClassicMode extends BaseMode {
    * Calculate time based on configuration
    */
   calculate(date, timezone, config) {
-    const minutes = this.getMinutesSinceMidnight(date, timezone);
-    const startMinute = (config.startHour || 0) * 60;
-
-    // Build segments
-    const segments = this.buildSegments(config);
-
-    // Adjust minutes for start hour
-    const adjustedMinutes = (minutes - startMinute + 1440) % 1440;
-
-    // Find active segment
-    const activeSegment = this.findActiveSegment(adjustedMinutes, segments);
-
-    if (!activeSegment) {
-      throw new Error('No active segment found - this should not happen');
-    }
-
-    // Calculate elapsed time in segment
-    const segmentElapsed = this.getSegmentElapsed(adjustedMinutes, activeSegment);
-    const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
-
-    // Calculate display time
-    let displayTime;
-    if (activeSegment.type === 'designed') {
-      // Designed 24 - scale time
-      displayTime = this.calculateDisplayTime(activeSegment, scaledElapsed, 0);
-    } else {
-      // Another Hour - use real time
-      const ahStartHour = Math.floor(config.designed24Duration / 60);
-      displayTime = this.calculateDisplayTime(activeSegment, segmentElapsed, ahStartHour);
-    }
-
-    // Calculate progress
-    const segmentProgress = this.getSegmentProgress(segmentElapsed, activeSegment.duration);
+    const duration = config.designed24Minutes || this.getDefaultConfig().designed24Minutes;
+    const angles = getCustomAhAngles(date, timezone, duration);
 
     return {
-      hours: displayTime.hours,
-      minutes: displayTime.minutes,
-      seconds: displayTime.seconds,
-      scaleFactor: activeSegment.scaleFactor,
-      isAnotherHour: activeSegment.type === 'another',
+      hours: angles.aphHours,
+      minutes: angles.aphMinutes,
+      seconds: angles.aphSeconds,
+      scaleFactor: angles.scaleFactor,
+      isAnotherHour: angles.isPersonalizedAhPeriod,
       segmentInfo: {
-        type: activeSegment.type,
-        label: activeSegment.label,
-        progress: segmentProgress,
-        elapsed: segmentElapsed,
-        duration: activeSegment.duration,
-        remaining: activeSegment.duration - segmentElapsed
+        type: angles.isPersonalizedAhPeriod ? 'another' : 'designed',
+        label: angles.isPersonalizedAhPeriod ? 'Another Hour' : 'Designed 24',
       },
-      // Additional info for display
-      displayString: this.formatTime(displayTime.hours, displayTime.minutes, displayTime.seconds),
-      periodName: activeSegment.type === 'designed' ? 'Designed 24' : 'Another Hour'
+      // for clock display
+      hourAngle: angles.hourAngle,
+      minuteAngle: angles.minuteAngle,
+      secondAngle: angles.secondAngle,
     };
   }
 
@@ -118,7 +83,7 @@ export class ClassicMode extends BaseMode {
    */
   buildSegments(config) {
     const segments = [];
-    const designed24Duration = config.designed24Duration;
+    const designed24Duration = config.designed24Minutes;
     const anotherHourDuration = 1440 - designed24Duration;
 
     // Designed 24 segment
@@ -156,9 +121,9 @@ export class ClassicMode extends BaseMode {
    * Get configuration summary for display
    */
   getConfigSummary(config) {
-    const designed24Hours = Math.floor(config.designed24Duration / 60);
-    const designed24Minutes = config.designed24Duration % 60;
-    const anotherHourDuration = 1440 - config.designed24Duration;
+    const designed24Hours = Math.floor(config.designed24Minutes / 60);
+    const designed24Minutes = config.designed24Minutes % 60;
+    const anotherHourDuration = 1440 - config.designed24Minutes;
     const anotherHourHours = Math.floor(anotherHourDuration / 60);
     const anotherHourMinutes = anotherHourDuration % 60;
 
@@ -166,8 +131,8 @@ export class ClassicMode extends BaseMode {
       designed24: {
         hours: designed24Hours,
         minutes: designed24Minutes,
-        total: config.designed24Duration,
-        display: this.formatDuration(config.designed24Duration)
+        total: config.designed24Minutes,
+        display: this.formatDuration(config.designed24Minutes)
       },
       anotherHour: {
         hours: anotherHourHours,
@@ -175,7 +140,7 @@ export class ClassicMode extends BaseMode {
         total: anotherHourDuration,
         display: this.formatDuration(anotherHourDuration)
       },
-      scaleFactor: config.designed24Duration > 0 ? (1440 / config.designed24Duration).toFixed(2) : '1.00'
+      scaleFactor: config.designed24Minutes > 0 ? (1440 / config.designed24Minutes).toFixed(2) : '1.00'
     };
   }
 
@@ -187,83 +152,12 @@ export class ClassicMode extends BaseMode {
     if (!legacyDuration) return null;
 
     return {
-      designed24Duration: parseInt(legacyDuration, 10),
-      startHour: 0,
+      designed24Minutes: parseInt(legacyDuration, 10),
       metadata: {
         created: new Date().toISOString(),
         modified: new Date().toISOString(),
         migratedFrom: 'legacy'
       }
-    };
-  }
-}
-// ClassicMode.js - Classic Another Hour implementation
-import { BaseMode } from './BaseMode.js';
-
-export class ClassicMode extends BaseMode {
-  getName() {
-    return 'classic';
-  }
-
-  getDisplayName() {
-    return 'Classic Mode';
-  }
-
-  getDescription() {
-    return 'Traditional Another Hour with customizable duration';
-  }
-
-  getDefaultConfig() {
-    return {
-      normalDayDurationMinutes: 1440 // 24 hours default
-    };
-  }
-
-  getConfigSchema() {
-    return {
-      normalDayDurationMinutes: {
-        type: 'number',
-        label: 'Normal Day Duration (minutes)',
-        min: 60,
-        max: 2880,
-        step: 1,
-        default: 1440
-      }
-    };
-  }
-
-  calculateAngles(date, timezone, config) {
-    const durationMinutes = config.normalDayDurationMinutes || 1440;
-    const scaleFactor = durationMinutes / 1440;
-    
-    // Get current time
-    const now = new Date(date);
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const seconds = now.getSeconds();
-    
-    // Calculate Another Hour time
-    const totalSecondsInDay = hours * 3600 + minutes * 60 + seconds;
-    const scaledSeconds = totalSecondsInDay * scaleFactor;
-    
-    const aphHours = Math.floor(scaledSeconds / 3600) % 24;
-    const aphMinutes = Math.floor((scaledSeconds % 3600) / 60);
-    const aphSecondsRemainder = scaledSeconds % 60;
-    
-    // Calculate angles for Another Hour time
-    const hourAngle = this.normalizeAngle((aphHours % 12) * 30 + aphMinutes * 0.5 + aphSecondsRemainder * (0.5 / 60));
-    const minuteAngle = this.normalizeAngle(aphMinutes * 6 + aphSecondsRemainder * 0.1);
-    const secondAngle = this.normalizeAngle(aphSecondsRemainder * 6);
-    
-    return {
-      hourAngle,
-      minuteAngle,
-      secondAngle,
-      aphHours,
-      aphMinutes,
-      aphSeconds: aphSecondsRemainder,
-      scaleFactor,
-      isPersonalizedAhPeriod: true
     };
   }
 }

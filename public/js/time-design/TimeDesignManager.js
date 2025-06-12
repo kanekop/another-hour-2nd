@@ -1,114 +1,119 @@
-
 // TimeDesignManager.js - Main coordinator for Time Design Modes
 import { ModeRegistry } from './ModeRegistry.js';
+
+const STORAGE_KEYS = {
+  CURRENT_MODE: 'timeDesignMode',
+  MODE_CONFIG_PREFIX: 'timeDesignConfig_',
+};
 
 export class TimeDesignManager {
   constructor() {
     this.registry = new ModeRegistry();
-    this.currentMode = null;
-    this.config = {};
+    this.currentModeId = null;
+    this.currentConfig = null;
     this.listeners = new Set();
-    
-    // Initialize with default mode
-    this.setMode('classic');
+    this.loadConfiguration();
   }
 
-  // Set active mode
-  setMode(modeName, config = {}) {
-    const ModeClass = this.registry.getMode(modeName);
-    if (!ModeClass) {
-      console.error(`Mode '${modeName}' not found`);
+  loadConfiguration() {
+    const savedModeId = localStorage.getItem(STORAGE_KEYS.CURRENT_MODE) || 'classic';
+    const mode = this.registry.get(savedModeId);
+    if (!mode) {
+      this.setMode('classic'); // Fallback to classic
+      return;
+    }
+
+    const savedConfigStr = localStorage.getItem(this._getConfigKey(savedModeId));
+    let config;
+    try {
+      config = savedConfigStr ? JSON.parse(savedConfigStr) : mode.getDefaultConfig();
+    } catch (e) {
+      console.error("Failed to parse config, using default", e);
+      config = mode.getDefaultConfig();
+    }
+
+    this.setMode(savedModeId, config);
+  }
+
+  saveConfiguration() {
+    if (!this.currentModeId) return;
+    localStorage.setItem(STORAGE_KEYS.CURRENT_MODE, this.currentModeId);
+    localStorage.setItem(this._getConfigKey(this.currentModeId), JSON.stringify(this.currentConfig));
+    this.notifyListeners();
+  }
+
+  _getConfigKey(modeId) {
+    return `${STORAGE_KEYS.MODE_CONFIG_PREFIX}${modeId}`;
+  }
+
+  setMode(modeId, config = null) {
+    const mode = this.registry.get(modeId);
+    if (!mode) {
+      console.error(`Attempted to set unknown mode: ${modeId}`);
       return false;
     }
 
-    this.currentMode = new ModeClass();
-    this.config = { ...this.currentMode.getDefaultConfig(), ...config };
-    
-    // Save to localStorage
-    this.saveState();
-    
-    // Notify listeners
-    this.notifyListeners();
-    
+    const finalConfig = config || mode.getDefaultConfig();
+    const validation = mode.validate(finalConfig);
+    if (!validation.valid) {
+      console.error(`Invalid config for mode ${modeId}:`, validation.errors);
+      return false;
+    }
+
+    this.currentModeId = modeId;
+    this.currentConfig = finalConfig;
+    this.saveConfiguration();
     return true;
   }
 
-  // Get current time angles using active mode
-  getTimeAngles(date = new Date(), timezone = 'UTC') {
-    if (!this.currentMode) {
-      console.error('No active mode');
-      return null;
+  updateConfig(configUpdate) {
+    if (!this.currentModeId) return false;
+    const newConfig = { ...this.currentConfig, ...configUpdate };
+    return this.setMode(this.currentModeId, newConfig);
+  }
+
+  getTimeAngles(date, timezone) {
+    if (!this.currentModeId) {
+      throw new Error('No mode selected');
     }
-
-    return this.currentMode.calculateAngles(date, timezone, this.config);
+    const mode = this.registry.get(this.currentModeId);
+    return mode.calculate(date, timezone, this.currentConfig);
   }
 
-  // Get mode information
+  getAvailableModes() {
+    return this.registry.getAllAsInfo();
+  }
+
   getCurrentModeInfo() {
-    if (!this.currentMode) return null;
-    
+    if (!this.currentModeId) return null;
+    const mode = this.registry.get(this.currentModeId);
     return {
-      name: this.currentMode.getName(),
-      displayName: this.currentMode.getDisplayName(),
-      description: this.currentMode.getDescription(),
-      config: this.config
+      name: mode.id,
+      displayName: mode.name,
+      description: mode.description,
+      config: this.currentConfig
     };
-  }
-
-  // Configuration management
-  updateConfig(newConfig) {
-    this.config = { ...this.config, ...newConfig };
-    this.saveState();
-    this.notifyListeners();
   }
 
   getConfig() {
-    return { ...this.config };
+    return this.currentConfig;
   }
 
-  // Available modes
-  getAvailableModes() {
-    return this.registry.getAvailableModes();
+  addListener(listener) {
+    this.listeners.add(listener);
   }
 
-  // State persistence
-  saveState() {
-    const state = {
-      modeName: this.currentMode?.getName(),
-      config: this.config
-    };
-    localStorage.setItem('timeDesignState', JSON.stringify(state));
-  }
-
-  loadState() {
-    try {
-      const saved = localStorage.getItem('timeDesignState');
-      if (saved) {
-        const state = JSON.parse(saved);
-        this.setMode(state.modeName || 'classic', state.config || {});
-        return true;
-      }
-    } catch (error) {
-      console.error('Failed to load Time Design state:', error);
-    }
-    return false;
-  }
-
-  // Event system
-  addListener(callback) {
-    this.listeners.add(callback);
-  }
-
-  removeListener(callback) {
-    this.listeners.delete(callback);
+  removeListener(listener) {
+    this.listeners.delete(listener);
   }
 
   notifyListeners() {
-    this.listeners.forEach(callback => {
+    const modeInfo = this.getCurrentModeInfo();
+    this.listeners.forEach(listener => {
       try {
-        callback(this.getCurrentModeInfo());
+        listener(modeInfo);
       } catch (error) {
-        console.error('Error in Time Design listener:', error);
+        console.error('Error in listener:', error);
       }
     });
   }

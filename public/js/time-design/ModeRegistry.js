@@ -1,4 +1,3 @@
-
 // ModeRegistry.js - Registry for all Time Design Modes
 import { ClassicMode } from './modes/ClassicMode.js';
 import { CoreTimeMode } from './modes/CoreTimeMode.js';
@@ -7,40 +6,46 @@ import { SolarMode } from './modes/SolarMode.js';
 
 export class ModeRegistry {
   constructor() {
-    this.modes = new Map();
-    this.registerDefaultModes();
+    this._modes = new Map();
+    this._registerDefaultModes();
   }
 
-  registerDefaultModes() {
-    this.register('classic', ClassicMode);
-    this.register('coreTime', CoreTimeMode);
+  _registerDefaultModes() {
+    this.register(new ClassicMode());
+    this.register(new CoreTimeMode());
     this.register('wakeBased', WakeBasedMode);
     this.register('solar', SolarMode);
   }
 
-  register(name, ModeClass) {
-    this.modes.set(name, ModeClass);
-  }
-
-  getMode(name) {
-    return this.modes.get(name);
-  }
-
-  getAvailableModes() {
-    const modeList = [];
-    for (const [name, ModeClass] of this.modes) {
-      const instance = new ModeClass();
-      modeList.push({
-        name,
-        displayName: instance.getDisplayName(),
-        description: instance.getDescription(),
-        configSchema: instance.getConfigSchema()
-      });
+  register(modeInstance) {
+    if (this._modes.has(modeInstance.id)) {
+      console.warn(`Mode [${modeInstance.id}] is already registered. Overwriting.`);
     }
-    return modeList;
+    this._modes.set(modeInstance.id, modeInstance);
+  }
+
+  get(modeId) {
+    if (!this._modes.has(modeId)) {
+      console.error(`Mode [${modeId}] not found.`);
+      return null;
+    }
+    return this._modes.get(modeId);
+  }
+
+  getAll() {
+    return Array.from(this._modes.values());
+  }
+
+  getAllAsInfo() {
+    return this.getAll().map(mode => ({
+      name: mode.id,
+      displayName: mode.name,
+      description: mode.description,
+      configSchema: mode.configSchema,
+    }));
   }
 
   hasMode(name) {
-    return this.modes.has(name);
+    return this._modes.has(name);
   }
 }
