@@ -1,5 +1,6 @@
 // SolarMode.js - Time based on solar cycles
 import { BaseMode } from './BaseMode.js';
+import { getCustomAhAngles } from '../../clock-core.js';
 
 export class SolarMode extends BaseMode {
   constructor() {

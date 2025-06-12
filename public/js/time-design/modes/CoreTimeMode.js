@@ -1,6 +1,7 @@
 // public/js/time-design/modes/CoreTimeMode.js
 
 import { BaseMode } from './BaseMode.js';
+import { getCustomAhAngles } from '../../clock-core.js';
 
 /**
  * CoreTimeMode - Define productive hours with Another Hour periods before and after

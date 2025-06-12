@@ -1,7 +1,7 @@
 // public/js/time-design/modes/ClassicMode.js
 
 import { BaseMode } from './BaseMode.js';
-import { getCustomAhAngles } from '../../../clock-core.js';
+import { getCustomAhAngles } from '../../clock-core.js';
 
 /**
  * ClassicMode - The original Another Hour time design

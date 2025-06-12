@@ -1,5 +1,6 @@
 // WakeBasedMode.js - Another Hour period based on wake time
 import { BaseMode } from './BaseMode.js';
+import { getCustomAhAngles } from '../../clock-core.js';
 
 export class WakeBasedMode extends BaseMode {
   constructor() {
