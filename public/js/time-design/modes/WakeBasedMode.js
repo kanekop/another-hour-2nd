@@ -90,14 +90,17 @@ export class WakeBasedMode extends BaseMode {
     } else { // 'designed'
       // Elapsed real time since wake-up.
       const elapsedRealMinutesInPeriod = realMinutes - wakeTimeMinutes;
-      // The scaled time starts from 0 at wake-up.
+      // The scaled elapsed time since wake-up (starts from 0).
       const scaledElapsedMinutes = elapsedRealMinutesInPeriod * activeSegment.scaleFactor;
+      const scaledElapsedSeconds = scaledElapsedMinutes * 60 + date.getSeconds() * activeSegment.scaleFactor;
 
-      const scaledTotalSeconds = scaledElapsedMinutes * 60 + date.getSeconds() * activeSegment.scaleFactor;
+      // The display time is the wake time offset by the scaled elapsed time.
+      const wakeTimeSeconds = wakeTimeMinutes * 60;
+      const displayTotalSeconds = wakeTimeSeconds + scaledElapsedSeconds;
 
-      displayHours = Math.floor(scaledTotalSeconds / 3600);
-      displayMinutes = Math.floor((scaledTotalSeconds % 3600) / 60);
-      displaySeconds = Math.floor(scaledTotalSeconds % 60);
+      displayHours = Math.floor(displayTotalSeconds / 3600) % 24;
+      displayMinutes = Math.floor((displayTotalSeconds % 3600) / 60);
+      displaySeconds = Math.floor(displayTotalSeconds % 60);
     }
 
     const totalActivityMinutes = 1440 - wakeTimeMinutes;
