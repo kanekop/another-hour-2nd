@@ -126,6 +126,10 @@ function loadModeConfig() {
 
     configContent.innerHTML = configHtml;
 
+    if (current.id === 'core-time') {
+        initializeCoreTimeSlider(current.config);
+    }
+
     document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
     document.getElementById('resetConfigBtn').addEventListener('click', resetConfig);
 }
@@ -138,9 +142,11 @@ function generateClassicConfig(config) {
 
 function generateCoreTimeConfig(config) {
     return `
-        <div class="config-group"><label>Morning AH Start</label><input type="time" id="morningStart" value="${config.morningAH_start}"></div>
-        <div class="config-group"><label>Morning AH Duration (minutes)</label><input type="range" id="morningDuration" min="0" max="360" value="${config.morningAH_duration}" oninput="updateRangeValue(this)"><div class="range-value">${config.morningAH_duration} min</div></div>
-        <div class="config-group"><label>Evening AH Duration (minutes)</label><input type="range" id="eveningDuration" min="0" max="360" value="${config.eveningAH_duration}" oninput="updateRangeValue(this)"><div class="range-value">${config.eveningAH_duration} min</div></div>
+        <div class="config-group">
+            <label>Core Time Range</label>
+            <div id="coreTimeSlider" style="margin: 30px 10px 40px;"></div>
+            <div id="coreTimeValue" style="text-align: center; font-weight: 600;"></div>
+        </div>
     `;
 }
 
@@ -218,6 +224,20 @@ function updateDisplay() {
         document.getElementById('remaining').textContent = formatDuration(result.segmentInfo.remaining);
         document.getElementById('phase').textContent = result.segmentInfo.type === 'designed' ? 'Designed' : 'Another Hour';
         document.getElementById('phaseInfo').textContent = result.segmentInfo.label;
+
+        // --- New Core Time Duration Display Logic ---
+        const currentMode = timeDesignManager.getCurrentMode();
+        const coreTimeInfoCard = document.getElementById('coreTimeInfoCard');
+        if (currentMode && currentMode.id === 'core-time') {
+            const config = currentMode.config;
+            const coreTimeMinutes = config.coreTimeEnd - config.coreTimeStart;
+            document.getElementById('coreTimeDuration').textContent = formatDuration(coreTimeMinutes);
+            coreTimeInfoCard.style.display = 'block';
+        } else if (coreTimeInfoCard) {
+            coreTimeInfoCard.style.display = 'none';
+        }
+        // --- End of New Logic ---
+
     } catch (error) {
         // debug('Update error:', error.message);
     }
@@ -248,18 +268,26 @@ async function saveConfig() {
         if (!current) return;
         let newConfig = { ...current.config };
 
-        const schema = timeDesignManager.registry.get(current.id).configSchema;
-        for (const key in schema) {
-            const el = document.getElementById(key);
-            if (el) {
-                switch (schema[key].type) {
-                    case 'number':
-                        newConfig[key] = parseInt(el.value);
-                        break;
-                    case 'select':
-                    case 'time':
-                        newConfig[key] = el.value;
-                        break;
+        // Special handling for Core Time slider
+        if (current.id === 'core-time') {
+            const slider = document.getElementById('coreTimeSlider').noUiSlider;
+            const values = slider.get();
+            newConfig.coreTimeStart = parseInt(values[0]);
+            newConfig.coreTimeEnd = parseInt(values[1]);
+        } else {
+            const schema = timeDesignManager.registry.get(current.id).configSchema;
+            for (const key in schema) {
+                const el = document.getElementById(key);
+                if (el) {
+                    switch (schema[key].type) {
+                        case 'number':
+                            newConfig[key] = parseInt(el.value);
+                            break;
+                        case 'select':
+                        case 'time':
+                            newConfig[key] = el.value;
+                            break;
+                    }
                 }
             }
         }
@@ -295,6 +323,36 @@ function showStatus(message, type) {
 
 function formatTime(h, m, s) { return [h, m, s].map(v => String(Math.floor(v)).padStart(2, '0')).join(':'); }
 function formatDuration(m) { return m > 60 ? `${Math.floor(m / 60)}h ${Math.floor(m % 60)}m` : `${Math.floor(m)}m`; }
+
+function initializeCoreTimeSlider(config) {
+    const slider = document.getElementById('coreTimeSlider');
+    const valueDisplay = document.getElementById('coreTimeValue');
+
+    const format = (value) => {
+        const h = Math.floor(value / 60);
+        const m = value % 60;
+        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    }
+
+    noUiSlider.create(slider, {
+        start: [config.coreTimeStart, config.coreTimeEnd],
+        connect: true,
+        range: {
+            'min': 0,
+            'max': 1440
+        },
+        step: 15,
+        tooltips: {
+            to: format
+        }
+    });
+
+    slider.noUiSlider.on('update', (values) => {
+        const [start, end] = values.map(v => parseInt(v));
+        const duration = end - start;
+        valueDisplay.textContent = `${format(start)} - ${format(end)} (${formatDuration(duration)})`;
+    });
+}
 
 // --- Main Execution ---
 if (document.readyState === 'loading') {

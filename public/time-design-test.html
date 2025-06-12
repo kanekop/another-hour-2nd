@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Design Modes - Test Page</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -303,6 +305,11 @@
                 content: '...';
             }
         }
+
+        /* Add some basic styling for the new info card */
+        #coreTimeInfoCard {
+            display: none;
+        }
     </style>
 </head>
 
@@ -340,10 +347,15 @@
                         <div class="value" id="progress">-</div>
                         <div class="subvalue" id="remaining">-</div>
                     </div>
-                    <div class="info-card">
+                    <div class="info-card" id="phaseInfoCard">
                         <h4>Current Phase</h4>
                         <div class="value" id="phase">-</div>
                         <div class="subvalue" id="phaseInfo">-</div>
+                    </div>
+                    <div class="info-card" id="coreTimeInfoCard">
+                        <h4>Core Time</h4>
+                        <div class="value" id="coreTimeDuration">-</div>
+                        <div class="subvalue">Duration</div>
                     </div>
                 </div>
             </div>
@@ -371,6 +383,7 @@
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 
     <!-- Main script entry point for the test page -->
     <script type="module" src="js/time-design-test-main.js"></script>
