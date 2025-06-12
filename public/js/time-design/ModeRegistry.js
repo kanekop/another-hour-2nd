@@ -1,11 +1,8 @@
 // ModeRegistry.js - Registry for all Time Design Modes
-import { ClassicMode } from './modes/ClassicMode.js';
-import { CoreTimeMode } from './modes/CoreTimeMode.js';
-import { WakeBasedMode } from './modes/WakeBasedMode.js';
-import { SolarMode } from './modes/SolarMode.js';
 
 export class ModeRegistry {
   constructor() {
+<<<<<<< HEAD
     this._modes = new Map();
     this._registerDefaultModes();
   }
@@ -20,6 +17,7 @@ export class ModeRegistry {
   register(modeInstance) {
     if (this._modes.has(modeInstance.id)) {
       console.warn(`Mode [${modeInstance.id}] is already registered. Overwriting.`);
+
     }
     this._modes.set(modeInstance.id, modeInstance);
   }

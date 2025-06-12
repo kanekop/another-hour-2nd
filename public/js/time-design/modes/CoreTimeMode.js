@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // public/js/time-design/modes/CoreTimeMode.js
 
 import { BaseMode } from './BaseMode.js';
