@@ -78,14 +78,15 @@ Time Design Test Page（`/time-design-test.html`）は、Another Hour の新し�
 ### Wake-Based Mode
 **設定項目**:
 - Today's Wake Time: 起床時刻
-- Another Hour Duration: 0〜360分
+- Another Hour Duration 
 - Default Wake Time: デフォルト起床時刻
 
 **期待動作**:
 1. 起床時刻から24時間をカウント
 2. 遅く起きるほど時間が速く進む
 3. 最大2.0xまでのスケールファクター制限
-4. 24時間経過後は「Extended Day」表示
+4. 24時間経過後は「Another Hour」表示
+5. 
 
 **テスト手順**:
 1. Wake-Based Modeを選択

@@ -1,19 +1,19 @@
-// WakeBasedMode.js - Another Hour period based on wake time
+// WakeBasedMode.js - A day designed around your activity time, from wake-up to midnight.
 
 import { BaseMode } from './BaseMode.js';
 
 /**
- * WakeBasedMode - Another Hour period starts after waking up
+ * WakeBasedMode - A day designed around your activity time, from wake-up to midnight.
  */
 export class WakeBasedMode extends BaseMode {
   constructor() {
     super(
       'wake-based',
       'Wake-Based Mode',
-      'Another Hour period starts after waking up.',
+      'Your day, from wake-up to midnight, is redesigned. The end of your day becomes a focused Another Hour.',
       {
         wakeTime: { type: 'time', label: 'Today\'s Wake Time', default: '07:00' },
-        anotherHourDuration: { type: 'number', label: 'Another Hour Duration (minutes)', min: 0, max: 360, default: 60 },
+        anotherHourDuration: { type: 'number', label: 'Another Hour Duration (minutes)', min: 0, max: 720, default: 60 },
       }
     );
   }
@@ -30,8 +30,10 @@ export class WakeBasedMode extends BaseMode {
     if (!config.wakeTime || !/^\d{2}:\d{2}$/.test(config.wakeTime)) {
       errors.push('Wake time must be in HH:MM format.');
     }
-    if (config.anotherHourDuration === undefined || typeof config.anotherHourDuration !== 'number' || config.anotherHourDuration < 0) {
-      errors.push('Another Hour duration must be a non-negative number.');
+    const wakeTimeMinutes = this._parseTime(config.wakeTime);
+    const activityMinutes = 1440 - wakeTimeMinutes;
+    if (config.anotherHourDuration >= activityMinutes) {
+      errors.push('Another Hour duration must be less than the total activity time.');
     }
     return { valid: errors.length === 0, errors };
   }
@@ -44,59 +46,41 @@ export class WakeBasedMode extends BaseMode {
   _buildSegments(config) {
     const wakeTimeMinutes = this._parseTime(config.wakeTime);
     const ahDuration = config.anotherHourDuration;
-    const designedEnd = wakeTimeMinutes + ahDuration;
 
-    // A day in this mode is defined as 24 hours starting from wake-up time.
-    // The timeline wraps around midnight.
+    // Total available time from wake-up to midnight.
+    const totalActivityMinutes = 1440 - wakeTimeMinutes;
 
-    const anotherHourSegment = {
-      start: wakeTimeMinutes,
-      end: wakeTimeMinutes + ahDuration,
-      type: 'another'
-    };
+    // The real-time duration available for the "Designed" period.
+    const designedRealDuration = totalActivityMinutes - ahDuration;
 
-    const designedSegment = {
-      start: anotherHourSegment.end,
-      end: anotherHourSegment.end + (1440 - ahDuration),
-      type: 'designed'
-    };
+    if (designedRealDuration <= 0) return [];
 
-    const segments = [];
-    const scaleFactor = (1440 - ahDuration) > 0 ? 1440 / (1440 - ahDuration) : 1;
+    // The scale factor compresses the totalActivityMinutes into the designedRealDuration.
+    const scaleFactor = totalActivityMinutes / designedRealDuration;
 
-    // The logic needs to handle segments that cross midnight (e.g., wake at 23:00)
-    // For simplicity, we can think of time as a continuous line from wake-up.
-    // However, getMinutesSinceMidnight is based on a real day.
-    // A better approach is to calculate minutes *since wake-up time*.
+    const anotherHourStart = 1440 - ahDuration;
 
-    // We create segments for a "virtual" day that starts at wakeTime.
-    // The actual mapping from real time to virtual time happens in calculate().
-    segments.push(this.createSegment('another', 0, ahDuration, 1.0, 'Another Hour'));
-    segments.push(this.createSegment('designed', ahDuration, 1440, scaleFactor, 'Designed Day'));
+    const segments = [
+      this.createSegment('another', 0, wakeTimeMinutes, 1.0, 'Night'),
+      this.createSegment('designed', wakeTimeMinutes, anotherHourStart, scaleFactor, 'Designed Day'),
+      this.createSegment('another', anotherHourStart, 1440, 1.0, 'Another Hour'),
+    ];
 
-    return segments;
+    return segments.filter(s => s.duration > 0);
   }
 
   calculate(date, timezone, config) {
     const realMinutes = this.getMinutesSinceMidnight(date, timezone);
-    const wakeTimeMinutes = this._parseTime(config.wakeTime);
-
-    // Calculate minutes since wake-up, handling midnight wrap-around
-    let minutesSinceWake = realMinutes - wakeTimeMinutes;
-    if (minutesSinceWake < 0) {
-      minutesSinceWake += 1440; // Add a full day if current time is "before" wake-up time (e.g., wake at 7:00, current is 2:00)
-    }
-
     const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutesSinceWake, segments);
+    const activeSegment = this.findActiveSegment(realMinutes, segments);
+    const wakeTimeMinutes = this._parseTime(config.wakeTime);
 
     if (!activeSegment) {
       return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' } };
     }
 
     let displayHours, displayMinutes, displaySeconds;
-
-    const { progress, remaining } = this.calculateProgress(minutesSinceWake, activeSegment);
+    const { progress, remaining, duration } = this.calculateProgress(realMinutes, activeSegment);
 
     if (activeSegment.type === 'another') {
       const remainingTotalSeconds = remaining * 60;
@@ -104,13 +88,20 @@ export class WakeBasedMode extends BaseMode {
       displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
       displaySeconds = Math.floor(remainingTotalSeconds % 60);
     } else { // 'designed'
-      const segmentElapsed = minutesSinceWake - activeSegment.startTime;
-      const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
-      const scaledTotalMinutes = scaledElapsed;
-      displayHours = Math.floor(scaledTotalMinutes / 60) % 24;
-      displayMinutes = Math.floor(scaledTotalMinutes % 60);
-      displaySeconds = Math.floor((scaledTotalMinutes * 60) % 60);
+      // Elapsed real time since wake-up.
+      const elapsedRealMinutesInPeriod = realMinutes - wakeTimeMinutes;
+      // The scaled time starts from 0 at wake-up.
+      const scaledElapsedMinutes = elapsedRealMinutesInPeriod * activeSegment.scaleFactor;
+
+      const scaledTotalSeconds = scaledElapsedMinutes * 60 + date.getSeconds() * activeSegment.scaleFactor;
+
+      displayHours = Math.floor(scaledTotalSeconds / 3600);
+      displayMinutes = Math.floor((scaledTotalSeconds % 3600) / 60);
+      displaySeconds = Math.floor(scaledTotalSeconds % 60);
     }
+
+    const totalActivityMinutes = 1440 - wakeTimeMinutes;
+    const segmentDuration = activeSegment.label === 'Designed Day' ? totalActivityMinutes : activeSegment.duration;
 
     return {
       hours: displayHours,
@@ -118,7 +109,7 @@ export class WakeBasedMode extends BaseMode {
       seconds: displaySeconds,
       scaleFactor: activeSegment.scaleFactor,
       isAnotherHour: activeSegment.type === 'another',
-      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: activeSegment.duration },
+      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: segmentDuration },
       periodName: activeSegment.label,
     };
   }
