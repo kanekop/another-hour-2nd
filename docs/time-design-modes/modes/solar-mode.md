@@ -1,5 +1,11 @@
 # Solar Mode: A Deep Dive
 
+**📋 完全仕様書**: より詳細な技術仕様は [Solar Mode Complete Specification](../../specifications/solar-mode-spec.md) を参照してください。
+
+**🧪 テストページ**: 
+- 既存実装: [Solar Mode Test Page](/pages/time-design-test.html)
+- 南中固定版: [Solar Mode V2 Test Page](/pages/tests/solar-mode-v2-test.html)
+
 ## 📋 概要 (Overview)
 
 Solar Mode（太陽光モード）は、**地球の自然なリズムとあなたの生活を同期させる**ことを目的とした、ダイナミックな時間設計モードです。

@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Mode Test - Another Hour</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            opacity: 0.8;
+        }
+
+        .value {
+            font-weight: bold;
+            color: #ffed4e;
+        }
+
+        .control-group {
+            margin: 15px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        select, input[type="range"], input[type="time"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        select option {
+            background: #302b63;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ffd700;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .range-value {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 1.2em;
+            color: #ffd700;
+        }
+
+        .clock-container {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .digital-clock {
+            font-size: 4em;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .ah-label {
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        .sun-position {
+            position: relative;
+            width: 300px;
+            height: 150px;
+            margin: 20px auto;
+            background: linear-gradient(to bottom, #87CEEB 0%, #FDB813 50%, #1e3c72 100%);
+            border-radius: 150px 150px 0 0;
+            overflow: hidden;
+        }
+
+        .sun {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #ffd700;
+            border-radius: 50%;
+            box-shadow: 0 0 30px #ffd700;
+            transition: all 0.3s ease;
+        }
+
+        .horizon-line {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .scale-indicators {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .scale-box {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .scale-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .scale-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .day-scale { color: #87CEEB; }
+        .night-scale { color: #9370DB; }
+
+        button {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1e3c72;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .test-log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .warning {
+            background: rgba(255, 152, 0, 0.2);
+            border: 1px solid #ff9800;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .noon-marker {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 100%;
+            background: #ffd700;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>☀️ Solar Mode Test</h1>
+        <p class="subtitle">Testing Another Hour Solar Time Implementation</p>
+
+        <div class="test-grid">
+            <!-- Configuration Card -->
+            <div class="card">
+                <h2>⚙️ Configuration</h2>
+                
+                <div class="control-group">
+                    <label for="city-select">Location:</label>
+                    <select id="city-select">
+                        <option value="tokyo">Tokyo, Japan</option>
+                        <option value="kumamoto">Kumamoto, Japan</option>
+                        <option value="newyork">New York, USA</option>
+                        <option value="london">London, UK</option>
+                        <option value="singapore">Singapore</option>
+                        <option value="sydney">Sydney, Australia</option>
+                        <option value="custom">Custom Coordinates</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="custom-coords" style="display: none;">
+                    <label>Latitude: <input type="number" id="latitude" step="0.0001" value="35.6762"></label>
+                    <label>Longitude: <input type="number" id="longitude" step="0.0001" value="139.6503"></label>
+                </div>
+
+                <div class="control-group">
+                    <label for="day-hours">Designed Day Hours:</label>
+                    <input type="range" id="day-hours" min="1" max="23" value="12" step="0.5">
+                    <div class="range-value" id="day-hours-value">12.0 hours</div>
+                </div>
+
+                <div class="control-group">
+                    <label for="test-date">Test Date:</label>
+                    <input type="date" id="test-date">
+                </div>
+
+                <div class="control-group">
+                    <label for="test-time">Test Time:</label>
+                    <input type="time" id="test-time" step="1">
+                </div>
+
+                <button onclick="applySettings()">Apply Settings</button>
+                <button onclick="resetToDefaults()">Reset to Actual</button>
+            </div>
+
+            <!-- Solar Information Card -->
+            <div class="card">
+                <h2>🌅 Solar Information</h2>
+                <div class="info-row">
+                    <span class="label">Sunrise:</span>
+                    <span class="value" id="sunrise-time">--:--</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Solar Noon:</span>
+                    <span class="value" id="solar-noon-time">--:--</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Sunset:</span>
+                    <span class="value" id="sunset-time">--:--</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Daylight Duration:</span>
+                    <span class="value" id="daylight-duration">-- h -- m</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Night Duration:</span>
+                    <span class="value" id="night-duration">-- h -- m</span>
+                </div>
+                
+                <div class="sun-position">
+                    <div class="noon-marker"></div>
+                    <div class="sun" id="sun-indicator"></div>
+                    <div class="horizon-line"></div>
+                </div>
+            </div>
+
+            <!-- Another Hour Display Card -->
+            <div class="card clock-container">
+                <h2>⏰ Another Hour Time</h2>
+                <div class="digital-clock" id="ah-time">00:00:00</div>
+                <div class="ah-label" id="ah-phase">Initializing...</div>
+                
+                <div class="scale-indicators">
+                    <div class="scale-box">
+                        <div class="scale-label">Day Scale</div>
+                        <div class="scale-value day-scale" id="day-scale">1.00x</div>
+                    </div>
+                    <div class="scale-box">
+                        <div class="scale-label">Night Scale</div>
+                        <div class="scale-value night-scale" id="night-scale">1.00x</div>
+                    </div>
+                </div>
+
+                <div class="info-row" style="margin-top: 20px;">
+                    <span class="label">Real Time:</span>
+                    <span class="value" id="real-time">--:--:--</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Current Scale:</span>
+                    <span class="value" id="current-scale">1.00x</span>
+                </div>
+            </div>
+
+            <!-- Test Results Card -->
+            <div class="card">
+                <h2>🧪 Test Results</h2>
+                <div id="test-results">
+                    <div class="info-row">
+                        <span class="label">AH Noon Time:</span>
+                        <span class="value" id="ah-noon">12:00:00</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">AH Sunrise:</span>
+                        <span class="value" id="ah-sunrise">--:--:--</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">AH Sunset:</span>
+                        <span class="value" id="ah-sunset">--:--:--</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Phase:</span>
+                        <span class="value" id="current-phase">Day/Night</span>
+                    </div>
+                </div>
+
+                <button onclick="runTests()">Run All Tests</button>
+                <button onclick="exportTestData()">Export Test Data</button>
+            </div>
+        </div>
+
+        <!-- Test Log -->
+        <div class="card">
+            <h2>📝 Test Log</h2>
+            <div class="test-log" id="test-log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
+    <script>
+        // City coordinates database
+        const cities = {
+            tokyo: { name: 'Tokyo', lat: 35.6762, lng: 139.6503, tz: 'Asia/Tokyo' },
+            kumamoto: { name: 'Kumamoto', lat: 32.8032, lng: 130.7079, tz: 'Asia/Tokyo' },
+            newyork: { name: 'New York', lat: 40.7128, lng: -74.0060, tz: 'America/New_York' },
+            london: { name: 'London', lat: 51.5074, lng: -0.1278, tz: 'Europe/London' },
+            singapore: { name: 'Singapore', lat: 1.3521, lng: 103.8198, tz: 'Asia/Singapore' },
+            sydney: { name: 'Sydney', lat: -33.8688, lng: 151.2093, tz: 'Australia/Sydney' }
+        };
+
+        // Solar Mode implementation
+        class SolarModeV2 {
+            constructor() {
+                this.location = cities.tokyo;
+                this.designedDayHours = 12;
+                this.testDate = new Date();
+                this.updateInterval = null;
+            }
+
+            setLocation(cityKey) {
+                if (cityKey === 'custom') {
+                    this.location = {
+                        name: 'Custom',
+                        lat: parseFloat(document.getElementById('latitude').value),
+                        lng: parseFloat(document.getElementById('longitude').value),
+                        tz: 'UTC'
+                    };
+                } else {
+                    this.location = cities[cityKey];
+                }
+                this.updateSolarTimes();
+            }
+
+            setDesignedDayHours(hours) {
+                this.designedDayHours = hours;
+                this.updateScaleFactors();
+            }
+
+            updateSolarTimes() {
+                const times = SunCalc.getTimes(this.testDate, this.location.lat, this.location.lng);
+                
+                this.sunrise = times.sunrise;
+                this.sunset = times.sunset;
+                this.solarNoon = new Date((this.sunrise.getTime() + this.sunset.getTime()) / 2);
+                
+                // Calculate durations
+                this.actualDayMinutes = (this.sunset - this.sunrise) / 60000;
+                this.actualNightMinutes = 1440 - this.actualDayMinutes;
+                
+                this.updateDisplay();
+                this.updateScaleFactors();
+            }
+
+            updateScaleFactors() {
+                // Calculate scale factors
+                const designedNightHours = 24 - this.designedDayHours;
+                
+                this.dayScaleFactor = this.designedDayHours / (this.actualDayMinutes / 60);
+                this.nightScaleFactor = designedNightHours / (this.actualNightMinutes / 60);
+                
+                // Apply limits
+                this.dayScaleFactor = Math.max(0.1, Math.min(10, this.dayScaleFactor));
+                this.nightScaleFactor = Math.max(0.1, Math.min(10, this.nightScaleFactor));
+                
+                this.updateDisplay();
+            }
+
+            getRealToAHTime(realTime) {
+                const realDate = new Date(realTime);
+                const dayStart = new Date(realDate);
+                dayStart.setHours(0, 0, 0, 0);
+                
+                // Get today's solar times
+                const times = SunCalc.getTimes(dayStart, this.location.lat, this.location.lng);
+                const sunrise = times.sunrise;
+                const sunset = times.sunset;
+                const solarNoon = new Date((sunrise.getTime() + sunset.getTime()) / 2);
+                
+                // Determine phase and calculate AH time
+                if (realTime < sunrise) {
+                    // Night phase (after midnight)
+                    const nightStart = new Date(dayStart);
+                    const progress = (realTime - nightStart) / (sunrise - nightStart);
+                    const ahHours = progress * 6; // 0:00 to 6:00
+                    return {
+                        time: this.hoursToTimeString(ahHours),
+                        phase: 'Night',
+                        scaleFactor: this.nightScaleFactor
+                    };
+                } else if (realTime < sunset) {
+                    // Day phase
+                    if (realTime <= solarNoon) {
+                        // Morning (sunrise to solar noon)
+                        const progress = (realTime - sunrise) / (solarNoon - sunrise);
+                        const ahHours = 6 + (progress * 6); // 6:00 to 12:00
+                        return {
+                            time: this.hoursToTimeString(ahHours),
+                            phase: 'Day (Morning)',
+                            scaleFactor: this.dayScaleFactor
+                        };
+                    } else {
+                        // Afternoon (solar noon to sunset)
+                        const progress = (realTime - solarNoon) / (sunset - solarNoon);
+                        const ahHours = 12 + (progress * 6); // 12:00 to 18:00
+                        return {
+                            time: this.hoursToTimeString(ahHours),
+                            phase: 'Day (Afternoon)',
+                            scaleFactor: this.dayScaleFactor
+                        };
+                    }
+                } else {
+                    // Night phase (after sunset)
+                    const nextMidnight = new Date(dayStart);
+                    nextMidnight.setDate(nextMidnight.getDate() + 1);
+                    const progress = (realTime - sunset) / (nextMidnight - sunset);
+                    const ahHours = 18 + (progress * 6); // 18:00 to 24:00
+                    return {
+                        time: this.hoursToTimeString(ahHours),
+                        phase: 'Night',
+                        scaleFactor: this.nightScaleFactor
+                    };
+                }
+            }
+
+            hoursToTimeString(hours) {
+                const h = Math.floor(hours);
+                const m = Math.floor((hours - h) * 60);
+                const s = Math.floor(((hours - h) * 60 - m) * 60);
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+
+            updateDisplay() {
+                // Update solar information
+                document.getElementById('sunrise-time').textContent = this.formatTime(this.sunrise);
+                document.getElementById('solar-noon-time').textContent = this.formatTime(this.solarNoon);
+                document.getElementById('sunset-time').textContent = this.formatTime(this.sunset);
+                
+                const dayHours = Math.floor(this.actualDayMinutes / 60);
+                const dayMins = Math.floor(this.actualDayMinutes % 60);
+                document.getElementById('daylight-duration').textContent = `${dayHours}h ${dayMins}m`;
+                
+                const nightHours = Math.floor(this.actualNightMinutes / 60);
+                const nightMins = Math.floor(this.actualNightMinutes % 60);
+                document.getElementById('night-duration').textContent = `${nightHours}h ${nightMins}m`;
+                
+                // Update scale factors
+                document.getElementById('day-scale').textContent = `${this.dayScaleFactor.toFixed(2)}x`;
+                document.getElementById('night-scale').textContent = `${this.nightScaleFactor.toFixed(2)}x`;
+                
+                // Update sun position indicator
+                this.updateSunPosition();
+            }
+
+            updateSunPosition() {
+                const now = this.testDate;
+                const sunAngle = this.getSunAngle(now);
+                const sunElement = document.getElementById('sun-indicator');
+                
+                // Position sun on the arc (0° = sunrise, 90° = noon, 180° = sunset)
+                const x = 150 + Math.cos((sunAngle - 90) * Math.PI / 180) * 120;
+                const y = 150 - Math.sin((sunAngle - 90) * Math.PI / 180) * 120;
+                
+                sunElement.style.left = `${x - 15}px`;
+                sunElement.style.top = `${y - 15}px`;
+                
+                // Hide sun if below horizon
+                if (now < this.sunrise || now > this.sunset) {
+                    sunElement.style.opacity = '0.3';
+                } else {
+                    sunElement.style.opacity = '1';
+                }
+            }
+
+            getSunAngle(time) {
+                if (time < this.sunrise) return 0;
+                if (time > this.sunset) return 180;
+                
+                const dayProgress = (time - this.sunrise) / (this.sunset - this.sunrise);
+                return dayProgress * 180;
+            }
+
+            formatTime(date) {
+                if (!date) return '--:--';
+                return date.toTimeString().substr(0, 5);
+            }
+
+            startLiveUpdate() {
+                if (this.updateInterval) clearInterval(this.updateInterval);
+                
+                this.updateInterval = setInterval(() => {
+                    const now = new Date();
+                    const testTime = document.getElementById('test-time').value;
+                    
+                    if (!testTime) {
+                        // Live mode
+                        const ahResult = this.getRealToAHTime(now);
+                        document.getElementById('ah-time').textContent = ahResult.time;
+                        document.getElementById('ah-phase').textContent = ahResult.phase;
+                        document.getElementById('real-time').textContent = now.toTimeString().substr(0, 8);
+                        document.getElementById('current-scale').textContent = `${ahResult.scaleFactor.toFixed(2)}x`;
+                        document.getElementById('current-phase').textContent = ahResult.phase;
+                        
+                        // Update sun position for current time
+                        this.testDate = now;
+                        this.updateSunPosition();
+                    }
+                }, 100);
+            }
+        }
+
+        // Global instance
+        const solarMode = new SolarModeV2();
+
+        // UI Functions
+        function applySettings() {
+            const citySelect = document.getElementById('city-select').value;
+            solarMode.setLocation(citySelect);
+            
+            const dayHours = parseFloat(document.getElementById('day-hours').value);
+            solarMode.setDesignedDayHours(dayHours);
+            
+            const testDate = document.getElementById('test-date').value;
+            if (testDate) {
+                solarMode.testDate = new Date(testDate);
+                solarMode.updateSolarTimes();
+            }
+            
+            const testTime = document.getElementById('test-time').value;
+            if (testTime) {
+                const [hours, minutes] = testTime.split(':');
+                const testDateTime = new Date(solarMode.testDate);
+                testDateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+                
+                const ahResult = solarMode.getRealToAHTime(testDateTime);
+                document.getElementById('ah-time').textContent = ahResult.time;
+                document.getElementById('ah-phase').textContent = ahResult.phase;
+                document.getElementById('real-time').textContent = testDateTime.toTimeString().substr(0, 8);
+                document.getElementById('current-scale').textContent = `${ahResult.scaleFactor.toFixed(2)}x`;
+            }
+            
+            logTest('Settings applied', 'info');
+        }
+
+        function resetToDefaults() {
+            const actualDayHours = solarMode.actualDayMinutes / 60;
+            document.getElementById('day-hours').value = actualDayHours;
+            document.getElementById('day-hours-value').textContent = `${actualDayHours.toFixed(1)} hours`;
+            solarMode.setDesignedDayHours(actualDayHours);
+            logTest('Reset to actual solar hours', 'info');
+        }
+
+        function runTests() {
+            logTest('Starting comprehensive tests...', 'info');
+            
+            // Test 1: Verify solar noon maps to 12:00
+            const solarNoonResult = solarMode.getRealToAHTime(solarMode.solarNoon);
+            const isNoonCorrect = solarNoonResult.time === '12:00:00';
+            logTest(`Solar Noon Test: ${isNoonCorrect ? 'PASS' : 'FAIL'} (${solarNoonResult.time})`, isNoonCorrect ? 'success' : 'error');
+            
+            // Test 2: Verify sunrise maps to ~6:00
+            const sunriseResult = solarMode.getRealToAHTime(solarMode.sunrise);
+            logTest(`Sunrise maps to: ${sunriseResult.time}`, 'info');
+            
+            // Test 3: Verify sunset maps to ~18:00
+            const sunsetResult = solarMode.getRealToAHTime(solarMode.sunset);
+            logTest(`Sunset maps to: ${sunsetResult.time}`, 'info');
+            
+            // Test 4: Scale factor validation
+            const scaleValid = solarMode.dayScaleFactor > 0.1 && solarMode.dayScaleFactor < 10 &&
+                               solarMode.nightScaleFactor > 0.1 && solarMode.nightScaleFactor < 10;
+            logTest(`Scale Factor Test: ${scaleValid ? 'PASS' : 'FAIL'}`, scaleValid ? 'success' : 'error');
+            
+            // Test 5: Phase transitions
+            const beforeSunrise = new Date(solarMode.sunrise);
+            beforeSunrise.setMinutes(beforeSunrise.getMinutes() - 1);
+            const phaseBeforeSunrise = solarMode.getRealToAHTime(beforeSunrise).phase;
+            
+            const afterSunrise = new Date(solarMode.sunrise);
+            afterSunrise.setMinutes(afterSunrise.getMinutes() + 1);
+            const phaseAfterSunrise = solarMode.getRealToAHTime(afterSunrise).phase;
+            
+            const transitionCorrect = phaseBeforeSunrise === 'Night' && phaseAfterSunrise.includes('Day');
+            logTest(`Phase Transition Test: ${transitionCorrect ? 'PASS' : 'FAIL'}`, transitionCorrect ? 'success' : 'error');
+            
+            // Update test results display
+            document.getElementById('ah-sunrise').textContent = sunriseResult.time;
+            document.getElementById('ah-sunset').textContent = sunsetResult.time;
+            
+            logTest('All tests completed', 'info');
+        }
+
+        function exportTestData() {
+            const testData = {
+                location: solarMode.location,
+                testDate: solarMode.testDate.toISOString(),
+                solarTimes: {
+                    sunrise: solarMode.sunrise.toISOString(),
+                    solarNoon: solarMode.solarNoon.toISOString(),
+                    sunset: solarMode.sunset.toISOString()
+                },
+                configuration: {
+                    designedDayHours: solarMode.designedDayHours,
+                    designedNightHours: 24 - solarMode.designedDayHours
+                },
+                scaleFactors: {
+                    day: solarMode.dayScaleFactor,
+                    night: solarMode.nightScaleFactor
+                },
+                durations: {
+                    actualDayMinutes: solarMode.actualDayMinutes,
+                    actualNightMinutes: solarMode.actualNightMinutes
+                }
+            };
+            
+            const dataStr = JSON.stringify(testData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `solar-mode-test-${new Date().toISOString()}.json`;
+            a.click();
+            
+            logTest('Test data exported', 'success');
+        }
+
+        function logTest(message, type = 'info') {
+            const log = document.getElementById('test-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.style.borderLeft = `3px solid ${type === 'error' ? '#ff5252' : type === 'success' ? '#4caf50' : '#ffd700'}`;
+            entry.textContent = `[${new Date().toTimeString().substr(0, 8)}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Event listeners
+        document.getElementById('city-select').addEventListener('change', (e) => {
+            const customCoords = document.getElementById('custom-coords');
+            customCoords.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        });
+
+        document.getElementById('day-hours').addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            document.getElementById('day-hours-value').textContent = `${value.toFixed(1)} hours`;
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set today's date
+            const today = new Date();
+            document.getElementById('test-date').value = today.toISOString().split('T')[0];
+            
+            // Initialize solar mode
+            solarMode.updateSolarTimes();
+            solarMode.startLiveUpdate();
+            
+            // Set default day hours to actual daylight
+            const actualDayHours = solarMode.actualDayMinutes / 60;
+            document.getElementById('day-hours').value = actualDayHours;
+            document.getElementById('day-hours-value').textContent = `${actualDayHours.toFixed(1)} hours`;
+            
+            logTest('Solar Mode Test initialized', 'success');
+        });
+    </script>
+</body>
+</html>
