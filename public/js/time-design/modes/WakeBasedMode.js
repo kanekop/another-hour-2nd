@@ -6,6 +6,14 @@ import { BaseMode } from './BaseMode.js';
  * WakeBasedMode - A day designed around your activity time, from wake-up to midnight.
  */
 export class WakeBasedMode extends BaseMode {
+  static getDefaultConfig() {
+    return {
+      wakeTime: '07:00',
+      sleepTime: '23:00',
+      dayHours: 16,
+    };
+  }
+
   constructor() {
     super(
       'wake-based',

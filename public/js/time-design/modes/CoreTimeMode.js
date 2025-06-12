@@ -6,6 +6,14 @@ import { BaseMode } from './BaseMode.js';
  * CoreTimeMode - Define productive hours with Another Hour periods before and after
  */
 export class CoreTimeMode extends BaseMode {
+  static getDefaultConfig() {
+    return {
+      coreTimeStart: 480, // 08:00
+      coreTimeEnd: 1020, // 17:00
+      dayHours: 12,
+    };
+  }
+
   constructor() {
     super(
       'core-time',

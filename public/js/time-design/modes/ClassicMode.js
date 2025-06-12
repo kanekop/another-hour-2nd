@@ -27,9 +27,9 @@ export class ClassicMode extends BaseMode {
   /**
    * Get default configuration
    */
-  getDefaultConfig() {
+  static getDefaultConfig() {
     return {
-      designed24Duration: 1380 // 23 hours
+      designed24Duration: 1380, // Default to 23 hours
     };
   }
 
