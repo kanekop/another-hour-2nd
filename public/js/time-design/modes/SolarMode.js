@@ -25,12 +25,7 @@ export class SolarMode extends BaseMode {
         city: {
           type: 'select',
           label: 'City',
-          options: [
-            { value: 'tokyo', text: 'Tokyo' },
-            { value: 'kumamoto', text: 'Kumamoto' },
-            { value: 'newyork', text: 'New York' },
-            { value: 'london', text: 'London' }
-          ],
+          options: Object.entries(CITIES).map(([key, value]) => ({ value: key, text: value.name })),
           default: 'tokyo'
         },
         dayHours: { type: 'number', label: 'Day Hours', min: 1, max: 23, default: 12 },
