@@ -2,16 +2,12 @@
 import { BaseMode } from './BaseMode.js';
 
 export class WakeBasedMode extends BaseMode {
-  getName() {
-    return 'wake-based';
-  }
-
-  getDisplayName() {
-    return 'Wake-Based Mode';
-  }
-
-  getDescription() {
-    return 'Another Hour period starts after waking up';
+  constructor() {
+    super(
+      'wake-based',
+      'Wake-Based Mode',
+      'Another Hour period starts after waking up'
+    );
   }
 
   getDefaultConfig() {
@@ -22,7 +18,24 @@ export class WakeBasedMode extends BaseMode {
     };
   }
 
-  calculateAngles(date, timezone, config) {
+  validate(config) {
+    const errors = [];
+    
+    if (typeof config.anotherHourDuration !== 'number' || config.anotherHourDuration < 0) {
+      errors.push('Another Hour duration must be a positive number');
+    }
+    
+    if (typeof config.defaultWakeTime !== 'number' || config.defaultWakeTime < 0 || config.defaultWakeTime >= 1440) {
+      errors.push('Default wake time must be between 0 and 1439 minutes');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
+  calculate(date, timezone, config) {
     const now = new Date(date);
     const today = now.toDateString();
 

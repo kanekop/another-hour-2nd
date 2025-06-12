@@ -118,6 +118,59 @@ export class TimeDesignManager {
       }
     });
   }
+
+  // Add methods expected by the HTML interface
+  async initialize() {
+    // Already initialized in constructor, just return resolved promise
+    return Promise.resolve();
+  }
+
+  async setMode(modeId, config = null) {
+    const mode = this.registry.get(modeId);
+    if (!mode) {
+      console.error(`Attempted to set unknown mode: ${modeId}`);
+      return false;
+    }
+
+    const finalConfig = config || mode.getDefaultConfig();
+    const validation = mode.validate(finalConfig);
+    if (!validation.valid) {
+      console.error(`Invalid config for mode ${modeId}:`, validation.errors);
+      return false;
+    }
+
+    this.currentModeId = modeId;
+    this.currentConfig = finalConfig;
+    this.saveConfiguration();
+    return true;
+  }
+
+  getCurrentMode() {
+    if (!this.currentModeId) return null;
+    const mode = this.registry.get(this.currentModeId);
+    return mode ? {
+      id: this.currentModeId,
+      name: mode.name,
+      description: mode.description,
+      config: this.currentConfig
+    } : null;
+  }
+
+  calculate(date, timezone) {
+    if (!this.currentModeId) {
+      throw new Error('No mode selected');
+    }
+    const mode = this.registry.get(this.currentModeId);
+    return mode.calculate(date, timezone, this.currentConfig);
+  }
+
+  subscribe(listener) {
+    this.addListener(listener);
+  }
+
+  unsubscribe(listener) {
+    this.removeListener(listener);
+  }
 }
 
 // Create and export singleton instance

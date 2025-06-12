@@ -1,124 +1,60 @@
-
-// BaseMode.js - Base class for all Time Design Modes
-
-/**
- * @typedef {Object} ValidationResult
- * @property {boolean} valid
- * @property {string[]} [errors]
- */
-
-/**
- * @typedef {Object} TimeCalculationResult
- * @property {number} hours
- * @property {number} minutes
- * @property {number} seconds
- * @property {number} scaleFactor
- * @property {boolean} isAnotherHour
- * @property {object} segmentInfo
- */
+// BaseMode.js - Abstract base class for Time Design Modes
 
 export class BaseMode {
-  constructor(id, name, description, configSchema) {
+  constructor(id, name, description, configSchema = {}) {
     if (this.constructor === BaseMode) {
-      throw new Error("Abstract classes can't be instantiated.");
+      throw new Error('BaseMode is an abstract class and cannot be instantiated directly');
     }
+
     this.id = id;
     this.name = name;
     this.description = description;
-    this.configSchema = configSchema || {};
+    this.configSchema = configSchema;
   }
 
-  /**
-   * @param {object} config
-   * @returns {ValidationResult}
-   */
-  validate(config) {
-    throw new Error('validate() must be implemented');
-  }
-
-  /**
-   * @param {Date} date
-   * @param {string} timezone
-   * @param {object} config
-   * @returns {TimeCalculationResult}
-   */
-  calculate(date, timezone, config) {
-    throw new Error('calculate() must be implemented');
-  }
-
-  /**
-   * @returns {object}
-   */
+  // Abstract methods that must be implemented by subclasses
   getDefaultConfig() {
-    throw new Error('getDefaultConfig() must be implemented');
+    throw new Error('getDefaultConfig() must be implemented by subclass');
   }
 
-  // --- Common utility methods ---
+  validate(config) {
+    throw new Error('validate() must be implemented by subclass');
+  }
+
+  calculate(date, timezone, config) {
+    throw new Error('calculate() must be implemented by subclass');
+  }
+
+  // Utility methods available to all modes
+  getMinutesSinceMidnight(date, timezone) {
+    // Convert to specified timezone
+    const localDate = new Date(date.toLocaleString("en-US", {timeZone: timezone}));
+    return localDate.getHours() * 60 + localDate.getMinutes();
+  }
+
+  formatDuration(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  }
 
   createSegment(type, startTime, endTime, scaleFactor, label) {
     return {
-      id: `${type}-${startTime}-${endTime}`,
-      type,
-      startTime,
-      endTime,
-      scaleFactor,
-      label
+      type,           // 'designed' or 'another'
+      startTime,      // minutes since midnight
+      endTime,        // minutes since midnight
+      scaleFactor,    // time scaling factor
+      label,          // human-readable label
+      duration: endTime - startTime
     };
   }
 
-  getMinutesSinceMidnight(date, timezone) {
-    const localTime = moment(date).tz(timezone);
-    return localTime.hours() * 60 + localTime.minutes();
-  }
-
-  findActiveSegment(minutes, segments) {
-    return segments.find(segment =>
-      minutes >= segment.startTime && minutes < segment.endTime
+  findActiveSegment(currentMinutes, segments) {
+    return segments.find(segment => 
+      currentMinutes >= segment.startTime && currentMinutes < segment.endTime
     );
-  }
-
-  getName() {
-    throw new Error('getName() must be implemented by subclass');
-  }
-
-  getDisplayName() {
-    throw new Error('getDisplayName() must be implemented by subclass');
-  }
-
-  getDescription() {
-    throw new Error('getDescription() must be implemented by subclass');
-  }
-
-  getConfigSchema() {
-    return {};
-  }
-
-  calculateAngles(date, timezone, config) {
-    throw new Error('calculateAngles() must be implemented by subclass');
-  }
-
-  // Utility methods for angle calculations
-  timeToAngle(hours, minutes, seconds = 0) {
-    const totalMinutes = hours * 60 + minutes + seconds / 60;
-    return (totalMinutes / (24 * 60)) * 360;
-  }
-
-  normalizeAngle(angle) {
-    while (angle < 0) angle += 360;
-    while (angle >= 360) angle -= 360;
-    return angle;
-  }
-
-  // Standard time calculations
-  getStandardAngles(date) {
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-
-    return {
-      hourAngle: this.normalizeAngle((hours % 12) * 30 + minutes * 0.5 + seconds * (0.5 / 60)),
-      minuteAngle: this.normalizeAngle(minutes * 6 + seconds * 0.1),
-      secondAngle: this.normalizeAngle(seconds * 6)
-    };
   }
 }

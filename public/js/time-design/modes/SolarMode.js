@@ -2,16 +2,12 @@
 import { BaseMode } from './BaseMode.js';
 
 export class SolarMode extends BaseMode {
-  getName() {
-    return 'solar';
-  }
-
-  getDisplayName() {
-    return 'Solar Mode';
-  }
-
-  getDescription() {
-    return 'Time synchronized with sunrise and sunset cycles';
+  constructor() {
+    super(
+      'solar',
+      'Solar Mode',
+      'Time synchronized with sunrise and sunset cycles'
+    );
   }
 
   getDefaultConfig() {
@@ -27,7 +23,38 @@ export class SolarMode extends BaseMode {
     };
   }
 
-  calculateAngles(date, timezone, config) {
+  validate(config) {
+    const errors = [];
+    
+    if (!config.location || typeof config.location !== 'object') {
+      errors.push('Location must be an object');
+    } else {
+      if (typeof config.location.latitude !== 'number' || config.location.latitude < -90 || config.location.latitude > 90) {
+        errors.push('Latitude must be between -90 and 90');
+      }
+      if (typeof config.location.longitude !== 'number' || config.location.longitude < -180 || config.location.longitude > 180) {
+        errors.push('Longitude must be between -180 and 180');
+      }
+    }
+
+    if (!config.dayNightRatio || typeof config.dayNightRatio !== 'object') {
+      errors.push('Day/night ratio must be an object');
+    } else {
+      if (typeof config.dayNightRatio.day !== 'number' || config.dayNightRatio.day <= 0) {
+        errors.push('Day hours must be a positive number');
+      }
+      if (typeof config.dayNightRatio.night !== 'number' || config.dayNightRatio.night <= 0) {
+        errors.push('Night hours must be a positive number');
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
+  calculate(date, timezone, config) {
     const now = new Date(date);
 
     // Simplified solar calculation (would use proper solar library in production)

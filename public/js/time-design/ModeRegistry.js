@@ -1,4 +1,8 @@
 // ModeRegistry.js - Registry for all Time Design Modes
+import { ClassicMode } from './modes/ClassicMode.js';
+import { CoreTimeMode } from './modes/CoreTimeMode.js';
+import { WakeBasedMode } from './modes/WakeBasedMode.js';
+import { SolarMode } from './modes/SolarMode.js';
 
 export class ModeRegistry {
   constructor() {
@@ -9,8 +13,8 @@ export class ModeRegistry {
   _registerDefaultModes() {
     this.register(new ClassicMode());
     this.register(new CoreTimeMode());
-    this.register('wakeBased', WakeBasedMode);
-    this.register('solar', SolarMode);
+    this.register(new WakeBasedMode());
+    this.register(new SolarMode());
   }
 
   register(modeInstance) {
