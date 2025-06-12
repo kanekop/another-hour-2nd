@@ -1,27 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AH Timer</title>
-  <style>
-    .back-link {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      text-decoration: none;
-      color: #333;
-      font-weight: 500;
-    }
-    .back-link:hover {
-      text-decoration: underline;
-    }
-  </style>
-    <link rel="stylesheet" href="/style.css"> 
-    <link rel="stylesheet" href="/css/components.css"> 
-    <link rel="stylesheet" href="/css/timer.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&display=swap"> 
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AH Timer</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/timer.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&display=swap">
 </head>
+
 <body>
   <a href="/" class="back-link">Back</a>
   <div class="timer-input">
@@ -30,13 +19,14 @@
     <input type="number" id="seconds" placeholder="SS" min="0" max="59">
   </div>
   <div class="timer-display">00:00:00</div>
-  <div class="controls"> 
+  <div class="controls">
     <button id="start">Start</button>
     <button id="stop">Stop</button>
     <button id="reset">Reset</button>
-  </div> 
+  </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
   <script type="module" src="/js/timer-ui.js"></script>
 </body>
+
 </html>

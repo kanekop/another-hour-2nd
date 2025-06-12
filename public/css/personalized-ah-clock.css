@@ -7,7 +7,8 @@
   align-items: center;
   text-align: center;
   width: 100%;
-  max-width: 600px; /* Adjust as needed */
+  max-width: 600px;
+  /* Adjust as needed */
   margin: 0 auto;
   padding: 5px;
 }
@@ -37,12 +38,15 @@ body.inverted .clock-settings-container {
 
 .setting-group {
   margin-bottom: 15px;
-  /* text-align: center; */ /* 必要に応じて */
+  /* text-align: center; */
+  /* 必要に応じて */
 }
 
-.setting-group label[for="normal-duration-slider"] { /* ラベルの特定 */
+.setting-group label[for="normal-duration-slider"] {
+  /* ラベルの特定 */
   display: block;
-  margin-bottom: 10px; /* スライダーとの間隔 */
+  margin-bottom: 10px;
+  /* スライダーとの間隔 */
   font-weight: 500;
 }
 
@@ -50,7 +54,8 @@ body.inverted .clock-settings-container {
 .slider-wrapper {
   position: relative;
   width: 80%;
-  margin: 20px auto 50px auto; /* 下側のマージンを増やして、▼とテキストのスペースを確保 */
+  margin: 20px auto 50px auto;
+  /* 下側のマージンを増やして、▼とテキストのスペースを確保 */
 }
 
 /* input type=range の基本スタイルリセット */
@@ -58,8 +63,10 @@ input[type="range"]#normal-duration-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 12px; /* トラックの太さ */
-  background: transparent; /* デフォルト背景を消す */
+  height: 12px;
+  /* トラックの太さ */
+  background: transparent;
+  /* デフォルト背景を消す */
   cursor: pointer;
   outline: none;
 }
@@ -69,11 +76,15 @@ input[type="range"]#normal-duration-slider::-webkit-slider-runnable-track {
   width: 100%;
   height: 12px;
   background: linear-gradient(to right,
-    #6e8bc4 0%, /* 淡い水色 */
-    #6e8bc4 var(--slider-progress-percent, 95.83%), /* JSで更新 (例: 1380分/1440分) */
-    #5c641b var(--slider-progress-percent, 95.83%), /* 混合色 - JSで更新 */
-    #5c641b 100% /* 混合色 */
-  );
+      #6e8bc4 0%,
+      /* 淡い水色 */
+      #6e8bc4 var(--slider-progress-percent, 95.83%),
+      /* JSで更新 (例: 1380分/1440分) */
+      #5c641b var(--slider-progress-percent, 95.83%),
+      /* 混合色 - JSで更新 */
+      #5c641b 100%
+      /* 混合色 */
+    );
   border-radius: 6px;
 }
 
@@ -82,11 +93,10 @@ input[type="range"]#normal-duration-slider::-moz-range-track {
   width: 100%;
   height: 12px;
   background: linear-gradient(to right,
-    #6e8bc4 0%,
-    #6e8bc4 var(--slider-progress-percent, 95.83%),
-    #5c641b var(--slider-progress-percent, 95.83%),
-    #5c641b 100%
-  );
+      #6e8bc4 0%,
+      #6e8bc4 var(--slider-progress-percent, 95.83%),
+      #5c641b var(--slider-progress-percent, 95.83%),
+      #5c641b 100%);
   border-radius: 6px;
   border: none;
 }
@@ -96,14 +106,20 @@ input[type="range"]#normal-duration-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   border: 1px solid #333;
-  height: 24px; /* つまみの高さ */
-  width: 12px;  /* つまみの幅 */
+  height: 24px;
+  /* つまみの高さ */
+  width: 12px;
+  /* つまみの幅 */
   border-radius: 3px;
   /* background: #c00000; きょう */
-  background: #4CAF50; /* Changed from #c00000 to green */
-  margin-top: -6px; /* (つまみの高さ - トラックの高さ) / 2 の負の値 */
-  position: relative; /* z-indexを有効にするため */
-  z-index: 2; /* ▲マークより手前に表示 */
+  background: #4CAF50;
+  /* Changed from #c00000 to green */
+  margin-top: -6px;
+  /* (つまみの高さ - トラックの高さ) / 2 の負の値 */
+  position: relative;
+  /* z-indexを有効にするため */
+  z-index: 2;
+  /* ▲マークより手前に表示 */
 }
 
 /* つまみのスタイル - Firefox */
@@ -113,7 +129,8 @@ input[type="range"]#normal-duration-slider::-moz-range-thumb {
   width: 12px;
   border-radius: 3px;
   /* background: #c00000; きょう */
-  background: #4CAF50; /* Changed from #c00000 to green */
+  background: #4CAF50;
+  /* Changed from #c00000 to green */
   position: relative;
   z-index: 2;
 }
@@ -121,30 +138,36 @@ input[type="range"]#normal-duration-slider::-moz-range-thumb {
 /* リアルタイム表示用インジケーター (▲ + テキスト) */
 .slider-real-time-indicator {
   position: absolute;
-  /* top: -28px; */ /* この行を削除またはコメントアウト */
-  bottom: -35px; /* スライダーの下、つまみと重ならないように調整 (スライダーの高さやテキストの高さに応じて調整) */
+  /* top: -28px; */
+  /* この行を削除またはコメントアウト */
+  bottom: -35px;
+  /* スライダーの下、つまみと重ならないように調整 (スライダーの高さやテキストの高さに応じて調整) */
   left: var(--slider-thumb-position, 50%);
   transform: translateX(-50%);
   display: flex;
-  flex-direction: column; /* ▼ とテキストを縦に並べる */
+  flex-direction: column;
+  /* ▼ とテキストを縦に並べる */
   align-items: center;
   pointer-events: none;
   z-index: 1;
 }
 
-.slider-real-time-indicator::before { /* ▲マーク */
+.slider-real-time-indicator::before {
+  /* ▲マーク */
   content: '';
   width: 0;
   height: 0;
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
-  border-bottom: 9px solid #c00000; /* 赤色の三角形 */
+  border-bottom: 9px solid #c00000;
+  /* 赤色の三角形 */
   margin-bottom: 3px;
 }
 
 .slider-real-time-text {
   font-size: 0.85em;
-  color: #c00000; /* 赤色 */
+  color: #c00000;
+  /* 赤色 */
   background-color: rgba(255, 255, 255, 0.8);
   padding: 2px 5px;
   border-radius: 3px;
@@ -157,11 +180,14 @@ input[type="range"]#normal-duration-slider::-moz-range-thumb {
   /* 必要に応じてスタイル調整 */
 }
 
-#normal-duration-display { /* 元のスライダー値表示用 */
+#normal-duration-display {
+  /* 元のスライダー値表示用 */
   display: block;
-  margin-top: 8px; /* スライダーとの間隔 */
+  margin-top: 8px;
+  /* スライダーとの間隔 */
   font-size: 0.9em;
-  /* color: #555; */ /* components.css で定義されている可能性 */
+  /* color: #555; */
+  /* components.css で定義されている可能性 */
 }
 
 /* body.inverted #normal-duration-display {
@@ -206,7 +232,8 @@ body.inverted #normal-duration-display {
 
 /* Analog clock specific styling if needed beyond common components */
 #personalized-ah-analog-clock {
-  width: clamp(250px, 65vmin, 380px); /* Same as main clock */
+  width: clamp(250px, 65vmin, 380px);
+  /* Same as main clock */
   height: clamp(250px, 65vmin, 380px);
   margin: 10px auto;
   display: block;
@@ -215,7 +242,8 @@ body.inverted #normal-duration-display {
 
 /* AH Sector for personalized clock */
 #ah-personalized-sector {
-  fill: rgba(255, 193, 7, 0.1); /* Color for NORMAL duration sector */
+  fill: rgba(255, 193, 7, 0.1);
+  /* Color for NORMAL duration sector */
   stroke: rgba(255, 160, 0, 0.5);
   stroke-width: 1;
   /* transition: fill 0.3s ease, stroke 0.3s ease; /* Optional: for smooth color changes if you implement them */
@@ -226,7 +254,7 @@ body.inverted #ah-personalized-sector {
   /* If you want a different sector style for APH period AND display it, adjust JS logic */
   stroke: rgba(255, 160, 0, 0.5);
   stroke-width: 1;
-  
+
   /* fill: rgba(75, 75, 75, 0.4); 
   stroke: rgba(100, 100, 100, 0.5); */
 }
@@ -246,12 +274,15 @@ body.inverted #ah-personalized-sector {
 /* Style for hour numbers on the analog clock */
 .hour-number {
   font-family: 'Roboto Mono', monospace;
-  font-size: 10px; /* Adjust size as needed */
-  fill: #333; /* Color for light mode */
+  font-size: 10px;
+  /* Adjust size as needed */
+  fill: #333;
+  /* Color for light mode */
 }
 
 body.inverted .hour-number {
-  fill: #ccc; /* Color for dark mode */
+  fill: #ccc;
+  /* Color for dark mode */
 }
 
 .back-link {
@@ -259,25 +290,28 @@ body.inverted .hour-number {
   top: 20px;
   right: 20px;
   text-decoration: none;
-  color: #333; /* Adjust color as needed */
+  color: #333;
+  /* Adjust color as needed */
   font-weight: 500;
   padding: 8px 12px;
   background-color: #f0f0f0;
   border-radius: 4px;
   border: 1px solid #ddd;
 }
+
 body.inverted .back-link {
-    color: #ccc;
-    background-color: #333;
-    border-color: #555;
+  color: #ccc;
+  background-color: #333;
+  border-color: #555;
 }
 
 .back-link:hover {
   background-color: #e0e0e0;
   text-decoration: underline;
 }
+
 body.inverted .back-link:hover {
-    background-color: #444;
+  background-color: #444;
 }
 
 /* ... */
@@ -285,23 +319,26 @@ body.inverted .back-link:hover {
   stroke: rgba(100, 100, 100, 0.8);
   stroke-width: 2;
   stroke-linecap: round;
-  display: none; /* 通常は非表示 */
+  display: none;
+  /* 通常は非表示 */
 }
 
 body.inverted .ah-sector-indicator-line {
-    /* stroke: rgba(100, 100, 100, 0.8); */
-    stroke: rgba(255, 160, 0, 5.0);
-    stroke-width: 1;
+  /* stroke: rgba(100, 100, 100, 0.8); */
+  stroke: rgba(255, 160, 0, 5.0);
+  stroke-width: 1;
 }
 
-.controls-toggle-settings button { /* または #toggle-settings-panel-btn */
+.controls-toggle-settings button {
+  /* または #toggle-settings-panel-btn */
   /* 必要に応じて .toggle-button とは異なるスタイルをここに記述 */
   /* 例: margin-top: 10px; */
 }
 
 /* public/css/components.css または personalized-ah-clock.css */
 .view-hidden {
-  display: none !important; /* !important は必要に応じて */
+  display: none !important;
+  /* !important は必要に応じて */
 }
 
 /* public/css/personalized-ah-clock.css */
@@ -309,38 +346,50 @@ body.inverted .ah-sector-indicator-line {
 /* ... 既存のスタイル ... */
 
 #personalized-aph-graph-display-area {
-  margin-top: 20px; /* スライダーグループとの間隔調整 */
-  margin-bottom: 20px; /* スライダーグループとの間隔調整 */
+  margin-top: 20px;
+  /* スライダーグループとの間隔調整 */
+  margin-bottom: 20px;
+  /* スライダーグループとの間隔調整 */
   padding: 10px;
-  border: 1px solid #e0e0e0; /* 任意: グラフエリアを囲む場合 */
-  border-radius: 6px;       /* 任意 */
-  background-color: #f9f9f9; /* 任意: グラフエリアの背景色 */
+  border: 1px solid #e0e0e0;
+  /* 任意: グラフエリアを囲む場合 */
+  border-radius: 6px;
+  /* 任意 */
+  background-color: #f9f9f9;
+  /* 任意: グラフエリアの背景色 */
 }
 
 body.inverted #personalized-aph-graph-display-area {
-    border-color: #444;
-    background-color: #2a2a2a; /* ダークモード時の背景色 */
+  border-color: #444;
+  background-color: #2a2a2a;
+  /* ダークモード時の背景色 */
 }
 
 
 #personalized-aph-graph-display-area h4 {
-    margin-bottom: 15px;
-    font-size: 1em;
-    color: var(--light-text);
+  margin-bottom: 15px;
+  font-size: 1em;
+  color: var(--light-text);
 }
+
 body.inverted #personalized-aph-graph-display-area h4 {
-    color: var(--dark-text);
+  color: var(--dark-text);
 }
 
 /* Personalized AH Clock 内のグラフエリアのサイズ調整 */
 .personalized-clock-graph-area {
   /* APH Graph Demo の .graph-area のスタイルを参考にしつつ、
      Personalized AH Clock の Settings パネルに合うように調整 */
-  /* grid-template-columns: min-content; */ /* ← 1列指定をコメントアウトまたは変更 */
-  grid-template-columns: min-content min-content; /* ← 2列指定に変更 */
-  grid-template-rows: auto 300px; /* タイトルとグラフバーの高さ。元のAPH Graph Demoより少し小さくする例 */
-  gap: 0 20px; /* グラフ間の隙間 (今回は1つなので主に列間の意味は薄い) */
-  justify-content: center; /* グラフを中央に配置 */
+  /* grid-template-columns: min-content; */
+  /* ← 1列指定をコメントアウトまたは変更 */
+  grid-template-columns: min-content min-content;
+  /* ← 2列指定に変更 */
+  grid-template-rows: auto 300px;
+  /* タイトルとグラフバーの高さ。元のAPH Graph Demoより少し小さくする例 */
+  gap: 0 20px;
+  /* グラフ間の隙間 (今回は1つなので主に列間の意味は薄い) */
+  justify-content: center;
+  /* グラフを中央に配置 */
   margin-top: 10px;
   margin-bottom: 10px;
   /* 高さや幅を固定値にするか、親要素に追従させるかはデザイン次第 */
@@ -351,19 +400,21 @@ body.inverted #personalized-aph-graph-display-area h4 {
 
 /* Personalized AH Clock 内のグラフバーコンテナの調整 */
 #personalizedAphGraphContainer {
-    /* 必要に応じて APH Graph Demo の .aph-graph-container からスタイルを継承または上書き */
-    /* 例: width: 70px; など、バーの幅を調整 */
+  /* 必要に応じて APH Graph Demo の .aph-graph-container からスタイルを継承または上書き */
+  /* 例: width: 70px; など、バーの幅を調整 */
 }
 
 /* Personalized AH Clock 内のグラフバーの幅を調整する場合 */
 #personalizedAphGraphBar {
-    width: 70px; /* 例: APH Graph Demoの90pxより少し細く */
+  width: 70px;
+  /* 例: APH Graph Demoの90pxより少し細く */
 }
 
 
 /* Personalized AH Clock 内のY軸ラベルの位置調整などが必要な場合 */
 #personalizedAphAxisLabels .dynamic-aph-axis-label {
-    /* font-size: 0.9em; */ /* 例: 少し小さくする */
+  /* font-size: 0.9em; */
+  /* 例: 少し小さくする */
 }
 
 /*
@@ -465,7 +516,8 @@ body.inverted .fine-tune-btn:disabled {
   justify-content: center;
   transition: background-color 0.3s, transform 0.1s;
   flex-shrink: 0;
-  user-select: none; /* Prevent text selection on long press */
+  user-select: none;
+  /* Prevent text selection on long press */
   -webkit-user-select: none;
 }
 
@@ -520,7 +572,8 @@ input[type="range"]#normal-duration-slider::-webkit-slider-thumb {
   height: 24px;
   width: 12px;
   border-radius: 3px;
-  background: #4CAF50; /* Changed from #c00000 to green */
+  background: #4CAF50;
+  /* Changed from #c00000 to green */
   margin-top: -6px;
   position: relative;
   z-index: 2;
@@ -531,7 +584,8 @@ input[type="range"]#normal-duration-slider::-moz-range-thumb {
   height: 24px;
   width: 12px;
   border-radius: 3px;
-  background: #4CAF50; /* Changed from #c00000 to green */
+  background: #4CAF50;
+  /* Changed from #c00000 to green */
   position: relative;
   z-index: 2;
 }
@@ -541,11 +595,12 @@ input[type="range"]#normal-duration-slider::-webkit-slider-runnable-track {
   width: 100%;
   height: 12px;
   background: linear-gradient(to right,
-    #6e8bc4 0%, /* Normal period - blue */
-    #6e8bc4 var(--slider-progress-percent, 95.83%),
-    #d9534f var(--slider-progress-percent, 95.83%), /* APH period - changed to red */
-    #d9534f 100%
-  );
+      #6e8bc4 0%,
+      /* Normal period - blue */
+      #6e8bc4 var(--slider-progress-percent, 95.83%),
+      #d9534f var(--slider-progress-percent, 95.83%),
+      /* APH period - changed to red */
+      #d9534f 100%);
   border-radius: 6px;
 }
 
@@ -553,11 +608,11 @@ input[type="range"]#normal-duration-slider::-moz-range-track {
   width: 100%;
   height: 12px;
   background: linear-gradient(to right,
-    #6e8bc4 0%,
-    #6e8bc4 var(--slider-progress-percent, 95.83%),
-    #d9534f var(--slider-progress-percent, 95.83%), /* APH period - changed to red */
-    #d9534f 100%
-  );
+      #6e8bc4 0%,
+      #6e8bc4 var(--slider-progress-percent, 95.83%),
+      #d9534f var(--slider-progress-percent, 95.83%),
+      /* APH period - changed to red */
+      #d9534f 100%);
   border-radius: 6px;
   border: none;
 }
@@ -569,16 +624,54 @@ input[type="range"]#normal-duration-slider::-moz-range-track {
   height: 0;
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
-  border-bottom: 9px solid #4CAF50; /* Changed from #c00000 to green */
+  border-bottom: 9px solid #4CAF50;
+  /* Changed from #c00000 to green */
   margin-bottom: 3px;
 }
 
 .slider-real-time-text {
   font-size: 0.85em;
-  color: #4CAF50; /* Changed from #c00000 to green */
+  color: #4CAF50;
+  /* Changed from #c00000 to green */
   background-color: rgba(255, 255, 255, 0.8);
   padding: 2px 5px;
   border-radius: 3px;
   white-space: nowrap;
   font-weight: bold;
+}
+
+/* Theme settings panel styles */
+.theme-settings-panel {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+body.inverted .theme-settings-panel {
+  background: #2c2c2c;
+  border-color: #444;
+}
+
+.theme-settings-panel h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.theme-select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+}
+
+/* Hide/show elements based on theme */
+.analog-clock-svg {
+  display: block;
+}
+
+#personalized-ah-analog-clock {
+  transition: opacity 0.3s ease;
 }

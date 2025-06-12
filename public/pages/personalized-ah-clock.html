@@ -1,205 +1,110 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Personalized AH Clock - Another Hour</title>
-    <link rel="stylesheet" href="/style.css" />
-    <link rel="stylesheet" href="/css/components.css" />
-    <link rel="stylesheet" href="/css/personalized-ah-clock.css" />
-    <link rel="stylesheet" href="/css/aph-graph-demo.css" />
-    <link rel="stylesheet" href="/css/clock-themes.css" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&display=swap"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
-    <style>
-      /* Theme settings panel styles */
-      .theme-settings-panel {
-        margin-top: 20px;
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 6px;
-        border: 1px solid #e9ecef;
-      }
-      
-      body.inverted .theme-settings-panel {
-        background: #2c2c2c;
-        border-color: #444;
-      }
-      
-      .theme-settings-panel h3 {
-        margin-top: 0;
-        margin-bottom: 15px;
-        font-size: 1.1em;
-      }
-      
-      .theme-select {
-        width: 100%;
-        padding: 8px;
-        border-radius: 4px;
-        margin-top: 5px;
-      }
-      
-      /* Hide/show elements based on theme */
-      .analog-clock-svg {
-        display: block;
-      }
-      
-      #personalized-ah-analog-clock {
-        transition: opacity 0.3s ease;
-      }
-    </style>
-  </head>
-  <body>
-    <a href="/" class="back-link">Back</a>
-    <main class="personalized-ah-clock-container">
-      <header class="clock-settings-container page-title-header">
-        <h2 id="personalized-ah-title">Personalized AH Clock</h2>
-      </header>
-      <div id="clock-view-container">
-        <section
-          id="clock-display"
-          class="clock-display analog-clock-svg"
-          aria-label="Analog Personalized AH Clock"
-        >
-          <svg
-            id="personalized-ah-analog-clock"
-            viewBox="0 0 200 200"
-            aria-hidden="true"
-          >
-            <circle class="face common-clock-face" cx="100" cy="100" r="95" />
-            <path id="ah-personalized-sector" class="ah-sector" />
-            <line
-              id="ah-personalized-sector-indicator"
-              class="ah-sector-indicator-line"
-            />
-            <g id="ticks-personalized"></g>
-            <line
-              id="hour-personalized"
-              class="hand hour common-clock-hand common-clock-hand-hour"
-              x1="100"
-              y1="100"
-              x2="100"
-              y2="50"
-            />
-            <line
-              id="minute-personalized"
-              class="hand minute common-clock-hand common-clock-hand-minute"
-              x1="100"
-              y1="100"
-              x2="100"
-              y2="40"
-            />
-            <line
-              id="second-personalized"
-              class="hand second common-clock-hand common-clock-hand-second"
-              x1="100"
-              y1="100"
-              x2="100"
-              y2="35"
-            />
-            <circle
-              class="center common-clock-center"
-              cx="100"
-              cy="100"
-              r="3"
-            />
-          </svg>
-        </section>
 
-        <section
-          id="digital-clock-personalized"
-          class="digital-clock"
-          aria-label="Digital Personalized AH Clock"
-        >
-          <div id="personalized-aph-time" class="ah-time-display-main">
-            APH Time: 00:00:00
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personalized AH Clock - Another Hour</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/personalized-ah-clock.css" />
+  <link rel="stylesheet" href="/css/aph-graph-demo.css" />
+  <link rel="stylesheet" href="/css/clock-themes.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&display=swap" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+</head>
+
+<body>
+  <a href="/" class="back-link">Back</a>
+  <main class="personalized-ah-clock-container">
+    <header class="clock-settings-container page-title-header">
+      <h2 id="personalized-ah-title">Personalized AH Clock</h2>
+    </header>
+    <div id="clock-view-container">
+      <section id="clock-display" class="clock-display analog-clock-svg" aria-label="Analog Personalized AH Clock">
+        <svg id="personalized-ah-analog-clock" viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="face common-clock-face" cx="100" cy="100" r="95" />
+          <path id="ah-personalized-sector" class="ah-sector" />
+          <line id="ah-personalized-sector-indicator" class="ah-sector-indicator-line" />
+          <g id="ticks-personalized"></g>
+          <line id="hour-personalized" class="hand hour common-clock-hand common-clock-hand-hour" x1="100" y1="100"
+            x2="100" y2="50" />
+          <line id="minute-personalized" class="hand minute common-clock-hand common-clock-hand-minute" x1="100"
+            y1="100" x2="100" y2="40" />
+          <line id="second-personalized" class="hand second common-clock-hand common-clock-hand-second" x1="100"
+            y1="100" x2="100" y2="35" />
+          <circle class="center common-clock-center" cx="100" cy="100" r="3" />
+        </svg>
+      </section>
+
+      <section id="digital-clock-personalized" class="digital-clock" aria-label="Digital Personalized AH Clock">
+        <div id="personalized-aph-time" class="ah-time-display-main">
+          APH Time: 00:00:00
+        </div>
+        <div id="personalized-normal-time" class="normal-time-display-sub">
+          Actual: 00:00:00
+        </div>
+        <div id="personalized-aph-remaining" class="aph-remaining-time-display" style="display: none">
+          APH Remaining: 00:00:00
+        </div>
+      </section>
+    </div>
+
+    <section class="clock-settings-container" id="aph-settings-panel" style="display: none">
+      <div class="graph-area personalized-clock-graph-area">
+        <div class="graph-title real">実時間</div>
+        <div class="graph-title aph">Designed 24</div>
+
+        <div class="graph-bar-container real-hours-graph-container" id="personalizedRealHoursGraphContainer">
+          <div class="graph-bar real-hours-bar" id="personalizedRealHoursBar">
           </div>
-          <div id="personalized-normal-time" class="normal-time-display-sub">
-            Actual: 00:00:00
-          </div>
-          <div
-            id="personalized-aph-remaining"
-            class="aph-remaining-time-display"
-            style="display: none"
-          >
-            APH Remaining: 00:00:00
-          </div>
-        </section>
+        </div>
+        <div class="graph-bar-container aph-graph-container" id="personalizedAphGraphContainer">
+          <div class="graph-bar aph-bar" id="personalizedAphGraphBar"></div>
+          <div class="axis-labels aph-axis-labels" id="personalizedAphAxisLabels"></div>
+        </div>
       </div>
 
-      <section
-        class="clock-settings-container"
-        id="aph-settings-panel"
-        style="display: none"
-      >
-        <div class="graph-area personalized-clock-graph-area">
-            <div class="graph-title real">実時間</div>
-            <div class="graph-title aph">Designed 24</div>
-
-            <div class="graph-bar-container real-hours-graph-container" id="personalizedRealHoursGraphContainer">
-                <div class="graph-bar real-hours-bar" id="personalizedRealHoursBar">
-                    </div>
-                </div>
-            <div class="graph-bar-container aph-graph-container" id="personalizedAphGraphContainer">
-                <div class="graph-bar aph-bar" id="personalizedAphGraphBar"></div>
-                <div class="axis-labels aph-axis-labels" id="personalizedAphAxisLabels"></div>
+      <div class="setting-group">
+        <label for="another-hour-duration-display">Another Hour Duration Adjuster:
+        </label>
+        <div class="slider-controls">
+          <button id="slider-decrement" class="fine-tune-btn decrement" aria-label="Decrease by 1 minute"></button>
+          <div class="slider-wrapper">
+            <input type="range" id="normal-duration-slider" min="0" max="1440" value="1380" />
+            <div class="slider-real-time-indicator">
+              <span class="slider-real-time-text" id="slider-real-time-label">23:00</span>
             </div>
-        </div>
-        
-        <div class="setting-group">
-          <label for="another-hour-duration-display"
-            >Another Hour Duration Adjuster:
-          </label>
-          <div class="slider-controls">
-            <button id="slider-decrement" class="fine-tune-btn decrement" aria-label="Decrease by 1 minute"></button>
-            <div class="slider-wrapper">
-              <input
-                type="range"
-                id="normal-duration-slider"
-                min="0"
-                max="1440"
-                value="1380"
-              />
-              <div class="slider-real-time-indicator">
-                <span class="slider-real-time-text" id="slider-real-time-label"
-                  >23:00</span
-                >
-              </div>
-            </div>
-            <button id="slider-increment" class="fine-tune-btn increment" aria-label="Increase by 1 minute"></button>
           </div>
-          <span id="normal-duration-display" style="display: block">
-            Designed 24 Duration: 23 hours 0 minutes
-          </span>
+          <button id="slider-increment" class="fine-tune-btn increment" aria-label="Increase by 1 minute"></button>
+        </div>
+        <span id="normal-duration-display" style="display: block">
+          Designed 24 Duration: 23 hours 0 minutes
+        </span>
         <label for="normal-duration-slider">
           Another Hour Today:
           <span id="another-hour-duration-display"> 1 hours 0 minutes</span>
         </label>
-        </div>
-        
-        <div class="setting-group">
-          <h4 id="personalized-ah-city-name" class="personalized-ah-city"></h4>
-          <select id="timezone-select" aria-label="Select timezone"></select>
-        </div>
-        
-        <!-- Theme Settings Panel -->
-        <div id="theme-settings-container"></div>
-      </section>
-      
-      <div
-        class="controls-toggle-settings"
-        style="text-align: center; margin-bottom: 15px; margin-top: 15px"
-      >
-        <button id="toggle-view-btn" class="toggle-button">
-          Show Settings
-        </button>
       </div>
-      <footer class="clock-controls"></footer>
-    </main>
-    <script type="module" src="/js/personalized-ah-clock-ui.js"></script>
-  </body>
+
+      <div class="setting-group">
+        <h4 id="personalized-ah-city-name" class="personalized-ah-city"></h4>
+        <select id="timezone-select" aria-label="Select timezone"></select>
+      </div>
+
+      <!-- Theme Settings Panel -->
+      <div id="theme-settings-container"></div>
+    </section>
+
+    <div class="controls-toggle-settings" style="text-align: center; margin-bottom: 15px; margin-top: 15px">
+      <button id="toggle-view-btn" class="toggle-button">
+        Show Settings
+      </button>
+    </div>
+    <footer class="clock-controls"></footer>
+  </main>
+  <script type="module" src="/js/personalized-ah-clock-ui.js"></script>
+</body>
+
 </html>

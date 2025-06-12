@@ -1,23 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Another Hour Clock</title>
-  <style>
-    .back-link {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      text-decoration: none;
-      color: #333;
-      font-weight: 500;
-    }
-    .back-link:hover {
-      text-decoration: underline;
-    }
-  </style>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/main-clock.css">
@@ -25,6 +12,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
 </head>
+
 <body>
   <a href="/" class="back-link">Back</a>
   <main class="main-clock-container">
@@ -35,13 +23,15 @@
 
     <section id="clock-display" class="clock-display" aria-label="Analog clock">
       <svg id="clock" viewBox="0 0 200 200" aria-hidden="true">
-        <circle class="face common-clock-face" cx="100" cy="100" r="95"/>
-        <path id="ah-sector" class="ah-sector"/>
+        <circle class="face common-clock-face" cx="100" cy="100" r="95" />
+        <path id="ah-sector" class="ah-sector" />
         <g id="ticks"></g>
-        <line id="hour" class="hand hour common-clock-hand common-clock-hand-hour" x1="100" y1="100" x2="100" y2="50"/>
-        <line id="minute" class="hand minute common-clock-hand common-clock-hand-minute" x1="100" y1="100" x2="100" y2="40"/>
-        <line id="second" class="hand second common-clock-hand common-clock-hand-second" x1="100" y1="100" x2="100" y2="35"/>
-        <circle class="center common-clock-center" cx="100" cy="100" r="3"/>
+        <line id="hour" class="hand hour common-clock-hand common-clock-hand-hour" x1="100" y1="100" x2="100" y2="50" />
+        <line id="minute" class="hand minute common-clock-hand common-clock-hand-minute" x1="100" y1="100" x2="100"
+          y2="40" />
+        <line id="second" class="hand second common-clock-hand common-clock-hand-second" x1="100" y1="100" x2="100"
+          y2="35" />
+        <circle class="center common-clock-center" cx="100" cy="100" r="3" />
       </svg>
     </section>
 
@@ -63,4 +53,5 @@
 
   <script type="module" src="/main.js"></script>
 </body>
+
 </html>
