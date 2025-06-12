@@ -2,7 +2,6 @@
 
 export class ModeRegistry {
   constructor() {
-<<<<<<< HEAD
     this._modes = new Map();
     this._registerDefaultModes();
   }
