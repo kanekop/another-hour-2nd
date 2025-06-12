@@ -24,30 +24,30 @@
         border-radius: 6px;
         border: 1px solid #e9ecef;
       }
-
+      
       body.inverted .theme-settings-panel {
         background: #2c2c2c;
         border-color: #444;
       }
-
+      
       .theme-settings-panel h3 {
         margin-top: 0;
         margin-bottom: 15px;
         font-size: 1.1em;
       }
-
+      
       .theme-select {
         width: 100%;
         padding: 8px;
         border-radius: 4px;
         margin-top: 5px;
       }
-
+      
       /* Hide/show elements based on theme */
       .analog-clock-svg {
         display: block;
       }
-
+      
       #personalized-ah-analog-clock {
         transition: opacity 0.3s ease;
       }
@@ -149,7 +149,7 @@
                 <div class="axis-labels aph-axis-labels" id="personalizedAphAxisLabels"></div>
             </div>
         </div>
-
+        
         <div class="setting-group">
           <label for="another-hour-duration-display"
             >Another Hour Duration Adjuster:
@@ -180,16 +180,16 @@
           <span id="another-hour-duration-display"> 1 hours 0 minutes</span>
         </label>
         </div>
-
+        
         <div class="setting-group">
           <h4 id="personalized-ah-city-name" class="personalized-ah-city"></h4>
           <select id="timezone-select" aria-label="Select timezone"></select>
         </div>
-
+        
         <!-- Theme Settings Panel -->
         <div id="theme-settings-container"></div>
       </section>
-
+      
       <div
         class="controls-toggle-settings"
         style="text-align: center; margin-bottom: 15px; margin-top: 15px"
@@ -200,23 +200,6 @@
       </div>
       <footer class="clock-controls"></footer>
     </main>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.34/moment-timezone-with-data.min.js"></script>
-    <script type="module">
-      // Auto-migrate legacy data and initialize Time Design
-      import { autoMigrate } from '/js/time-design-migration.js';
-
-      document.addEventListener('DOMContentLoaded', async () => {
-        try {
-          const migrationResult = await autoMigrate();
-          if (migrationResult.migrated) {
-            console.log('✅ Legacy data migrated to Time Design system');
-          }
-        } catch (error) {
-          console.warn('Migration failed, continuing with legacy mode:', error);
-        }
-      });
-    </script>
     <script type="module" src="/js/personalized-ah-clock-ui.js"></script>
   </body>
 </html>
