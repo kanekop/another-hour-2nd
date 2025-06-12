@@ -1,3 +1,4 @@
+
 // ModeRegistry.js - Registry for all Time Design Modes
 
 class ModeRegistry {
@@ -7,16 +8,27 @@ class ModeRegistry {
   }
 
   _registerDefaultModes() {
-    this.register(new ClassicMode());
-    this.register(new CoreTimeMode());
-    this.register(new WakeBasedMode());
-    this.register(new SolarMode());
+    try {
+      if (typeof ClassicMode !== 'undefined') {
+        this.register(new ClassicMode());
+      }
+      if (typeof CoreTimeMode !== 'undefined') {
+        this.register(new CoreTimeMode());
+      }
+      if (typeof WakeBasedMode !== 'undefined') {
+        this.register(new WakeBasedMode());
+      }
+      if (typeof SolarMode !== 'undefined') {
+        this.register(new SolarMode());
+      }
+    } catch (error) {
+      console.error('Error registering default modes:', error);
+    }
   }
 
   register(modeInstance) {
     if (this._modes.has(modeInstance.id)) {
       console.warn(`Mode [${modeInstance.id}] is already registered. Overwriting.`);
-
     }
     this._modes.set(modeInstance.id, modeInstance);
   }
@@ -51,5 +63,8 @@ class ModeRegistry {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { ModeRegistry };
 } else {
-  window.ModeRegistry = ModeRegistry;
+  // Only declare if not already declared
+  if (typeof window.ModeRegistry === 'undefined') {
+    window.ModeRegistry = ModeRegistry;
+  }
 }

@@ -1,168 +1,167 @@
+
 // TimeDesignManager.js - Main coordinator for Time Design Modes
 
 class TimeDesignManager {
   constructor() {
-    this.registry = new ModeRegistry();
-    this.currentModeId = null;
+    this.registry = null;
+    this.currentMode = null;
     this.currentConfig = null;
-    this.listeners = new Set();
-    this.loadConfiguration();
+    this.listeners = [];
+    this.initialized = false;
+
+    // Define storage keys
+    this.STORAGE_KEYS = {
+      CURRENT_MODE: 'time-design-current-mode',
+      MODE_CONFIGS: 'time-design-mode-configs'
+    };
   }
 
-  loadConfiguration() {
-    const savedModeId = localStorage.getItem(STORAGE_KEYS.CURRENT_MODE) || 'classic';
-    const mode = this.registry.get(savedModeId);
-    if (!mode) {
-      this.setMode('classic'); // Fallback to classic
-      return;
-    }
-
-    const savedConfigStr = localStorage.getItem(this._getConfigKey(savedModeId));
-    let config;
+  async initialize() {
     try {
-      config = savedConfigStr ? JSON.parse(savedConfigStr) : mode.getDefaultConfig();
-    } catch (e) {
-      console.error("Failed to parse config, using default", e);
-      config = mode.getDefaultConfig();
+      // Initialize mode registry
+      this.registry = new ModeRegistry();
+
+      // Load saved mode and config from localStorage
+      const savedMode = localStorage.getItem(this.STORAGE_KEYS.CURRENT_MODE);
+      const savedConfigs = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.MODE_CONFIGS) || '{}');
+
+      // Set initial mode (default to classic)
+      const initialMode = savedMode || 'classic';
+      const initialConfig = savedConfigs[initialMode];
+
+      await this.setMode(initialMode, initialConfig);
+      this.initialized = true;
+
+      console.log('TimeDesignManager initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize TimeDesignManager:', error);
+      throw error;
+    }
+  }
+
+  async setMode(modeId, config = null) {
+    if (!this.registry) {
+      throw new Error('TimeDesignManager not initialized');
     }
 
-    this.setMode(savedModeId, config);
-  }
-
-  saveConfiguration() {
-    if (!this.currentModeId) return;
-    localStorage.setItem(STORAGE_KEYS.CURRENT_MODE, this.currentModeId);
-    localStorage.setItem(this._getConfigKey(this.currentModeId), JSON.stringify(this.currentConfig));
-    this.notifyListeners();
-  }
-
-  _getConfigKey(modeId) {
-    return `${STORAGE_KEYS.MODE_CONFIG_PREFIX}${modeId}`;
-  }
-
-  setMode(modeId, config = null) {
     const mode = this.registry.get(modeId);
     if (!mode) {
-      console.error(`Attempted to set unknown mode: ${modeId}`);
-      return false;
+      throw new Error(`Mode '${modeId}' not found`);
     }
 
-    const finalConfig = config || mode.getDefaultConfig();
-    const validation = mode.validate(finalConfig);
-    if (!validation.valid) {
-      console.error(`Invalid config for mode ${modeId}:`, validation.errors);
-      return false;
+    // Use provided config or mode's default config
+    const modeConfig = config || mode.getDefaultConfig();
+
+    // Validate configuration
+    if (!mode.validate(modeConfig)) {
+      throw new Error(`Invalid configuration for mode '${modeId}'`);
     }
 
-    this.currentModeId = modeId;
-    this.currentConfig = finalConfig;
-    this.saveConfiguration();
-    return true;
+    // Set current mode and config
+    this.currentMode = mode;
+    this.currentConfig = modeConfig;
+
+    // Save to localStorage
+    localStorage.setItem(this.STORAGE_KEYS.CURRENT_MODE, modeId);
+    
+    const savedConfigs = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.MODE_CONFIGS) || '{}');
+    savedConfigs[modeId] = modeConfig;
+    localStorage.setItem(this.STORAGE_KEYS.MODE_CONFIGS, JSON.stringify(savedConfigs));
+
+    // Notify listeners
+    this.notifyListeners({
+      type: 'MODE_CHANGED',
+      modeId: modeId,
+      config: modeConfig
+    });
   }
 
-  updateConfig(configUpdate) {
-    if (!this.currentModeId) return false;
-    const newConfig = { ...this.currentConfig, ...configUpdate };
-    return this.setMode(this.currentModeId, newConfig);
-  }
-
-  getTimeAngles(date, timezone) {
-    if (!this.currentModeId) {
-      throw new Error('No mode selected');
+  getCurrentMode() {
+    if (!this.currentMode) {
+      return null;
     }
-    const mode = this.registry.get(this.currentModeId);
-    return mode.calculate(date, timezone, this.currentConfig);
-  }
 
-  getAvailableModes() {
-    return this.registry.getAllAsInfo();
-  }
-
-  getCurrentModeInfo() {
-    if (!this.currentModeId) return null;
-    const mode = this.registry.get(this.currentModeId);
     return {
-      name: mode.id,
-      displayName: mode.name,
-      description: mode.description,
+      id: this.currentMode.id,
+      name: this.currentMode.name,
+      description: this.currentMode.description,
       config: this.currentConfig
     };
   }
 
-  getConfig() {
-    return this.currentConfig;
+  getAvailableModes() {
+    if (!this.registry) {
+      return [];
+    }
+
+    return this.registry.getAll().map(mode => ({
+      id: mode.id,
+      name: mode.name,
+      description: mode.description
+    }));
   }
 
-  addListener(listener) {
-    this.listeners.add(listener);
+  calculate(date, timezone) {
+    if (!this.currentMode || !this.currentConfig) {
+      throw new Error('No active mode set');
+    }
+
+    try {
+      return this.currentMode.calculate(date, timezone, this.currentConfig);
+    } catch (error) {
+      console.error('Calculation error:', error);
+      throw error;
+    }
   }
 
-  removeListener(listener) {
-    this.listeners.delete(listener);
+  subscribe(callback) {
+    this.listeners.push(callback);
+    return () => {
+      const index = this.listeners.indexOf(callback);
+      if (index > -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
   }
 
-  notifyListeners() {
-    const modeInfo = this.getCurrentModeInfo();
-    this.listeners.forEach(listener => {
+  notifyListeners(event) {
+    this.listeners.forEach(callback => {
       try {
-        listener(modeInfo);
+        callback(event);
       } catch (error) {
-        console.error('Error in listener:', error);
+        console.error('Listener error:', error);
       }
     });
   }
 
-  // Add methods expected by the HTML interface
-  async initialize() {
-    // Already initialized in constructor, just return resolved promise
-    return Promise.resolve();
-  }
+  // Utility method for backward compatibility
+  getCustomAhAngles(date, timezone, designed24Duration = 1380) {
+    try {
+      // Set classic mode temporarily if needed
+      if (!this.currentMode || this.currentMode.id !== 'classic') {
+        this.setMode('classic', { designed24Duration });
+      }
 
-  async setMode(modeId, config = null) {
-    const mode = this.registry.get(modeId);
-    if (!mode) {
-      console.error(`Attempted to set unknown mode: ${modeId}`);
-      return false;
+      const result = this.calculate(date, timezone);
+      
+      return {
+        aphHours: result.hours,
+        aphMinutes: result.minutes,
+        aphSeconds: result.seconds,
+        scaleFactor: result.scaleFactor,
+        isPersonalizedAhPeriod: result.segmentInfo.type === 'another',
+        hourAngle: (result.hours % 12) * 30 + result.minutes * 0.5,
+        minuteAngle: result.minutes * 6 + result.seconds * 0.1,
+        secondAngle: result.seconds * 6
+      };
+    } catch (error) {
+      console.error('Error in getCustomAhAngles:', error);
+      // Fallback to original function if available
+      if (typeof window.getCustomAhAngles === 'function') {
+        return window.getCustomAhAngles(date, timezone, designed24Duration);
+      }
+      throw error;
     }
-
-    const finalConfig = config || mode.getDefaultConfig();
-    const validation = mode.validate(finalConfig);
-    if (!validation.valid) {
-      console.error(`Invalid config for mode ${modeId}:`, validation.errors);
-      return false;
-    }
-
-    this.currentModeId = modeId;
-    this.currentConfig = finalConfig;
-    this.saveConfiguration();
-    return true;
-  }
-
-  getCurrentMode() {
-    if (!this.currentModeId) return null;
-    const mode = this.registry.get(this.currentModeId);
-    return mode ? {
-      id: this.currentModeId,
-      name: mode.name,
-      description: mode.description,
-      config: this.currentConfig
-    } : null;
-  }
-
-  calculate(date, timezone) {
-    if (!this.currentModeId) {
-      throw new Error('No mode selected');
-    }
-    const mode = this.registry.get(this.currentModeId);
-    return mode.calculate(date, timezone, this.currentConfig);
-  }
-
-  subscribe(listener) {
-    this.addListener(listener);
-  }
-
-  unsubscribe(listener) {
-    this.removeListener(listener);
   }
 }
 

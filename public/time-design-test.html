@@ -355,6 +355,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
     
     <!-- Load modules in order -->
+    <script>
+        // Check if required libraries are loaded
+        if (typeof moment === 'undefined') {
+            console.error('Moment.js is not loaded');
+            document.getElementById('debugOutput').textContent = 'Error: Moment.js is not loaded. Please check your internet connection.';
+        }
+    </script>
     <script src="./clock-core.js"></script>
     <script src="js/time-design/modes/BaseMode.js"></script>
     <script src="js/time-design/modes/ClassicMode.js"></script>
@@ -389,6 +396,19 @@
         // Initialize the system
         async function initialize() {
             try {
+                // Check dependencies first
+                if (typeof moment === 'undefined') {
+                    throw new Error('Moment.js is not loaded');
+                }
+                
+                if (typeof TimeDesignManager === 'undefined') {
+                    throw new Error('TimeDesignManager is not loaded');
+                }
+
+                if (typeof timeDesignManager === 'undefined') {
+                    throw new Error('timeDesignManager instance is not available');
+                }
+
                 debug('Initializing Time Design Manager...');
                 await timeDesignManager.initialize();
                 debug('Time Design Manager initialized successfully');
@@ -409,6 +429,15 @@
             } catch (error) {
                 debug('Initialization error:', error.message);
                 console.error('Failed to initialize:', error);
+                
+                // Show error in UI
+                document.getElementById('modeList').innerHTML = `
+                    <div style="color: red; padding: 20px;">
+                        <h3>Initialization Error</h3>
+                        <p>${error.message}</p>
+                        <button onclick="location.reload()">Retry</button>
+                    </div>
+                `;
             }
         }
 

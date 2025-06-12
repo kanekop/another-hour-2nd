@@ -1,3 +1,4 @@
+
 // BaseMode.js - Abstract base class for Time Design Modes
 
 class BaseMode {
@@ -32,9 +33,15 @@ class BaseMode {
 
   // Utility methods available to all modes
   getMinutesSinceMidnight(date, timezone) {
-    // Convert to specified timezone
-    const localDate = new Date(date.toLocaleString("en-US", {timeZone: timezone}));
-    return localDate.getHours() * 60 + localDate.getMinutes();
+    // Use moment.js if available, otherwise fallback to basic calculation
+    if (typeof moment !== 'undefined' && typeof moment.tz !== 'undefined') {
+      const localTime = moment(date).tz(timezone);
+      return localTime.hours() * 60 + localTime.minutes();
+    } else {
+      // Fallback: convert to specified timezone
+      const localDate = new Date(date.toLocaleString("en-US", {timeZone: timezone}));
+      return localDate.getHours() * 60 + localDate.getMinutes();
+    }
   }
 
   formatDuration(minutes) {
@@ -62,11 +69,27 @@ class BaseMode {
       currentMinutes >= segment.startTime && currentMinutes < segment.endTime
     );
   }
+
+  calculateProgress(currentMinutes, segment) {
+    if (!segment) return { progress: 0, remaining: 0 };
+
+    const elapsed = currentMinutes - segment.startTime;
+    const progress = (elapsed / segment.duration) * 100;
+    const remaining = segment.duration - elapsed;
+
+    return {
+      progress: Math.max(0, Math.min(100, progress)),
+      remaining: Math.max(0, remaining)
+    };
+  }
 }
 
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { BaseMode };
 } else {
-  window.BaseMode = BaseMode;
+  // Only declare if not already declared
+  if (typeof window.BaseMode === 'undefined') {
+    window.BaseMode = BaseMode;
+  }
 }
