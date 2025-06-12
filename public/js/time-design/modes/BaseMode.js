@@ -35,11 +35,11 @@ export class BaseMode {
     // Use moment.js if available, otherwise fallback to basic calculation
     if (typeof moment !== 'undefined' && typeof moment.tz !== 'undefined') {
       const localTime = moment(date).tz(timezone);
-      return localTime.hours() * 60 + localTime.minutes();
+      return localTime.hours() * 60 + localTime.minutes() + localTime.seconds() / 60 + localTime.milliseconds() / 60000;
     } else {
       // Fallback: convert to specified timezone
       const localDate = new Date(date.toLocaleString("en-US", { timeZone: timezone }));
-      return localDate.getHours() * 60 + localDate.getMinutes();
+      return localDate.getHours() * 60 + localDate.getMinutes() + localDate.getSeconds() / 60 + localDate.getMilliseconds() / 60000;
     }
   }
 
