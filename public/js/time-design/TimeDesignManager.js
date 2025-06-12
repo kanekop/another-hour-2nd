@@ -53,6 +53,7 @@ export class TimeDesignManager {
       return false;
     }
 
+<<<<<<< HEAD
     const finalConfig = config || mode.getDefaultConfig();
     const validation = mode.validate(finalConfig);
     if (!validation.valid) {
@@ -63,6 +64,17 @@ export class TimeDesignManager {
     this.currentModeId = modeId;
     this.currentConfig = finalConfig;
     this.saveConfiguration();
+=======
+    this.currentMode = new ModeClass();
+    this.config = { ...this.currentMode.getDefaultConfig(), ...config };
+
+    // Save to localStorage
+    this.saveState();
+
+    // Notify listeners
+    this.notifyListeners();
+
+>>>>>>> 370dc0f (Assistant checkpoint: Fix duplicate declarations and module loading issues)
     return true;
   }
 
@@ -85,8 +97,13 @@ export class TimeDesignManager {
   }
 
   getCurrentModeInfo() {
+<<<<<<< HEAD
     if (!this.currentModeId) return null;
     const mode = this.registry.get(this.currentModeId);
+=======
+    if (!this.currentMode) return null;
+
+>>>>>>> 370dc0f (Assistant checkpoint: Fix duplicate declarations and module loading issues)
     return {
       name: mode.id,
       displayName: mode.name,

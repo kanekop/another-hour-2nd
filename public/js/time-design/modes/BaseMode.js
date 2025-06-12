@@ -1,3 +1,4 @@
+
 // BaseMode.js - Base class for all Time Design Modes
 
 /**

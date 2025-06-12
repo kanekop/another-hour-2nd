@@ -213,9 +213,11 @@
     </div>
 
     <script type="module">
-        import { TimeDesignManager } from '/js/time-design/TimeDesignManager.js';
+        try {
+            const { TimeDesignManager } = await import('/js/time-design/TimeDesignManager.js');
+            console.log('TimeDesignManager loaded successfully');
 
-        class TimeDesignTest {
+            class TimeDesignTest {
             constructor() {
                 this.manager = new TimeDesignManager();
                 this.currentMode = null;
@@ -446,15 +448,23 @@
         }
 
         // Initialize the test page
-        window.addEventListener('DOMContentLoaded', () => {
-            try {
-                new TimeDesignTest();
-            } catch (error) {
-                console.error('Failed to initialize Time Design Test:', error);
+            window.addEventListener('DOMContentLoaded', () => {
+                try {
+                    new TimeDesignTest();
+                } catch (error) {
+                    console.error('Failed to initialize Time Design Test:', error);
+                    document.getElementById('error-messages').innerHTML = 
+                        `<div class="error">Failed to initialize: ${error.message}</div>`;
+                }
+            });
+
+        } catch (moduleError) {
+            console.error('Failed to load TimeDesignManager module:', moduleError);
+            window.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('error-messages').innerHTML = 
-                    `<div class="error">Failed to initialize: ${error.message}</div>`;
-            }
-        });
+                    `<div class="error">Module loading failed: ${moduleError.message}</div>`;
+            });
+        }
     </script>
 </body>
 </html>
