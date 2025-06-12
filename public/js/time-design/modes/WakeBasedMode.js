@@ -19,11 +19,11 @@ class WakeBasedMode extends BaseMode {
 
   validate(config) {
     const errors = [];
-    
+
     if (typeof config.anotherHourDuration !== 'number' || config.anotherHourDuration < 0) {
       errors.push('Another Hour duration must be a positive number');
     }
-    
+
     if (typeof config.defaultWakeTime !== 'number' || config.defaultWakeTime < 0 || config.defaultWakeTime >= 1440) {
       errors.push('Default wake time must be between 0 and 1439 minutes');
     }

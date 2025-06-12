@@ -3,7 +3,7 @@
 /**
  * CoreTimeMode - Define productive hours with Another Hour periods before and after
  */
-export class CoreTimeMode extends BaseMode {
+class CoreTimeMode extends BaseMode {
   constructor() {
     super(
       'core-time',

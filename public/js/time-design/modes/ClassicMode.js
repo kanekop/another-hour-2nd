@@ -4,7 +4,7 @@
  * ClassicMode - The original Another Hour time design
  * Designed 24 period followed by Another Hour period
  */
-export class ClassicMode extends BaseMode {
+class ClassicMode extends BaseMode {
   constructor() {
     super(
       'classic',

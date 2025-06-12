@@ -24,7 +24,7 @@ class SolarMode extends BaseMode {
 
   validate(config) {
     const errors = [];
-    
+
     if (!config.location || typeof config.location !== 'object') {
       errors.push('Location must be an object');
     } else {

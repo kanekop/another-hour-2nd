@@ -12,6 +12,11 @@ class BaseMode {
     this.configSchema = configSchema;
   }
 
+  // Get mode name
+  getName() {
+    return this.name;
+  }
+
   // Abstract methods that must be implemented by subclasses
   getDefaultConfig() {
     throw new Error('getDefaultConfig() must be implemented by subclass');
@@ -57,4 +62,11 @@ class BaseMode {
       currentMinutes >= segment.startTime && currentMinutes < segment.endTime
     );
   }
+}
+
+// Export for module usage
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { BaseMode };
+} else {
+  window.BaseMode = BaseMode;
 }

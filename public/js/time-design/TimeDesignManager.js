@@ -1,12 +1,6 @@
-
 // TimeDesignManager.js - Main coordinator for Time Design Modes
 
-const STORAGE_KEYS = {
-  CURRENT_MODE: 'timeDesignMode',
-  MODE_CONFIG_PREFIX: 'timeDesignConfig_',
-};
-
-export class TimeDesignManager {
+class TimeDesignManager {
   constructor() {
     this.registry = new ModeRegistry();
     this.currentModeId = null;
