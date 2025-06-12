@@ -307,61 +307,57 @@
 </head>
 
 <body>
-    <div class="container">
-        <h1>⏰ Time Design Modes Test</h1>
+    <div class="test-page-container">
+        <header>
+            <h1><span class="icon">⏰</span> Time Design Modes Test</h1>
+        </header>
 
-        <div class="main-grid">
-            <!-- Mode Selector -->
-            <div class="mode-selector-panel">
-                <h2>Select Mode</h2>
-                <div id="modeList">
-                    <div class="loading">Loading modes</div>
+        <div class="main-content">
+            <div class="left-column">
+                <div class="card" id="mode-selection-card">
+                    <h2>Select Mode</h2>
+                    <div id="modeList">
+                        <div class="loading">Loading modes</div>
+                    </div>
+                </div>
+                <div class="card" id="mode-configuration-card">
+                    <h2>Mode Configuration</h2>
+                    <div id="configContent">
+                        <p>Select a mode to configure...</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Time Display -->
-            <div class="time-display-panel">
-                <div class="current-time">
-                    <div class="time-value" id="timeDisplay">--:--:--</div>
-                    <div class="time-label" id="periodLabel">Initializing...</div>
-                </div>
-
-                <div class="time-info-grid">
-                    <div class="info-card">
-                        <h4>Scale Factor</h4>
-                        <div class="value" id="scaleFactor">-</div>
-                    </div>
-                    <div class="info-card">
-                        <h4>Real Time</h4>
-                        <div class="value" id="realTime">--:--</div>
-                    </div>
-                    <div class="info-card">
-                        <h4>Progress</h4>
-                        <div class="value" id="progress">-</div>
-                        <div class="subvalue" id="remaining">-</div>
-                    </div>
-                    <div class="info-card">
-                        <h4>Current Phase</h4>
-                        <div class="value" id="phase">-</div>
-                        <div class="subvalue" id="phaseInfo">-</div>
+            <div class="right-column">
+                <div class="card time-display-card">
+                    <div id="timeDisplay">--:--:--</div>
+                    <div id="periodLabel">Initializing...</div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label">SCALE FACTOR</span>
+                            <span class="value" id="scaleFactor">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">REAL TIME</span>
+                            <span class="value" id="realTime">--:--:--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">PROGRESS</span>
+                            <span class="value" id="progress">-</span>
+                            <span class="sub-value" id="remaining">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">CURRENT PHASE</span>
+                            <span class="value" id="phase">-</span>
+                            <span class="sub-value" id="phaseInfo">-</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Configuration Panel -->
-        <div class="config-panel" id="configPanel">
-            <h2>Mode Configuration</h2>
-            <div id="configContent">
-                <p>Select a mode to configure...</p>
-            </div>
-        </div>
-
-        <!-- Debug Panel -->
-        <div class="config-panel">
-            <h2>Debug Output</h2>
-            <div class="debug-panel" id="debugOutput">
-                Waiting for Time Design Manager initialization...
+                <div class="card" id="debug-card">
+                    <h2>Debug Output</h2>
+                    <pre id="debugOutput">Initializing...</pre>
+                </div>
             </div>
         </div>
     </div>
