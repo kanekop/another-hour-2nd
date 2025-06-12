@@ -1,12 +1,13 @@
-// SolarMode.js - Time based on solar cycles
+// SolarMode.js - A day synchronized with sunrise and sunset.
 
 import { BaseMode } from './BaseMode.js';
 
-export const CITIES = {
-  'tokyo': { name: 'Tokyo', lat: 35.6895, lon: 139.6917 },
-  'kumamoto': { name: 'Kumamoto', lat: 32.8032, lon: 130.7079 },
-  'new-york': { name: 'New York', lat: 40.7128, lon: -74.0060 },
-  'london': { name: 'London', lat: 51.5074, lon: -0.1278 },
+// City coordinates
+const CITIES = {
+  tokyo: { lat: 35.6895, lon: 139.6917, name: 'Tokyo' },
+  kumamoto: { lat: 32.8032, lon: 130.7079, name: 'Kumamoto' },
+  newyork: { lat: 40.7128, lon: -74.0060, name: 'New York' },
+  london: { lat: 51.5074, lon: -0.1278, name: 'London' },
 };
 
 /**
@@ -21,7 +22,7 @@ export class SolarMode extends BaseMode {
       'Solar Mode',
       'Time synchronized with sunrise and sunset cycles. (Location features coming soon)',
       {
-        location: { type: 'select', label: 'City', options: CITIES, default: 'tokyo' },
+        city: { type: 'select', label: 'City', options: Object.keys(CITIES), default: 'tokyo' },
         dayHours: { type: 'number', label: 'Day Hours', min: 1, max: 23, default: 12 },
       }
     );
@@ -29,95 +30,119 @@ export class SolarMode extends BaseMode {
 
   getDefaultConfig() {
     return {
-      location: 'tokyo',
+      city: 'tokyo',
       dayHours: 12,
     };
   }
 
-  validate(config) {
-    const errors = [];
-    if (config.dayHours === undefined || typeof config.dayHours !== 'number' || config.dayHours < 1 || config.dayHours > 23) {
-      errors.push('Day Hours must be a number between 1 and 23.');
-    }
-    if (config.location === undefined || !CITIES[config.location]) {
-      errors.push('Invalid location selected.');
-    }
-    return { valid: errors.length === 0, errors };
+  getSunTimes(city, date = new Date()) {
+    const coords = CITIES[city];
+    if (!coords) return null;
+    return SunCalc.getTimes(date, coords.lat, coords.lon);
   }
 
-  // This is a simplified placeholder. A real implementation would use a library
-  // like SunCalc.js or an API call.
-  _getSunriseSunset(date, lat, lon) {
-    if (typeof SunCalc === 'undefined') {
-      console.warn('SunCalc.js is not loaded. Using fallback sunrise/sunset times.');
-      // Fallback: Fixed sunrise/sunset for simplicity
-      const sunrise = 6 * 60; // 6:00 AM
-      const sunset = 18 * 60; // 6:00 PM
-      return { sunrise, sunset };
-    }
+  _buildSegments(config) {
+    const sunTimes = this.getSunTimes(config.city);
+    if (!sunTimes) return [];
 
-    const times = SunCalc.getTimes(date, lat, lon);
-    const sunrise = this.getMinutesSinceMidnight(times.sunrise, 'UTC'); // SunCalc returns UTC dates
-    const sunset = this.getMinutesSinceMidnight(times.sunset, 'UTC');
-    return { sunrise, sunset };
-  }
+    const sunriseMinutes = sunTimes.sunrise.getHours() * 60 + sunTimes.sunrise.getMinutes();
+    const sunsetMinutes = sunTimes.sunset.getHours() * 60 + sunTimes.sunset.getMinutes();
 
-  _buildSegments(config, date) {
-    const city = CITIES[config.location] || CITIES['tokyo'];
-    const { sunrise, sunset } = this._getSunriseSunset(date, city.lat, city.lon);
-    const dayDuration = sunset - sunrise;
-    const nightDuration = 1440 - dayDuration;
+    const actualDayDuration = sunsetMinutes - sunriseMinutes;
+    const actualNightDuration = 1440 - actualDayDuration;
 
-    const configuredDayMinutes = (config.dayHours || 12) * 60;
-    const configuredNightMinutes = (24 - (config.dayHours || 12)) * 60;
+    if (actualDayDuration <= 0 || actualNightDuration <= 0) return [];
 
-    const dayScaleFactor = dayDuration > 0 ? configuredDayMinutes / dayDuration : 1;
-    const nightScaleFactor = nightDuration > 0 ? configuredNightMinutes / nightDuration : 1;
+    const designedDayDuration = config.dayHours * 60;
+    const designedNightDuration = (24 - config.dayHours) * 60;
 
-    const segments = [
-      this.createSegment('night', 0, sunrise, nightScaleFactor, 'Night (Scaled)'),
-      this.createSegment('day', sunrise, sunset, dayScaleFactor, 'Daylight (Scaled)'),
-      this.createSegment('night', sunset, 1440, nightScaleFactor, 'Night (Scaled)'),
-    ];
+    const dayScaleFactor = designedDayDuration / actualDayDuration;
+    const nightScaleFactor = designedNightDuration / actualNightDuration;
 
-    return segments.filter(s => s.duration > 0);
+    return [
+      this.createSegment('night', 0, sunriseMinutes, nightScaleFactor, 'Night'),
+      this.createSegment('day', sunriseMinutes, sunsetMinutes, dayScaleFactor, 'Day'),
+      this.createSegment('night', sunsetMinutes, 1440, nightScaleFactor, 'Night'),
+    ].filter(s => s.duration > 0);
   }
 
   calculate(date, timezone, config) {
-    const minutes = this.getMinutesSinceMidnight(date, timezone);
-    const segments = this._buildSegments(config, date);
-    const activeSegment = this.findActiveSegment(minutes, segments);
+    const realMinutes = this.getMinutesSinceMidnight(date, timezone);
+    const segments = this._buildSegments(config);
+    const activeSegment = this.findActiveSegment(realMinutes, segments);
 
     if (!activeSegment) {
-      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' } };
+      return this.errorState(date, 'Cannot find active segment.');
     }
 
-    let scaledTime = 0;
-    // Calculate total scaled minutes passed before this segment
-    for (const seg of segments) {
-      if (seg.endTime <= activeSegment.startTime) {
-        scaledTime += seg.duration * seg.scaleFactor;
+    let designedTotalSeconds;
+    if (activeSegment.type === 'day') {
+      const elapsedInSegment = realMinutes - activeSegment.startTime;
+      const scaledElapsed = elapsedInSegment * activeSegment.scaleFactor;
+      designedTotalSeconds = (activeSegment.startTime * activeSegment.scaleFactor) + scaledElapsed;
+    } else { // Night
+      const elapsedInSegment = realMinutes - activeSegment.startTime;
+      let scaledElapsed = elapsedInSegment * activeSegment.scaleFactor;
+
+      // The night is split into two segments, we need to handle the time accumulation correctly.
+      if (activeSegment.startTime > 0) { // This is the second night segment (sunset to midnight)
+        const firstNightSegment = segments.find(s => s.type === 'night' && s.startTime === 0);
+        const firstNightDesignedDuration = firstNightSegment.duration * activeSegment.scaleFactor;
+        scaledElapsed += firstNightDesignedDuration;
       }
+
+      // Offset by the designed duration of the day period
+      const daySegment = segments.find(s => s.type === 'day');
+      const designedDayDuration = daySegment.duration * daySegment.scaleFactor;
+      designedTotalSeconds = designedDayDuration + scaledElapsed;
     }
 
-    const segmentElapsed = minutes - activeSegment.startTime;
-    scaledTime += segmentElapsed * activeSegment.scaleFactor;
+    // This logic is simplified and might need refinement for edge cases.
+    // For now, let's just scale the elapsed time within the segment.
+    const elapsedInSegment = realMinutes - activeSegment.startTime;
+    const scaledElapsedSeconds = (elapsedInSegment * 60 + date.getSeconds()) * activeSegment.scaleFactor;
 
-    const displayHours = Math.floor(scaledTime / 60) % 24;
-    const displayMinutes = Math.floor(scaledTime % 60);
-    const displaySeconds = Math.floor((scaledTime * 60) % 60);
+    // We need a baseline to add the scaled elapsed time to.
+    let baseDesignedMinutes = 0;
+    if (activeSegment.type === 'day') {
+      baseDesignedMinutes = 0; // Day starts at 00:00 in its own context
+    } else if (activeSegment.startTime > 0) { // Second night segment
+      const daySegment = segments.find(s => s.type === 'day');
+      baseDesignedMinutes = daySegment.duration * daySegment.scaleFactor;
+    }
 
-    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
+    // This part of the logic is complex. For now, let's adopt a simpler calculation
+    // similar to other modes and refine later if needed.
 
-    const isDesigned = activeSegment.type === 'day';
+    let designedStartTime = 0; // Night starts at 00:00
+    if (activeSegment.type === 'day') {
+      // Find the duration of the first night segment after scaling
+      const firstNightSegment = segments.find(s => s.type === 'night' && s.startTime === 0);
+      if (firstNightSegment) {
+        designedStartTime = firstNightSegment.duration * firstNightSegment.scaleFactor;
+      }
+    } else if (activeSegment.startTime > 0) { // Second night segment (after sunset)
+      const daySegment = segments.find(s => s.type === 'day');
+      const firstNightSegment = segments.find(s => s.type === 'night' && s.startTime === 0);
+      designedStartTime = (firstNightSegment.duration * firstNightSegment.scaleFactor) + (daySegment.duration * daySegment.scaleFactor);
+    }
+
+    const scaledElapsedTotalSeconds = (realMinutes - activeSegment.startTime) * 60 * activeSegment.scaleFactor + date.getSeconds() * activeSegment.scaleFactor;
+    const designedTotalSecondsFromStart = designedStartTime * 60 + scaledElapsedTotalSeconds;
+
+    const displayHours = Math.floor(designedTotalSecondsFromStart / 3600) % 24;
+    const displayMinutes = Math.floor((designedTotalSecondsFromStart % 3600) / 60);
+    const displaySeconds = Math.floor(designedTotalSecondsFromStart % 60);
+
+    const { progress, remaining, duration } = this.calculateProgress(realMinutes, activeSegment);
 
     return {
       hours: displayHours,
       minutes: displayMinutes,
       seconds: displaySeconds,
       scaleFactor: activeSegment.scaleFactor,
-      isAnotherHour: !isDesigned,
-      segmentInfo: { type: isDesigned ? 'designed' : 'another', label: activeSegment.label, progress, remaining, duration: activeSegment.duration },
+      isAnotherHour: false, // Solar mode doesn't have a concept of "Another Hour"
+      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration },
       periodName: activeSegment.label,
     };
   }

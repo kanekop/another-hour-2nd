@@ -292,6 +292,11 @@ async function saveConfig() {
             }
         }
 
+        if (current.id === 'solar') {
+            newConfig.city = document.getElementById('solar-city').value;
+            newConfig.dayHours = parseFloat(document.getElementById('solar-day-hours').noUiSlider.get());
+        }
+
         await timeDesignManager.setMode(current.id, newConfig);
         showStatus('Configuration saved successfully!', 'success');
         debug('Configuration saved:', newConfig);
@@ -351,6 +356,71 @@ function initializeCoreTimeSlider(config) {
         const [start, end] = values.map(v => parseInt(v));
         const duration = end - start;
         valueDisplay.textContent = `${format(start)} - ${format(end)} (${formatDuration(duration)})`;
+    });
+}
+
+// Solar Mode Controls
+const solarCitySelect = document.getElementById('solar-city');
+const solarDayHoursSlider = document.getElementById('solar-day-hours');
+const solarDayHoursValue = document.getElementById('solar-day-hours-value');
+const sunriseTimeEl = document.getElementById('sunrise-time');
+const sunsetTimeEl = document.getElementById('sunset-time');
+const daylightDurationEl = document.getElementById('daylight-duration');
+
+if (solarDayHoursSlider) {
+    noUiSlider.create(solarDayHoursSlider, {
+        start: 12,
+        step: 0.5,
+        connect: [true, false],
+        range: { 'min': 1, 'max': 23 },
+        pips: { mode: 'values', values: [1, 6, 12, 18, 23], density: 4 },
+    });
+    solarDayHoursSlider.noUiSlider.on('update', (values) => {
+        const value = parseFloat(values[0]);
+        solarDayHoursValue.textContent = `${value.toFixed(1)}h`;
+    });
+}
+
+function updateSolarInfo(city) {
+    const solarMode = timeDesignManager.modes.solar;
+    if (!solarMode) return;
+
+    const sunTimes = solarMode.getSunTimes(city);
+    if (sunTimes) {
+        const format = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        sunriseTimeEl.textContent = format(sunTimes.sunrise);
+        sunsetTimeEl.textContent = format(sunTimes.sunset);
+
+        const durationMs = sunTimes.sunset - sunTimes.sunrise;
+        const durationHours = Math.floor(durationMs / 3600000);
+        const durationMins = Math.floor((durationMs % 3600000) / 60000);
+        daylightDurationEl.textContent = `${durationHours}h ${durationMins}m`;
+
+        const daylightHours = durationMs / 3600000;
+        if (solarDayHoursSlider) {
+            // Set the slider to the actual daylight hours as the default
+            solarDayHoursSlider.noUiSlider.set(daylightHours);
+        }
+    }
+}
+
+function setupMode(mode) {
+    if (mode.id === 'solar') {
+        const city = mode.config.city || 'tokyo';
+        solarCitySelect.value = city;
+        updateSolarInfo(city);
+        if (solarDayHoursSlider) {
+            solarDayHoursSlider.noUiSlider.set(mode.config.dayHours || 12);
+        }
+    }
+}
+
+// Event Listeners
+if (solarCitySelect) {
+    solarCitySelect.addEventListener('change', () => {
+        updateSolarInfo(solarCitySelect.value);
+        // We don't save automatically on city change, but we could.
+        // Let's let the user hit "Save".
     });
 }
 

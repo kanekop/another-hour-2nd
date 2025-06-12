@@ -7,6 +7,7 @@
     <title>Time Design Modes - Test Page</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -375,6 +376,34 @@
             <div class="debug-panel" id="debugOutput">
                 Waiting for Time Design Manager initialization...
             </div>
+        </div>
+
+        <!-- Solar Mode Configuration -->
+        <div id="solar-mode-config" class="mode-config-content" style="display: none;">
+            <div class="config-item">
+                <label for="solar-city">City:</label>
+                <select id="solar-city" class="config-input">
+                    <option value="tokyo">Tokyo</option>
+                    <option value="kumamoto">Kumamoto</option>
+                    <option value="newyork">New York</option>
+                    <option value="london">London</option>
+                </select>
+            </div>
+            <div class="config-item slider-item">
+                <label for="solar-day-hours">Day Hours:</label>
+                <div id="solar-day-hours" class="slider"></div>
+                <span id="solar-day-hours-value" class="slider-value"></span>
+            </div>
+            <div id="solar-info" class="solar-info-box">
+                <p><strong>Sunrise:</strong> <span id="sunrise-time">--:--</span></p>
+                <p><strong>Sunset:</strong> <span id="sunset-time">--:--</span></p>
+                <p><strong>Daylight Duration:</strong> <span id="daylight-duration">--h --m</span></p>
+            </div>
+        </div>
+
+        <!-- Wake-Based Mode Configuration -->
+        <div id="wake-based-mode-config" class="mode-config-content" style="display: none;">
+            <!-- Add wake-based mode configuration content here -->
         </div>
     </div>
 
