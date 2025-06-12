@@ -1,9 +1,8 @@
 // public/js/time-design/modes/CoreTimeMode.js
 
-/**
- * CoreTimeMode - Define productive hours with Another Hour periods before and after
- */
-class CoreTimeMode extends BaseMode {
+import { BaseMode } from './BaseMode.js';
+
+export class CoreTimeMode extends BaseMode {
   constructor() {
     super(
       'core-time',
@@ -18,9 +17,6 @@ class CoreTimeMode extends BaseMode {
     );
   }
 
-  /**
-   * Get default configuration
-   */
   getDefaultConfig() {
     return {
       morningAH_start: '05:00',
@@ -36,9 +32,6 @@ class CoreTimeMode extends BaseMode {
     return h * 60 + m;
   }
 
-  /**
-   * Validate configuration
-   */
   validate(config) {
     const errors = [];
     try {
@@ -59,53 +52,6 @@ class CoreTimeMode extends BaseMode {
     }
 
     return { valid: errors.length === 0, errors };
-  }
-
-  /**
-   * Calculate time based on configuration
-   */
-  calculate(date, timezone, config) {
-    const minutes = this.getMinutesSinceMidnight(date, timezone);
-    const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutes, segments);
-
-    if (!activeSegment) {
-      // Fallback for safety
-      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' }, hourAngle: 0, minuteAngle: 0, secondAngle: 0 };
-    }
-
-    const segmentElapsed = minutes - activeSegment.startTime;
-    const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
-
-    let displayHours, displayMinutes, displaySeconds;
-
-    if (activeSegment.type === 'another') {
-      const d = new Date(date);
-      displayHours = d.getHours();
-      displayMinutes = d.getMinutes();
-      displaySeconds = d.getSeconds();
-    } else { // 'designed'
-      const coreTimeStartAsDesigned = this._buildSegments(config).filter(s => s.type === 'another' && s.endTime <= activeSegment.startTime).reduce((acc, s) => acc + (s.endTime - s.startTime), 0) / 60;
-
-      const scaledTotalMinutes = (coreTimeStartAsDesigned * 60) + scaledElapsed;
-      displayHours = Math.floor(scaledTotalMinutes / 60) % 24;
-      displayMinutes = Math.floor(scaledTotalMinutes % 60);
-      displaySeconds = Math.floor((scaledTotalMinutes * 60) % 60);
-    }
-
-    const hourAngle = (displayHours % 12 + displayMinutes / 60) * 30;
-    const minuteAngle = (displayMinutes + displaySeconds / 60) * 6;
-    const secondAngle = displaySeconds * 6;
-
-    return {
-      hours: displayHours,
-      minutes: displayMinutes,
-      seconds: displaySeconds,
-      scaleFactor: activeSegment.scaleFactor,
-      isAnotherHour: activeSegment.type === 'another',
-      segmentInfo: { type: activeSegment.type, label: activeSegment.label },
-      hourAngle, minuteAngle, secondAngle,
-    };
   }
 
   _buildSegments(config) {
@@ -156,48 +102,47 @@ class CoreTimeMode extends BaseMode {
     return filledSegments;
   }
 
-  /**
-   * Get configuration summary for display
-   */
-  getConfigSummary(config) {
-    const morningAHEnd = this._parseTime(config.morningAH_start) + Number(config.morningAH_duration);
-    const eveningAHStart = this._parseTime(config.eveningAH_end) - Number(config.eveningAH_duration);
-    const coreDuration = eveningAHStart - this._parseTime(config.morningAH_start);
+  calculate(date, timezone, config) {
+    const minutes = this.getMinutesSinceMidnight(date, timezone);
+    const segments = this._buildSegments(config);
+    const activeSegment = this.findActiveSegment(minutes, segments);
+
+    if (!activeSegment) {
+      // Fallback for safety
+      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' }, hourAngle: 0, minuteAngle: 0, secondAngle: 0 };
+    }
+
+    const segmentElapsed = minutes - activeSegment.startTime;
+    const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
+
+    let displayHours, displayMinutes, displaySeconds;
+
+    if (activeSegment.type === 'another') {
+      const d = new Date(date);
+      displayHours = d.getHours();
+      displayMinutes = d.getMinutes();
+      displaySeconds = d.getSeconds();
+    } else { // 'designed'
+      const coreTimeStartAsDesigned = this._buildSegments(config).filter(s => s.type === 'another' && s.endTime <= activeSegment.startTime).reduce((acc, s) => acc + (s.endTime - s.startTime), 0) / 60;
+
+      const scaledTotalMinutes = (coreTimeStartAsDesigned * 60) + scaledElapsed;
+      displayHours = Math.floor(scaledTotalMinutes / 60) % 24;
+      displayMinutes = Math.floor(scaledTotalMinutes % 60);
+      displaySeconds = Math.floor((scaledTotalMinutes * 60) % 60);
+    }
+
+    const hourAngle = (displayHours % 12 + displayMinutes / 60) * 30;
+    const minuteAngle = (displayMinutes + displaySeconds / 60) * 6;
+    const secondAngle = displaySeconds * 6;
 
     return {
-      morningAH: {
-        start: this.minutesToTimeString(this._parseTime(config.morningAH_start)),
-        end: this.minutesToTimeString(morningAHEnd),
-        duration: this.formatDuration(Number(config.morningAH_duration))
-      },
-      coreTime: {
-        start: this.minutesToTimeString(this._parseTime(config.morningAH_start)),
-        end: this.minutesToTimeString(eveningAHStart),
-        duration: this.formatDuration(coreDuration),
-        scaleFactor: (1440 / coreDuration).toFixed(2)
-      },
-      eveningAH: {
-        start: this.minutesToTimeString(eveningAHStart),
-        end: this.minutesToTimeString(this._parseTime(config.eveningAH_end)),
-        duration: this.formatDuration(Number(config.eveningAH_duration))
-      },
-      totalAH: this.formatDuration(Number(config.morningAH_duration) + Number(config.eveningAH_duration))
+      hours: displayHours,
+      minutes: displayMinutes,
+      seconds: displaySeconds,
+      scaleFactor: activeSegment.scaleFactor,
+      isAnotherHour: activeSegment.type === 'another',
+      segmentInfo: { type: activeSegment.type, label: activeSegment.label },
+      hourAngle, minuteAngle, secondAngle,
     };
   }
-
-  /**
-   * Convert minutes to time string (HH:MM)
-   */
-  minutesToTimeString(minutes) {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-  }
-}
-
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CoreTimeMode };
-} else {
-  window.CoreTimeMode = CoreTimeMode;
 }
