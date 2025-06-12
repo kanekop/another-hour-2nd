@@ -8,6 +8,54 @@
  */
 export const SCALE_AH = 24/23;
 
+// Time Design Manager for new time design modes
+let timeDesignManager = null;
+
+/**
+ * Initialize Time Design system (lazy loading)
+ */
+async function initializeTimeDesign() {
+  if (timeDesignManager) return timeDesignManager;
+  
+  try {
+    const { timeDesignManager: manager } = await import('./js/time-design/modes/TimeDesignManager.js');
+    await manager.initialize();
+    timeDesignManager = manager;
+    return manager;
+  } catch (error) {
+    console.warn('Time Design system not available, falling back to classic mode:', error);
+    return null;
+  }
+}
+
+/**
+ * Get angles using Time Design system (new API)
+ * @param {Date} date - Current date
+ * @param {string} timezone - IANA timezone string
+ * @returns {Object} Clock angles and time information
+ */
+export async function getTimeDesignAngles(date, timezone) {
+  const manager = await initializeTimeDesign();
+  
+  if (!manager || !manager.isInitialized()) {
+    console.warn('Time Design not available, falling back to getCustomAhAngles');
+    // Use localStorage value or default
+    const saved = localStorage.getItem('personalizedAhDurationMinutes');
+    const duration = saved ? parseInt(saved, 10) : 1380;
+    return getCustomAhAngles(date, timezone, duration);
+  }
+
+  try {
+    return manager.getClockAngles(date, timezone);
+  } catch (error) {
+    console.error('Time Design calculation failed:', error);
+    // Fallback to classic calculation
+    const saved = localStorage.getItem('personalizedAhDurationMinutes');
+    const duration = saved ? parseInt(saved, 10) : 1380;
+    return getCustomAhAngles(date, timezone, duration);
+  }
+}
+
 /**
  * Calculates the angles for analog clock hands and AH digital time components for the standard Main/World Clock.
  * This function implements the 23-hour day cycle for the main clock and world clocks.
