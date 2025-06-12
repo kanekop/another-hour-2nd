@@ -14,23 +14,6 @@ export class SolarMode extends BaseMode {
     static getDefaultConfig() {
         return {
             location: {
-                lat: 35.6762,
-                lng: 139.6503,
-                name: 'Tokyo',
-                timezone: 'Asia/Tokyo'
-            },
-            autoAdjust: true
-        };
-    }
-    constructor() {
-        super();
-        this.id = 'solar';
-        this.name = 'Solar Mode';
-        this.description = 'Time flows with the sun - solar noon is always 12:00';
-
-        // Default configuration
-        this.defaultConfig = {
-            location: {
                 lat: 35.6762,  // Tokyo
                 lng: 139.6503,
                 name: 'Tokyo',
@@ -39,6 +22,15 @@ export class SolarMode extends BaseMode {
             designedDayHours: 12,  // Will be updated based on actual daylight
             autoAdjust: true       // Auto-adjust to actual daylight hours
         };
+    }
+    constructor() {
+        super();
+        this.id = 'solar';
+        this.name = 'Solar Mode';
+        this.description = 'Time flows with the sun - solar noon is always 12:00';
+
+        // Config will be set by initialize()
+        this.config = {};
 
         // Solar calculation cache
         this.solarCache = {
@@ -64,11 +56,57 @@ export class SolarMode extends BaseMode {
      * Initialize the mode with configuration
      */
     initialize(config = {}) {
-        this.config = { ...this.defaultConfig, ...config };
+        this.config = { ...this.constructor.getDefaultConfig(), ...config };
         this.updateSolarTimes(new Date());
 
         // Set up daily update at midnight
         this.scheduleDailyUpdate();
+    }
+
+    /**
+     * Validate the configuration object (Required by BaseMode).
+     * @param {object} config - The configuration to validate.
+     * @returns {{valid: boolean, errors: string[]}} - The validation result.
+     */
+    validate(config) {
+        const errors = [];
+        if (!config.location || typeof config.location.lat !== 'number' || typeof config.location.lng !== 'number') {
+            errors.push('Configuration must include a location with lat and lng.');
+        }
+        return { valid: errors.length === 0, errors };
+    }
+
+    /**
+     * Main calculation method called by the TimeDesignManager (Required by BaseMode).
+     * @param {Date} date - The current real time.
+     * @param {string} timezone - The browser's timezone (we use the city's timezone from config).
+     * @param {object} config - The mode's current configuration.
+     * @returns {object} - The calculated Another Hour time and state.
+     */
+    calculate(date, timezone, config) {
+        // Ensure internal config is up-to-date
+        this.config = { ...this.constructor.getDefaultConfig(), ...config };
+
+        if (typeof SunCalc === 'undefined') {
+            console.error('SunCalc.js library is not loaded.');
+            const now = new Date();
+            return {
+                hours: now.getHours(), minutes: now.getMinutes(), seconds: now.getSeconds(),
+                isError: true, errorMessage: 'SunCalc library not loaded.'
+            };
+        }
+
+        const ahResult = this.realToAnotherHour(date);
+
+        return {
+            hours: ahResult.hours,
+            minutes: ahResult.minutes,
+            seconds: ahResult.seconds,
+            scaleFactor: ahResult.scaleFactor,
+            isAnotherHour: true,
+            segmentInfo: ahResult.segmentInfo,
+            periodName: ahResult.segmentInfo.label,
+        };
     }
 
     /**
