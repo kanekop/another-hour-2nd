@@ -16,6 +16,7 @@ export class SolarMode extends BaseMode {
       {
         latitude: { type: 'number', label: 'Latitude', default: 35.68, disabled: true },
         longitude: { type: 'number', label: 'Longitude', default: 139.76, disabled: true },
+        dayHours: { type: 'number', label: 'Day Hours', min: 1, max: 23, default: 12 },
       }
     );
   }
@@ -24,12 +25,16 @@ export class SolarMode extends BaseMode {
     return {
       latitude: 35.68, // Tokyo
       longitude: 139.76,
+      dayHours: 12,
     };
   }
 
   validate(config) {
-    // For now, no validation is needed as the inputs are disabled
-    return { valid: true, errors: [] };
+    const errors = [];
+    if (config.dayHours === undefined || typeof config.dayHours !== 'number' || config.dayHours < 1 || config.dayHours > 23) {
+      errors.push('Day Hours must be a number between 1 and 23.');
+    }
+    return { valid: errors.length === 0, errors };
   }
 
   // This is a simplified placeholder. A real implementation would use a library
@@ -45,15 +50,18 @@ export class SolarMode extends BaseMode {
   _buildSegments(config, date) {
     const { sunrise, sunset } = this._getSunriseSunset(date, config.latitude, config.longitude);
     const dayDuration = sunset - sunrise;
-    const nightDuration = (1440 - dayDuration);
+    const nightDuration = 1440 - dayDuration;
 
-    const dayScaleFactor = dayDuration > 0 ? (12 * 60) / dayDuration : 1;
-    const nightScaleFactor = nightDuration > 0 ? (12 * 60) / nightDuration : 1;
+    const configuredDayMinutes = (config.dayHours || 12) * 60;
+    const configuredNightMinutes = (24 - (config.dayHours || 12)) * 60;
+
+    const dayScaleFactor = dayDuration > 0 ? configuredDayMinutes / dayDuration : 1;
+    const nightScaleFactor = nightDuration > 0 ? configuredNightMinutes / nightDuration : 1;
 
     const segments = [
-      this.createSegment('night', 0, sunrise, nightScaleFactor, 'Night'),
-      this.createSegment('day', sunrise, sunset, dayScaleFactor, 'Daylight'),
-      this.createSegment('night', sunset, 1440, nightScaleFactor, 'Night'),
+      this.createSegment('night', 0, sunrise, nightScaleFactor, 'Night (Scaled)'),
+      this.createSegment('day', sunrise, sunset, dayScaleFactor, 'Daylight (Scaled)'),
+      this.createSegment('night', sunset, 1440, nightScaleFactor, 'Night (Scaled)'),
     ];
 
     return segments.filter(s => s.duration > 0);

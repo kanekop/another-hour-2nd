@@ -103,6 +103,9 @@ function loadModeConfig() {
         case 'core-time':
             configContent.innerHTML = generateCoreTimeConfig(current.config);
             break;
+        case 'solar':
+            configContent.innerHTML = generateSolarConfig(current.config);
+            break;
         default:
             configContent.innerHTML = '<p>Configuration not available for this mode</p>';
     }
@@ -130,6 +133,24 @@ function generateCoreTimeConfig(config) {
         <div class="config-group"><label>Morning AH Start</label><input type="time" id="morningStart" value="${config.morningAH_start}"></div>
         <div class="config-group"><label>Morning AH Duration (minutes)</label><input type="range" id="morningDuration" min="0" max="360" value="${config.morningAH_duration}" oninput="updateRangeValue(this)"><div class="range-value">${config.morningAH_duration} min</div></div>
         <div class="config-group"><label>Evening AH Duration (minutes)</label><input type="range" id="eveningDuration" min="0" max="360" value="${config.eveningAH_duration}" oninput="updateRangeValue(this)"><div class="range-value">${config.eveningAH_duration} min</div></div>
+    `;
+}
+
+function generateSolarConfig(config) {
+    return `
+        <div class="config-group">
+            <label>Daylight Duration (scaled)</label>
+            <input type="range" id="dayHours" min="1" max="23" value="${config.dayHours || 12}" oninput="updateRangeValue(this)">
+            <div class="range-value">${config.dayHours || 12} hours</div>
+        </div>
+        <div class="config-group disabled">
+            <label>Latitude</label>
+            <input type="text" value="${config.latitude}" disabled>
+        </div>
+        <div class="config-group disabled">
+            <label>Longitude</label>
+            <input type="text" value="${config.longitude}" disabled>
+        </div>
     `;
 }
 
@@ -164,6 +185,8 @@ window.updateRangeValue = function (input) {
         const hours = Math.floor(input.value / 60);
         const minutes = input.value % 60;
         valueDiv.textContent = `${hours}h ${minutes}m`;
+    } else if (input.id === 'dayHours') {
+        valueDiv.textContent = `${input.value} hours`;
     } else {
         valueDiv.textContent = `${input.value} min`;
     }
@@ -182,6 +205,9 @@ async function saveConfig() {
                 newConfig.morningAH_start = document.getElementById('morningStart').value;
                 newConfig.morningAH_duration = parseInt(document.getElementById('morningDuration').value);
                 newConfig.eveningAH_duration = parseInt(document.getElementById('eveningDuration').value);
+                break;
+            case 'solar':
+                newConfig.dayHours = parseInt(document.getElementById('dayHours').value);
                 break;
         }
         await timeDesignManager.setMode(current.id, newConfig);
