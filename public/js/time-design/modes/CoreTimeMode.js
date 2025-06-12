@@ -2,18 +2,20 @@
 
 import { BaseMode } from './BaseMode.js';
 
+/**
+ * CoreTimeMode - Define productive hours with Another Hour periods before and after
+ */
 export class CoreTimeMode extends BaseMode {
   constructor() {
     super(
       'core-time',
       'Core Time Mode',
-      'Define your productive hours with Another Hour periods before and after.',
-      {
-        morningAH_start: { type: 'time', label: 'Morning AH Start', default: '05:00' },
-        morningAH_duration: { type: 'number', label: 'Morning AH Duration (minutes)', min: 0, default: 120 },
-        eveningAH_duration: { type: 'number', label: 'Evening AH Duration (minutes)', min: 0, default: 120 },
-        eveningAH_end: { type: 'time', label: 'Evening AH End', default: '24:00' },
-      }
+      'Define your productive hours with Another Hour periods before and after.', {
+      morningAH_start: { type: 'time', label: 'Morning AH Start', default: '05:00' },
+      morningAH_duration: { type: 'number', label: 'Morning AH Duration (minutes)', min: 0, default: 120 },
+      eveningAH_duration: { type: 'number', label: 'Evening AH Duration (minutes)', min: 0, default: 120 },
+      eveningAH_end: { type: 'time', label: 'Evening AH End', default: '24:00' },
+    }
     );
   }
 
@@ -45,6 +47,7 @@ export class CoreTimeMode extends BaseMode {
       const coreDuration = coreEnd - coreStart;
 
       if (coreDuration < 0) errors.push('Core Time duration cannot be negative. Check AH durations and times.');
+      const totalAH = morningDuration + eveningDuration;
       if (totalAH > 1439) errors.push('Total Another Hour time cannot exceed 24 hours.');
 
     } catch (e) {
@@ -68,38 +71,39 @@ export class CoreTimeMode extends BaseMode {
 
     if (coreDuration < 0) return []; // Invalid config
 
+    const coreScaleFactor = coreDuration > 0 ? (24 * 60) / coreDuration : 1;
+
+    // This logic creates a continuous timeline from 0 to 1440
+    let lastEnd = 0;
+
+    // Before morning AH
+    if (morningStart > 0) {
+      segments.push(this.createSegment('another', 0, morningStart, 1.0, 'Night'));
+    }
+    lastEnd = morningStart;
+
     // Morning AH
     if (morningDuration > 0) {
-      segments.push(this.createSegment('another', 0, morningStart, 1.0, 'Pre-Morning'));
       segments.push(this.createSegment('another', morningStart, morningEnd, 1.0, 'Morning AH'));
     }
+    lastEnd = morningEnd;
 
     // Core Time
-    const coreScaleFactor = coreDuration > 0 ? (24 * 60) / coreDuration : 1;
     segments.push(this.createSegment('designed', coreStart, coreEnd, coreScaleFactor, 'Core Time'));
+    lastEnd = coreEnd;
 
     // Evening AH
     if (eveningDuration > 0) {
       segments.push(this.createSegment('another', coreEnd, eveningEnd, 1.0, 'Evening AH'));
-      segments.push(this.createSegment('another', eveningEnd, 1440, 1.0, 'Post-Evening'));
     }
+    lastEnd = eveningEnd;
 
-    // Fill gaps
-    segments.sort((a, b) => a.startTime - b.startTime);
-    const filledSegments = [];
-    let lastEnd = 0;
-    for (const seg of segments) {
-      if (seg.startTime > lastEnd) {
-        filledSegments.push(this.createSegment('another', lastEnd, seg.startTime, 1.0, 'Gap'));
-      }
-      filledSegments.push(seg);
-      lastEnd = seg.endTime;
-    }
+    // After evening AH
     if (lastEnd < 1440) {
-      filledSegments.push(this.createSegment('another', lastEnd, 1440, 1.0, 'Gap'));
+      segments.push(this.createSegment('another', lastEnd, 1440, 1.0, 'Night'));
     }
 
-    return filledSegments;
+    return segments.filter(s => s.duration > 0);
   }
 
   calculate(date, timezone, config) {
@@ -109,11 +113,8 @@ export class CoreTimeMode extends BaseMode {
 
     if (!activeSegment) {
       // Fallback for safety
-      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' }, hourAngle: 0, minuteAngle: 0, secondAngle: 0 };
+      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' } };
     }
-
-    const segmentElapsed = minutes - activeSegment.startTime;
-    const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
 
     let displayHours, displayMinutes, displaySeconds;
 
@@ -123,17 +124,27 @@ export class CoreTimeMode extends BaseMode {
       displayMinutes = d.getMinutes();
       displaySeconds = d.getSeconds();
     } else { // 'designed'
-      const coreTimeStartAsDesigned = this._buildSegments(config).filter(s => s.type === 'another' && s.endTime <= activeSegment.startTime).reduce((acc, s) => acc + (s.endTime - s.startTime), 0) / 60;
+      let designedMinutesPassed = 0;
+      for (const seg of segments) {
+        if (seg.endTime <= activeSegment.startTime) {
+          if (seg.type === 'designed') {
+            designedMinutesPassed += seg.duration * seg.scaleFactor;
+          } else {
+            // In CoreTime mode, AH doesn't contribute to the 24h designed day
+          }
+        }
+      }
 
-      const scaledTotalMinutes = (coreTimeStartAsDesigned * 60) + scaledElapsed;
-      displayHours = Math.floor(scaledTotalMinutes / 60) % 24;
-      displayMinutes = Math.floor(scaledTotalMinutes % 60);
-      displaySeconds = Math.floor((scaledTotalMinutes * 60) % 60);
+      const segmentElapsed = minutes - activeSegment.startTime;
+      const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
+      const totalDesignedMinutes = designedMinutesPassed + scaledElapsed;
+
+      displayHours = Math.floor(totalDesignedMinutes / 60) % 24;
+      displayMinutes = Math.floor(totalDesignedMinutes % 60);
+      displaySeconds = Math.floor((totalDesignedMinutes * 60) % 60);
     }
 
-    const hourAngle = (displayHours % 12 + displayMinutes / 60) * 30;
-    const minuteAngle = (displayMinutes + displaySeconds / 60) * 6;
-    const secondAngle = displaySeconds * 6;
+    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
 
     return {
       hours: displayHours,
@@ -141,8 +152,8 @@ export class CoreTimeMode extends BaseMode {
       seconds: displaySeconds,
       scaleFactor: activeSegment.scaleFactor,
       isAnotherHour: activeSegment.type === 'another',
-      segmentInfo: { type: activeSegment.type, label: activeSegment.label },
-      hourAngle, minuteAngle, secondAngle,
+      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: activeSegment.duration },
+      periodName: activeSegment.label,
     };
   }
 }

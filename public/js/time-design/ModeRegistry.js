@@ -1,7 +1,11 @@
-
 // ModeRegistry.js - Registry for all Time Design Modes
 
-class ModeRegistry {
+import { ClassicMode } from './modes/ClassicMode.js';
+import { CoreTimeMode } from './modes/CoreTimeMode.js';
+// import { WakeBasedMode } from './modes/WakeBasedMode.js';
+// import { SolarMode } from './modes/SolarMode.js';
+
+export class ModeRegistry {
   constructor() {
     this._modes = new Map();
     this._registerDefaultModes();
@@ -15,12 +19,12 @@ class ModeRegistry {
       if (typeof CoreTimeMode !== 'undefined') {
         this.register(new CoreTimeMode());
       }
-      if (typeof WakeBasedMode !== 'undefined') {
-        this.register(new WakeBasedMode());
-      }
-      if (typeof SolarMode !== 'undefined') {
-        this.register(new SolarMode());
-      }
+      // if (typeof WakeBasedMode !== 'undefined') {
+      //   this.register(new WakeBasedMode());
+      // }
+      // if (typeof SolarMode !== 'undefined') {
+      //   this.register(new SolarMode());
+      // }
     } catch (error) {
       console.error('Error registering default modes:', error);
     }
@@ -47,8 +51,8 @@ class ModeRegistry {
 
   getAllAsInfo() {
     return this.getAll().map(mode => ({
-      name: mode.id,
-      displayName: mode.name,
+      id: mode.id,
+      name: mode.name,
       description: mode.description,
       configSchema: mode.configSchema,
     }));

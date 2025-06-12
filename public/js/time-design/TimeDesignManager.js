@@ -1,35 +1,29 @@
-
 // TimeDesignManager.js - Main coordinator for Time Design Modes
+
+import { ModeRegistry } from './ModeRegistry.js';
+
+const STORAGE_KEYS = {
+  CURRENT_MODE: 'time-design-current-mode',
+  MODE_CONFIGS: 'time-design-mode-configs'
+};
 
 class TimeDesignManager {
   constructor() {
-    this.registry = null;
+    this.registry = new ModeRegistry();
     this.currentMode = null;
     this.currentConfig = null;
-    this.listeners = [];
+    this.listeners = new Set();
     this.initialized = false;
-
-    // Define storage keys
-    this.STORAGE_KEYS = {
-      CURRENT_MODE: 'time-design-current-mode',
-      MODE_CONFIGS: 'time-design-mode-configs'
-    };
   }
 
   async initialize() {
     try {
-      // Initialize mode registry
-      this.registry = new ModeRegistry();
+      const savedModeId = localStorage.getItem(STORAGE_KEYS.CURRENT_MODE) || 'classic';
+      const savedConfigs = JSON.parse(localStorage.getItem(STORAGE_KEYS.MODE_CONFIGS) || '{}');
 
-      // Load saved mode and config from localStorage
-      const savedMode = localStorage.getItem(this.STORAGE_KEYS.CURRENT_MODE);
-      const savedConfigs = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.MODE_CONFIGS) || '{}');
+      const config = savedConfigs[savedModeId];
 
-      // Set initial mode (default to classic)
-      const initialMode = savedMode || 'classic';
-      const initialConfig = savedConfigs[initialMode];
-
-      await this.setMode(initialMode, initialConfig);
+      await this.setMode(savedModeId, config);
       this.initialized = true;
 
       console.log('TimeDesignManager initialized successfully');
@@ -40,47 +34,36 @@ class TimeDesignManager {
   }
 
   async setMode(modeId, config = null) {
-    if (!this.registry) {
-      throw new Error('TimeDesignManager not initialized');
-    }
-
     const mode = this.registry.get(modeId);
     if (!mode) {
       throw new Error(`Mode '${modeId}' not found`);
     }
 
-    // Use provided config or mode's default config
     const modeConfig = config || mode.getDefaultConfig();
-
-    // Validate configuration
-    if (!mode.validate(modeConfig)) {
-      throw new Error(`Invalid configuration for mode '${modeId}'`);
+    const validation = mode.validate(modeConfig);
+    if (!validation.valid) {
+      throw new Error(`Invalid configuration for mode '${modeId}': ${validation.errors.join(', ')}`);
     }
 
-    // Set current mode and config
     this.currentMode = mode;
     this.currentConfig = modeConfig;
 
-    // Save to localStorage
-    localStorage.setItem(this.STORAGE_KEYS.CURRENT_MODE, modeId);
-    
-    const savedConfigs = JSON.parse(localStorage.getItem(this.STORAGE_KEYS.MODE_CONFIGS) || '{}');
-    savedConfigs[modeId] = modeConfig;
-    localStorage.setItem(this.STORAGE_KEYS.MODE_CONFIGS, JSON.stringify(savedConfigs));
+    this._saveState();
+    this.notifyListeners({ type: 'MODE_CHANGED', modeId, config: modeConfig });
+  }
 
-    // Notify listeners
-    this.notifyListeners({
-      type: 'MODE_CHANGED',
-      modeId: modeId,
-      config: modeConfig
-    });
+  _saveState() {
+    if (!this.currentMode) return;
+
+    localStorage.setItem(STORAGE_KEYS.CURRENT_MODE, this.currentMode.id);
+
+    const savedConfigs = JSON.parse(localStorage.getItem(STORAGE_KEYS.MODE_CONFIGS) || '{}');
+    savedConfigs[this.currentMode.id] = this.currentConfig;
+    localStorage.setItem(STORAGE_KEYS.MODE_CONFIGS, JSON.stringify(savedConfigs));
   }
 
   getCurrentMode() {
-    if (!this.currentMode) {
-      return null;
-    }
-
+    if (!this.currentMode) return null;
     return {
       id: this.currentMode.id,
       name: this.currentMode.name,
@@ -90,37 +73,20 @@ class TimeDesignManager {
   }
 
   getAvailableModes() {
-    if (!this.registry) {
-      return [];
-    }
-
-    return this.registry.getAll().map(mode => ({
-      id: mode.id,
-      name: mode.name,
-      description: mode.description
-    }));
+    return this.registry.getAll();
   }
 
   calculate(date, timezone) {
     if (!this.currentMode || !this.currentConfig) {
       throw new Error('No active mode set');
     }
-
-    try {
-      return this.currentMode.calculate(date, timezone, this.currentConfig);
-    } catch (error) {
-      console.error('Calculation error:', error);
-      throw error;
-    }
+    return this.currentMode.calculate(date, timezone, this.currentConfig);
   }
 
   subscribe(callback) {
-    this.listeners.push(callback);
+    this.listeners.add(callback);
     return () => {
-      const index = this.listeners.indexOf(callback);
-      if (index > -1) {
-        this.listeners.splice(index, 1);
-      }
+      this.listeners.delete(callback);
     };
   }
 
@@ -143,7 +109,7 @@ class TimeDesignManager {
       }
 
       const result = this.calculate(date, timezone);
-      
+
       return {
         aphHours: result.hours,
         aphMinutes: result.minutes,
@@ -165,10 +131,4 @@ class TimeDesignManager {
   }
 }
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { TimeDesignManager };
-} else {
-  window.TimeDesignManager = TimeDesignManager;
-  window.timeDesignManager = new TimeDesignManager();
-}
+export const timeDesignManager = new TimeDesignManager();

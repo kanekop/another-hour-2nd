@@ -1,7 +1,6 @@
-
 // BaseMode.js - Abstract base class for Time Design Modes
 
-class BaseMode {
+export class BaseMode {
   constructor(id, name, description, configSchema = {}) {
     if (this.constructor === BaseMode) {
       throw new Error('BaseMode is an abstract class and cannot be instantiated directly');
@@ -39,7 +38,7 @@ class BaseMode {
       return localTime.hours() * 60 + localTime.minutes();
     } else {
       // Fallback: convert to specified timezone
-      const localDate = new Date(date.toLocaleString("en-US", {timeZone: timezone}));
+      const localDate = new Date(date.toLocaleString("en-US", { timeZone: timezone }));
       return localDate.getHours() * 60 + localDate.getMinutes();
     }
   }
@@ -65,7 +64,7 @@ class BaseMode {
   }
 
   findActiveSegment(currentMinutes, segments) {
-    return segments.find(segment => 
+    return segments.find(segment =>
       currentMinutes >= segment.startTime && currentMinutes < segment.endTime
     );
   }
@@ -82,11 +81,4 @@ class BaseMode {
       remaining: Math.max(0, remaining)
     };
   }
-}
-
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { BaseMode };
-} else {
-  window.BaseMode = BaseMode;
 }

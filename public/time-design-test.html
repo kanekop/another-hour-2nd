@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,7 +44,7 @@
             background: white;
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             height: fit-content;
         }
 
@@ -90,7 +91,7 @@
             background: white;
             border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .current-time {
@@ -150,7 +151,7 @@
             background: white;
             border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
         }
 
@@ -283,13 +284,28 @@
         }
 
         @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
+
+            0%,
+            20% {
+                content: '';
+            }
+
+            40% {
+                content: '.';
+            }
+
+            60% {
+                content: '..';
+            }
+
+            80%,
+            100% {
+                content: '...';
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>⏰ Time Design Modes Test</h1>
@@ -352,536 +368,11 @@
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
-    
-    <!-- Load modules in order -->
-    <script>
-        // Wait for moment.js to load before proceeding
-        function waitForMoment() {
-            return new Promise((resolve) => {
-                if (typeof moment !== 'undefined') {
-                    resolve();
-                } else {
-                    setTimeout(() => waitForMoment().then(resolve), 100);
-                }
-            });
-        }
-        
-        async function loadScripts() {
-            try {
-                await waitForMoment();
-                console.log('Moment.js loaded successfully');
-                
-                // Load scripts in sequence
-                const scripts = [
-                    './clock-core.js',
-                    'js/time-design/modes/BaseMode.js',
-                    'js/time-design/modes/ClassicMode.js',
-                    'js/time-design/modes/CoreTimeMode.js',
-                    'js/time-design/modes/WakeBasedMode.js',
-                    'js/time-design/modes/SolarMode.js',
-                    'js/time-design/ModeRegistry.js',
-                    'js/time-design/TimeDesignManager.js'
-                ];
-                
-                for (const scriptSrc of scripts) {
-                    await new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = scriptSrc;
-                        script.onload = resolve;
-                        script.onerror = () => reject(new Error(`Failed to load ${scriptSrc}`));
-                        document.head.appendChild(script);
-                    });
-                }
-                
-                // Initialize after all scripts are loaded
-                initialize();
-                
-            } catch (error) {
-                console.error('Script loading error:', error);
-                document.getElementById('debugOutput').textContent = `Script loading error: ${error.message}`;
-            }
-        }
-        
-        // Start loading when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', loadScripts);
-        } else {
-            loadScripts();
-        }
-    </script>
-    
-    <script>
-
-        // Global variables
-        let updateInterval;
-        let currentMode = null;
-
-        // Debug logger
-        function debug(message, data = null) {
-            const debugPanel = document.getElementById('debugOutput');
-            const timestamp = new Date().toISOString().split('T')[1].substring(0, 8);
-            let output = `[${timestamp}] ${message}`;
-            if (data) {
-                output += '\n' + JSON.stringify(data, null, 2);
-            }
-            debugPanel.textContent = output + '\n\n' + debugPanel.textContent;
-
-            // Keep only last 1000 characters
-            if (debugPanel.textContent.length > 1000) {
-                debugPanel.textContent = debugPanel.textContent.substring(0, 1000) + '...';
-            }
-        }
-
-        // Initialize the system
-        async function initialize() {
-            try {
-                // Check dependencies first
-                if (typeof moment === 'undefined') {
-                    throw new Error('Moment.js is not loaded');
-                }
-                
-                if (typeof TimeDesignManager === 'undefined') {
-                    throw new Error('TimeDesignManager is not loaded');
-                }
-
-                if (typeof timeDesignManager === 'undefined') {
-                    throw new Error('timeDesignManager instance is not available');
-                }
-
-                debug('Initializing Time Design Manager...');
-                await timeDesignManager.initialize();
-                debug('Time Design Manager initialized successfully');
-
-                // Load available modes
-                loadModes();
-
-                // Set up update interval
-                startTimeUpdate();
-
-                // Listen for mode changes
-                timeDesignManager.subscribe((event) => {
-                    debug('Mode changed event:', event);
-                    updateDisplay();
-                    loadModeConfig();
-                });
-
-            } catch (error) {
-                debug('Initialization error:', error.message);
-                console.error('Failed to initialize:', error);
-                
-                // Show error in UI
-                document.getElementById('modeList').innerHTML = `
-                    <div style="color: red; padding: 20px;">
-                        <h3>Initialization Error</h3>
-                        <p>${error.message}</p>
-                        <button onclick="location.reload()">Retry</button>
-                    </div>
-                `;
-            }
-        }
-
-        // Load and display available modes
-        function loadModes() {
-            const modeList = document.getElementById('modeList');
-            const modes = timeDesignManager.getAvailableModes();
-
-            debug('Available modes:', modes);
-
-            modeList.innerHTML = modes.map(mode => `
-                <div class="mode-option" data-mode="${mode.id}">
-                    <h3>${mode.name}</h3>
-                    <p>${mode.description}</p>
-                </div>
-            `).join('');
-
-            // Add click handlers
-            modeList.querySelectorAll('.mode-option').forEach(option => {
-                option.addEventListener('click', () => selectMode(option.dataset.mode));
-            });
-
-            // Select current mode
-            const current = timeDesignManager.getCurrentMode();
-            if (current) {
-                modeList.querySelector(`[data-mode="${current.id}"]`)?.classList.add('active');
-            }
-        }
-
-        // Select a mode
-        async function selectMode(modeId) {
-            try {
-                debug(`Selecting mode: ${modeId}`);
-
-                // Update UI immediately
-                document.querySelectorAll('.mode-option').forEach(el => {
-                    el.classList.toggle('active', el.dataset.mode === modeId);
-                });
-
-                // Set the mode
-                await timeDesignManager.setMode(modeId);
-                currentMode = modeId;
-
-                debug(`Mode set successfully: ${modeId}`);
-
-                // Load configuration UI
-                loadModeConfig();
-
-            } catch (error) {
-                debug(`Error setting mode: ${error.message}`);
-                console.error('Failed to set mode:', error);
-            }
-        }
-
-        // Load mode-specific configuration
-        function loadModeConfig() {
-            const configContent = document.getElementById('configContent');
-            const current = timeDesignManager.getCurrentMode();
-
-            if (!current) {
-                configContent.innerHTML = '<p>No mode selected</p>';
-                return;
-            }
-
-            debug('Loading config for mode:', current.id);
-
-            // Generate configuration UI based on mode
-            switch (current.id) {
-                case 'classic':
-                    configContent.innerHTML = generateClassicConfig(current.config);
-                    break;
-                case 'core-time':
-                    configContent.innerHTML = generateCoreTimeConfig(current.config);
-                    break;
-                case 'wake-based':
-                    configContent.innerHTML = generateWakeBasedConfig(current.config);
-                    break;
-                case 'solar':
-                    configContent.innerHTML = generateSolarConfig(current.config);
-                    break;
-                default:
-                    configContent.innerHTML = '<p>Configuration not available for this mode</p>';
-            }
-
-            // Add save button
-            configContent.innerHTML += `
-                <div class="button-group">
-                    <button class="btn-primary" onclick="saveConfig()">Save Configuration</button>
-                    <button class="btn-secondary" onclick="resetConfig()">Reset to Default</button>
-                </div>
-                <div class="status-message" id="statusMessage"></div>
-            `;
-        }
-
-        // Configuration generators for each mode
-        function generateClassicConfig(config) {
-            const hours = Math.floor(config.designed24Duration / 60);
-            const minutes = config.designed24Duration % 60;
-
-            return `
-                <div class="config-group">
-                    <label>Designed 24 Duration</label>
-                    <input type="range" id="designed24Duration" 
-                           min="0" max="1440" value="${config.designed24Duration}"
-                           oninput="updateRangeValue(this)">
-                    <div class="range-value">${hours}h ${minutes}m</div>
-                </div>
-            `;
-        }
-
-        function generateCoreTimeConfig(config) {
-            return `
-                <div class="config-group">
-                    <label>Morning Another Hour Start</label>
-                    <input type="time" id="morningStart" 
-                           value="${minutesToTime(config.morningAH.start)}">
-                </div>
-                <div class="config-group">
-                    <label>Morning Another Hour Duration (minutes)</label>
-                    <input type="range" id="morningDuration" 
-                           min="0" max="360" value="${config.morningAH.duration}"
-                           oninput="updateRangeValue(this)">
-                    <div class="range-value">${config.morningAH.duration} min</div>
-                </div>
-                <div class="config-group">
-                    <label>Evening Another Hour Duration (minutes)</label>
-                    <input type="range" id="eveningDuration" 
-                           min="0" max="360" value="${config.eveningAH.duration}"
-                           oninput="updateRangeValue(this)">
-                    <div class="range-value">${config.eveningAH.duration} min</div>
-                </div>
-            `;
-        }
-
-        function generateWakeBasedConfig(config) {
-            return `
-                <div class="config-group">
-                    <label>Today's Wake Time</label>
-                    <input type="time" id="wakeTime" 
-                           value="${config.wakeTime ? new Date(config.wakeTime.time).toTimeString().substring(0,5) : ''}">
-                    <button class="btn-secondary" onclick="setWakeTimeNow()">Use Current Time</button>
-                </div>
-                <div class="config-group">
-                    <label>Another Hour Duration (minutes)</label>
-                    <input type="range" id="anotherHourDuration" 
-                           min="0" max="360" value="${config.anotherHourDuration}"
-                           oninput="updateRangeValue(this)">
-                    <div class="range-value">${config.anotherHourDuration} min</div>
-                </div>
-                <div class="config-group">
-                    <label>Default Wake Time</label>
-                    <input type="time" id="defaultWakeTime" 
-                           value="${minutesToTime(config.defaultWakeTime)}">
-                </div>
-            `;
-        }
-
-        function generateSolarConfig(config) {
-            return `
-                <div class="config-group">
-                    <label>Location</label>
-                    <select id="locationPreset" onchange="updateLocation(this.value)">
-                        <option value="custom">Custom</option>
-                        <option value="tokyo">Tokyo, Japan</option>
-                        <option value="newyork">New York, USA</option>
-                        <option value="london">London, UK</option>
-                        <option value="sydney">Sydney, Australia</option>
-                    </select>
-                </div>
-                <div class="config-group">
-                    <label>Latitude</label>
-                    <input type="number" id="latitude" 
-                           min="-90" max="90" step="0.0001"
-                           value="${config.location.latitude}">
-                </div>
-                <div class="config-group">
-                    <label>Longitude</label>
-                    <input type="number" id="longitude" 
-                           min="-180" max="180" step="0.0001"
-                           value="${config.location.longitude}">
-                </div>
-                <div class="config-group">
-                    <label>Day Hours (Solar)</label>
-                    <input type="range" id="dayHours" 
-                           min="1" max="23" value="${config.dayNightRatio.day}"
-                           oninput="updateSolarRatio(this)">
-                    <div class="range-value">${config.dayNightRatio.day}h day / ${config.dayNightRatio.night}h night</div>
-                </div>
-            `;
-        }
-
-        // Update time display
-        function updateDisplay() {
-            try {
-                const now = new Date();
-                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const result = timeDesignManager.calculate(now, timezone);
-
-                // Update main time
-                document.getElementById('timeDisplay').textContent = 
-                    formatTime(result.hours, result.minutes, result.seconds);
-
-                // Update period label
-                document.getElementById('periodLabel').textContent = result.periodName;
-
-                // Update info cards
-                document.getElementById('scaleFactor').textContent = 
-                    result.scaleFactor.toFixed(2) + 'x';
-                document.getElementById('realTime').textContent = 
-                    now.toTimeString().substring(0, 8);
-                document.getElementById('progress').textContent = 
-                    Math.round(result.segmentInfo.progress) + '%';
-                document.getElementById('remaining').textContent = 
-                    formatDuration(result.segmentInfo.remaining);
-                document.getElementById('phase').textContent = 
-                    result.segmentInfo.type === 'designed' ? 'Designed' : 'Another Hour';
-                document.getElementById('phaseInfo').textContent = 
-                    result.segmentInfo.label;
-
-                // Mode-specific info
-                if (result.wakeBasedInfo) {
-                    document.getElementById('phaseInfo').textContent += 
-                        ` (${result.wakeBasedInfo.hoursAwake.toFixed(1)}h awake)`;
-                }
-
-                if (result.solarInfo) {
-                    document.getElementById('phaseInfo').textContent = 
-                        `${result.solarInfo.location}`;
-                }
-
-            } catch (error) {
-                debug('Update error:', error.message);
-            }
-        }
-
-        // Start time update loop
-        function startTimeUpdate() {
-            updateDisplay();
-            updateInterval = setInterval(updateDisplay, 100); // Update 10 times per second
-        }
-
-        // Helper functions
-        function formatTime(hours, minutes, seconds) {
-            return [hours, minutes, seconds]
-                .map(v => String(Math.floor(v)).padStart(2, '0'))
-                .join(':');
-        }
-
-        function formatDuration(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = Math.floor(minutes % 60);
-            if (hours > 0) {
-                return `${hours}h ${mins}m`;
-            }
-            return `${mins}m`;
-        }
-
-        function minutesToTime(minutes) {
-            const hours = Math.floor(minutes / 60);
-            const mins = minutes % 60;
-            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-        }
-
-        function timeToMinutes(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return hours * 60 + minutes;
-        }
-
-        // UI helper functions
-        window.updateRangeValue = function(input) {
-            const valueDiv = input.nextElementSibling;
-            if (input.id === 'designed24Duration') {
-                const hours = Math.floor(input.value / 60);
-                const minutes = input.value % 60;
-                valueDiv.textContent = `${hours}h ${minutes}m`;
-            } else {
-                valueDiv.textContent = `${input.value} min`;
-            }
-        };
-
-        window.updateSolarRatio = function(input) {
-            const dayHours = parseInt(input.value);
-            const nightHours = 24 - dayHours;
-            input.nextElementSibling.textContent = `${dayHours}h day / ${nightHours}h night`;
-        };
-
-        window.updateLocation = function(preset) {
-            const locations = {
-                tokyo: { lat: 35.6762, lng: 139.6503 },
-                newyork: { lat: 40.7128, lng: -74.0060 },
-                london: { lat: 51.5074, lng: -0.1278 },
-                sydney: { lat: -33.8688, lng: 151.2093 }
-            };
-
-            if (locations[preset]) {
-                document.getElementById('latitude').value = locations[preset].lat;
-                document.getElementById('longitude').value = locations[preset].lng;
-            }
-        };
-
-        window.setWakeTimeNow = function() {
-            const now = new Date();
-            document.getElementById('wakeTime').value = 
-                now.toTimeString().substring(0, 5);
-        };
-
-        // Save configuration
-        window.saveConfig = async function() {
-            try {
-                const current = timeDesignManager.getCurrentMode();
-                if (!current) return;
-
-                let newConfig = { ...current.config };
-
-                // Update config based on mode
-                switch (current.id) {
-                    case 'classic':
-                        newConfig.designed24Duration = 
-                            parseInt(document.getElementById('designed24Duration').value);
-                        break;
-
-                    case 'core-time':
-                        newConfig.morningAH.start = 
-                            timeToMinutes(document.getElementById('morningStart').value);
-                        newConfig.morningAH.duration = 
-                            parseInt(document.getElementById('morningDuration').value);
-                        newConfig.eveningAH.duration = 
-                            parseInt(document.getElementById('eveningDuration').value);
-                        break;
-
-                    case 'wake-based':
-                        const wakeTimeStr = document.getElementById('wakeTime').value;
-                        if (wakeTimeStr) {
-                            const [hours, minutes] = wakeTimeStr.split(':').map(Number);
-                            const wakeTime = new Date();
-                            wakeTime.setHours(hours, minutes, 0, 0);
-
-                            // Use the mode's recordWakeTime method
-                            const mode = timeDesignManager.registry.get('wake-based');
-                            newConfig = mode.recordWakeTime(wakeTime, newConfig);
-                        }
-                        newConfig.anotherHourDuration = 
-                            parseInt(document.getElementById('anotherHourDuration').value);
-                        newConfig.defaultWakeTime = 
-                            timeToMinutes(document.getElementById('defaultWakeTime').value);
-                        break;
-
-                    case 'solar':
-                        newConfig.location.latitude = 
-                            parseFloat(document.getElementById('latitude').value);
-                        newConfig.location.longitude = 
-                            parseFloat(document.getElementById('longitude').value);
-                        newConfig.dayNightRatio.day = 
-                            parseInt(document.getElementById('dayHours').value);
-                        newConfig.dayNightRatio.night = 24 - newConfig.dayNightRatio.day;
-                        break;
-                }
-
-                // Apply new configuration
-                await timeDesignManager.setMode(current.id, newConfig);
-
-                // Show success message
-                showStatus('Configuration saved successfully!', 'success');
-                debug('Configuration saved:', newConfig);
-
-            } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
-                debug('Save error:', error.message);
-            }
-        };
-
-        // Reset configuration
-        window.resetConfig = async function() {
-            try {
-                const current = timeDesignManager.getCurrentMode();
-                if (!current) return;
-
-                await timeDesignManager.setMode(current.id);
-                loadModeConfig();
-                showStatus('Configuration reset to default', 'success');
-
-            } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
-            }
-        };
-
-        // Show status message
-        function showStatus(message, type) {
-            const statusEl = document.getElementById('statusMessage');
-            statusEl.textContent = message;
-            statusEl.className = `status-message ${type}`;
-            statusEl.style.display = 'block';
-
-            setTimeout(() => {
-                statusEl.style.display = 'none';
-            }, 3000);
-        }
-
-        // Clean up on unload
-        window.addEventListener('unload', () => {
-            if (updateInterval) {
-                clearInterval(updateInterval);
-            }
-        });
-    </script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+
+    <!-- Main script entry point for the test page -->
+    <script type="module" src="js/time-design-test-main.js"></script>
 </body>
+
 </html>
