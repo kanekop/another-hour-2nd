@@ -204,8 +204,8 @@ function generateRangeConfig(item, value) {
 }
 
 function generateSelectConfig(item, value) {
-    const options = Object.keys(item.options).map(key =>
-        `<option value="${key}" ${key === value ? 'selected' : ''}>${item.options[key].name}</option>`
+    const options = item.options.map(opt =>
+        `<option value="${opt.value}" ${opt.value === value ? 'selected' : ''}>${opt.text}</option>`
     ).join('');
     return `<div class="config-group"><label>${item.label}</label><select id="${item.id}">${options}</select></div>`;
 }
