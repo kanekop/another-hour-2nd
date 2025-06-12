@@ -413,8 +413,11 @@ function initializeSolarMode(config) {
 }
 
 function updateSolarInfo(cityKey) {
-    const solarMode = timeDesignManager.modes.solar;
-    if (!solarMode) return;
+    const solarMode = timeDesignManager.registry.get('solar');
+    if (!solarMode) {
+        console.error("SolarMode not found in registry.");
+        return;
+    }
 
     const cityData = solarMode.getCityData(cityKey);
     if (!cityData) {
