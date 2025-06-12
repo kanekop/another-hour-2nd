@@ -1,3 +1,5 @@
+// public/js/time-design-test-main.js
+
 import { timeDesignManager } from './time-design/TimeDesignManager.js';
 
 // Global variables
@@ -128,6 +130,8 @@ function loadModeConfig() {
 
     if (current.id === 'core-time') {
         initializeCoreTimeSlider(current.config);
+    } else if (current.id === 'solar') {
+        initializeSolarMode(current.config);
     }
 
     document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
@@ -151,22 +155,27 @@ function generateCoreTimeConfig(config) {
 }
 
 function generateSolarConfig(config) {
-    let html = '';
-    const schema = timeDesignManager.registry.get('solar').configSchema;
-
-    for (const key in schema) {
-        const item = schema[key];
-        const value = config[key];
-        switch (item.type) {
-            case 'number':
-                html += generateRangeConfig({ id: key, ...item }, value);
-                break;
-            case 'select':
-                html += generateSelectConfig({ id: key, ...item }, value);
-                break;
-        }
-    }
-    return html;
+    return `
+        <div class="config-group">
+            <label for="solar-city">City</label>
+            <select id="solar-city">
+                <option value="tokyo" ${config.city === 'tokyo' ? 'selected' : ''}>Tokyo</option>
+                <option value="kumamoto" ${config.city === 'kumamoto' ? 'selected' : ''}>Kumamoto</option>
+                <option value="newyork" ${config.city === 'newyork' ? 'selected' : ''}>New York</option>
+                <option value="london" ${config.city === 'london' ? 'selected' : ''}>London</option>
+            </select>
+        </div>
+        <div class="solar-info" id="solar-info-display" style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <p><strong>Sun Rise:</strong> <span id="sunrise-time">--:--</span></p>
+            <p><strong>Sun Set:</strong> <span id="sunset-time">--:--</span></p>
+            <p><strong>Daytime:</strong> <span id="daylight-duration">--h --m</span></p>
+        </div>
+        <div class="config-group">
+            <label for="solar-day-hours">Day Hours</label>
+            <div id="solar-day-hours-slider" style="margin: 20px 0;"></div>
+            <div class="range-value" id="solar-day-hours-value">12 hours</div>
+        </div>
+    `;
 }
 
 function generateWakeBasedConfig(config) {
@@ -222,10 +231,10 @@ function updateDisplay() {
         document.getElementById('realTime').textContent = now.toTimeString().substring(0, 8);
         document.getElementById('progress').textContent = Math.round(result.segmentInfo.progress) + '%';
         document.getElementById('remaining').textContent = formatDuration(result.segmentInfo.remaining);
-        document.getElementById('phase').textContent = result.segmentInfo.type === 'designed' ? 'Designed' : 'Another Hour';
+        document.getElementById('phase').textContent = result.segmentInfo.type === 'designed' ? 'Designed' : result.segmentInfo.type === 'day' ? 'Day' : result.segmentInfo.type === 'night' ? 'Night' : 'Another Hour';
         document.getElementById('phaseInfo').textContent = result.segmentInfo.label;
 
-        // --- New Core Time Duration Display Logic ---
+        // Core Time Duration Display
         const currentMode = timeDesignManager.getCurrentMode();
         const coreTimeInfoCard = document.getElementById('coreTimeInfoCard');
         if (currentMode && currentMode.id === 'core-time') {
@@ -236,7 +245,6 @@ function updateDisplay() {
         } else if (coreTimeInfoCard) {
             coreTimeInfoCard.style.display = 'none';
         }
-        // --- End of New Logic ---
 
     } catch (error) {
         // debug('Update error:', error.message);
@@ -274,7 +282,15 @@ async function saveConfig() {
             const values = slider.get();
             newConfig.coreTimeStart = parseInt(values[0]);
             newConfig.coreTimeEnd = parseInt(values[1]);
+        } else if (current.id === 'solar') {
+            // Solar mode configuration
+            newConfig.city = document.getElementById('solar-city').value;
+            const sliderElement = document.getElementById('solar-day-hours-slider');
+            if (sliderElement && sliderElement.noUiSlider) {
+                newConfig.dayHours = parseFloat(sliderElement.noUiSlider.get());
+            }
         } else {
+            // Generic configuration handling
             const schema = timeDesignManager.registry.get(current.id).configSchema;
             for (const key in schema) {
                 const el = document.getElementById(key);
@@ -290,11 +306,6 @@ async function saveConfig() {
                     }
                 }
             }
-        }
-
-        if (current.id === 'solar') {
-            newConfig.city = document.getElementById('solar-city').value;
-            newConfig.dayHours = parseFloat(document.getElementById('solar-day-hours').noUiSlider.get());
         }
 
         await timeDesignManager.setMode(current.id, newConfig);
@@ -326,8 +337,13 @@ function showStatus(message, type) {
     setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
 }
 
-function formatTime(h, m, s) { return [h, m, s].map(v => String(Math.floor(v)).padStart(2, '0')).join(':'); }
-function formatDuration(m) { return m > 60 ? `${Math.floor(m / 60)}h ${Math.floor(m % 60)}m` : `${Math.floor(m)}m`; }
+function formatTime(h, m, s) { 
+    return [h, m, s].map(v => String(Math.floor(v)).padStart(2, '0')).join(':'); 
+}
+
+function formatDuration(m) { 
+    return m > 60 ? `${Math.floor(m / 60)}h ${Math.floor(m % 60)}m` : `${Math.floor(m)}m`; 
+}
 
 function initializeCoreTimeSlider(config) {
     const slider = document.getElementById('coreTimeSlider');
@@ -359,74 +375,68 @@ function initializeCoreTimeSlider(config) {
     });
 }
 
-// Solar Mode Controls
-const solarCitySelect = document.getElementById('solar-city');
-const solarDayHoursSlider = document.getElementById('solar-day-hours');
-const solarDayHoursValue = document.getElementById('solar-day-hours-value');
-const sunriseTimeEl = document.getElementById('sunrise-time');
-const sunsetTimeEl = document.getElementById('sunset-time');
-const daylightDurationEl = document.getElementById('daylight-duration');
+function initializeSolarMode(config) {
+    const solarMode = timeDesignManager.registry.get('solar');
+    if (!solarMode) return;
 
-if (solarDayHoursSlider) {
-    noUiSlider.create(solarDayHoursSlider, {
-        start: 12,
-        step: 0.5,
-        connect: [true, false],
-        range: { 'min': 1, 'max': 23 },
-        pips: { mode: 'values', values: [1, 6, 12, 18, 23], density: 4 },
-    });
-    solarDayHoursSlider.noUiSlider.on('update', (values) => {
-        const value = parseFloat(values[0]);
-        solarDayHoursValue.textContent = `${value.toFixed(1)}h`;
-    });
+    // Update sun info when city changes
+    const citySelect = document.getElementById('solar-city');
+    if (citySelect) {
+        citySelect.addEventListener('change', () => {
+            updateSolarInfo(citySelect.value);
+        });
+    }
+
+    // Initialize day hours slider
+    const dayHoursSlider = document.getElementById('solar-day-hours-slider');
+    if (dayHoursSlider) {
+        noUiSlider.create(dayHoursSlider, {
+            start: config.dayHours || 12,
+            step: 0.5,
+            connect: [true, false],
+            range: { 'min': 1, 'max': 23 },
+            pips: { 
+                mode: 'values', 
+                values: [1, 6, 12, 18, 23], 
+                density: 4 
+            },
+        });
+
+        dayHoursSlider.noUiSlider.on('update', (values) => {
+            const value = parseFloat(values[0]);
+            document.getElementById('solar-day-hours-value').textContent = `${value.toFixed(1)} hours`;
+        });
+    }
+
+    // Initial update
+    updateSolarInfo(config.city);
 }
 
 function updateSolarInfo(city) {
-    const solarMode = timeDesignManager.modes.solar;
+    const solarMode = timeDesignManager.registry.get('solar');
     if (!solarMode) return;
 
-    const sunTimes = solarMode.getSunTimes(city);
-    if (sunTimes) {
+    const sunInfo = solarMode.getSunInfo(city);
+    if (sunInfo) {
         const format = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        sunriseTimeEl.textContent = format(sunTimes.sunrise);
-        sunsetTimeEl.textContent = format(sunTimes.sunset);
+        document.getElementById('sunrise-time').textContent = format(sunInfo.sunrise);
+        document.getElementById('sunset-time').textContent = format(sunInfo.sunset);
 
-        const durationMs = sunTimes.sunset - sunTimes.sunrise;
-        const durationHours = Math.floor(durationMs / 3600000);
-        const durationMins = Math.floor((durationMs % 3600000) / 60000);
-        daylightDurationEl.textContent = `${durationHours}h ${durationMins}m`;
+        const durationHours = Math.floor(sunInfo.daylightHours);
+        const durationMins = Math.floor((sunInfo.daylightHours % 1) * 60);
+        document.getElementById('daylight-duration').textContent = `${durationHours}h ${durationMins}m`;
 
-        const daylightHours = durationMs / 3600000;
-        if (solarDayHoursSlider) {
-            // Set the slider to the actual daylight hours as the default
-            solarDayHoursSlider.noUiSlider.set(daylightHours);
+        // Set the slider to the actual daylight hours as the default
+        const dayHoursSlider = document.getElementById('solar-day-hours-slider');
+        if (dayHoursSlider && dayHoursSlider.noUiSlider) {
+            dayHoursSlider.noUiSlider.set(sunInfo.daylightHours);
         }
     }
 }
 
-function setupMode(mode) {
-    if (mode.id === 'solar') {
-        const city = mode.config.city || 'tokyo';
-        solarCitySelect.value = city;
-        updateSolarInfo(city);
-        if (solarDayHoursSlider) {
-            solarDayHoursSlider.noUiSlider.set(mode.config.dayHours || 12);
-        }
-    }
-}
-
-// Event Listeners
-if (solarCitySelect) {
-    solarCitySelect.addEventListener('change', () => {
-        updateSolarInfo(solarCitySelect.value);
-        // We don't save automatically on city change, but we could.
-        // Let's let the user hit "Save".
-    });
-}
-
-// --- Main Execution ---
+// Main Execution
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize);
 } else {
     initialize();
-} 
+}

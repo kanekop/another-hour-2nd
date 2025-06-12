@@ -5,9 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Design Modes - Test Page</title>
-    <link rel="stylesheet" href="css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -196,6 +194,42 @@
             font-weight: 500;
         }
 
+        /* Solar info box */
+        .solar-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .solar-info p {
+            margin: 5px 0;
+        }
+
+        /* NoUiSlider customization */
+        .noUi-target {
+            border: none;
+            box-shadow: none;
+            background: #e0e0e0;
+        }
+
+        .noUi-connect {
+            background: #3498db;
+        }
+
+        .noUi-handle {
+            border: 2px solid #3498db;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .noUi-tooltip {
+            background: #34495e;
+            border: none;
+            color: white;
+            font-size: 0.9em;
+        }
+
         /* Buttons */
         .button-group {
             display: flex;
@@ -287,29 +321,29 @@
         }
 
         @keyframes dots {
-
-            0%,
-            20% {
+            0%, 20% {
                 content: '';
             }
-
             40% {
                 content: '.';
             }
-
             60% {
                 content: '..';
             }
-
-            80%,
-            100% {
+            80%, 100% {
                 content: '...';
             }
         }
 
-        /* Add some basic styling for the new info card */
+        /* Core time info card */
         #coreTimeInfoCard {
             display: none;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #e0e0e0;
         }
     </style>
 </head>
@@ -377,41 +411,12 @@
                 Waiting for Time Design Manager initialization...
             </div>
         </div>
-
-        <!-- Solar Mode Configuration -->
-        <div id="solar-mode-config" class="mode-config-content" style="display: none;">
-            <div class="config-item">
-                <label for="solar-city">City:</label>
-                <select id="solar-city" class="config-input">
-                    <option value="tokyo">Tokyo</option>
-                    <option value="kumamoto">Kumamoto</option>
-                    <option value="newyork">New York</option>
-                    <option value="london">London</option>
-                </select>
-            </div>
-            <div class="config-item slider-item">
-                <label for="solar-day-hours">Day Hours:</label>
-                <div id="solar-day-hours" class="slider"></div>
-                <span id="solar-day-hours-value" class="slider-value"></span>
-            </div>
-            <div id="solar-info" class="solar-info-box">
-                <p><strong>Sunrise:</strong> <span id="sunrise-time">--:--</span></p>
-                <p><strong>Sunset:</strong> <span id="sunset-time">--:--</span></p>
-                <p><strong>Daylight Duration:</strong> <span id="daylight-duration">--h --m</span></p>
-            </div>
-        </div>
-
-        <!-- Wake-Based Mode Configuration -->
-        <div id="wake-based-mode-config" class="mode-config-content" style="display: none;">
-            <!-- Add wake-based mode configuration content here -->
-        </div>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 
     <!-- Main script entry point for the test page -->
