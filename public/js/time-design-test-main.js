@@ -96,30 +96,35 @@ function loadModeConfig() {
     }
     debug('Loading config for mode:', current.id);
 
-    switch (current.id) {
-        case 'classic':
-            configContent.innerHTML = generateClassicConfig(current.config);
-            break;
-        case 'core-time':
-            configContent.innerHTML = generateCoreTimeConfig(current.config);
-            break;
-        case 'solar':
-            configContent.innerHTML = generateSolarConfig(current.config);
-            break;
-        case 'wake-based':
-            configContent.innerHTML = generateWakeBasedConfig(current.config);
-            break;
-        default:
-            configContent.innerHTML = '<p>Configuration not available for this mode</p>';
-    }
-
-    configContent.innerHTML += `
+    // Start with buttons and status message container
+    let configHtml = `
         <div class="button-group">
             <button class="btn-primary" id="saveConfigBtn">Save Configuration</button>
             <button class="btn-secondary" id="resetConfigBtn">Reset to Default</button>
         </div>
-        <div class="status-message" id="statusMessage"></div>
+        <div class="status-message" id="statusMessage" style="display: none;"></div>
+        <hr>
     `;
+
+    // Append mode-specific config UI
+    switch (current.id) {
+        case 'classic':
+            configHtml += generateClassicConfig(current.config);
+            break;
+        case 'core-time':
+            configHtml += generateCoreTimeConfig(current.config);
+            break;
+        case 'solar':
+            configHtml += generateSolarConfig(current.config);
+            break;
+        case 'wake-based':
+            configHtml += generateWakeBasedConfig(current.config);
+            break;
+        default:
+            configHtml += '<p>Configuration not available for this mode</p>';
+    }
+
+    configContent.innerHTML = configHtml;
 
     document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
     document.getElementById('resetConfigBtn').addEventListener('click', resetConfig);
