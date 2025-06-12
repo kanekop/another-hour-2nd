@@ -35,6 +35,17 @@ export class SolarMode extends BaseMode {
     };
   }
 
+  validate(config) {
+    const errors = [];
+    if (!config.city || !CITIES[config.city]) {
+      errors.push('Invalid city selected.');
+    }
+    if (config.dayHours === undefined || typeof config.dayHours !== 'number' || config.dayHours < 1 || config.dayHours > 23) {
+      errors.push('Day Hours must be a number between 1 and 23.');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+
   getSunTimes(city, date = new Date()) {
     const coords = CITIES[city];
     if (!coords) return null;
