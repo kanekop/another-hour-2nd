@@ -1,6 +1,5 @@
 
 // TimeDesignManager.js - Main coordinator for Time Design Modes
-import { ModeRegistry } from './ModeRegistry.js';
 
 const STORAGE_KEYS = {
   CURRENT_MODE: 'timeDesignMode',
@@ -173,5 +172,10 @@ export class TimeDesignManager {
   }
 }
 
-// Create and export singleton instance
-export const timeDesignManager = new TimeDesignManager();
+// Export for module usage
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { TimeDesignManager };
+} else {
+  window.TimeDesignManager = TimeDesignManager;
+  window.timeDesignManager = new TimeDesignManager();
+}

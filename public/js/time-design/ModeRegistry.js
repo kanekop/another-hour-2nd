@@ -1,10 +1,6 @@
 // ModeRegistry.js - Registry for all Time Design Modes
-import { ClassicMode } from './modes/ClassicMode.js';
-import { CoreTimeMode } from './modes/CoreTimeMode.js';
-import { WakeBasedMode } from './modes/WakeBasedMode.js';
-import { SolarMode } from './modes/SolarMode.js';
 
-export class ModeRegistry {
+class ModeRegistry {
   constructor() {
     this._modes = new Map();
     this._registerDefaultModes();
@@ -49,4 +45,11 @@ export class ModeRegistry {
   hasMode(name) {
     return this._modes.has(name);
   }
+}
+
+// Export for module usage
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { ModeRegistry };
+} else {
+  window.ModeRegistry = ModeRegistry;
 }

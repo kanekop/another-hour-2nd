@@ -1,8 +1,5 @@
 // public/js/time-design/modes/ClassicMode.js
 
-import { BaseMode } from './BaseMode.js';
-import { getCustomAhAngles } from '../../clock-core.js';
-
 /**
  * ClassicMode - The original Another Hour time design
  * Designed 24 period followed by Another Hour period
@@ -160,4 +157,11 @@ export class ClassicMode extends BaseMode {
       }
     };
   }
+}
+
+// Export for module usage
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { ClassicMode };
+} else {
+  window.ClassicMode = ClassicMode;
 }

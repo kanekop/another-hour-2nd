@@ -1,8 +1,5 @@
 // public/js/time-design/modes/CoreTimeMode.js
 
-import { BaseMode } from './BaseMode.js';
-import { getCustomAhAngles } from '../../clock-core.js';
-
 /**
  * CoreTimeMode - Define productive hours with Another Hour periods before and after
  */
@@ -196,4 +193,11 @@ export class CoreTimeMode extends BaseMode {
     const mins = minutes % 60;
     return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
   }
+}
+
+// Export for module usage
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { CoreTimeMode };
+} else {
+  window.CoreTimeMode = CoreTimeMode;
 }

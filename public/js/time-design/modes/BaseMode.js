@@ -1,6 +1,6 @@
 // BaseMode.js - Abstract base class for Time Design Modes
 
-export class BaseMode {
+class BaseMode {
   constructor(id, name, description, configSchema = {}) {
     if (this.constructor === BaseMode) {
       throw new Error('BaseMode is an abstract class and cannot be instantiated directly');
