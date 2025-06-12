@@ -163,11 +163,11 @@ function generateSolarConfig(config) {
     const uiData = solarMode.getConfigUI();
     const solarInfo = uiData.solarInfo;
 
-    const formatTime = (date) => {
-        if (!date) return '--:--';
-        return new Intl.DateTimeFormat('en-GB', {
-            hour: '2-digit', minute: '2-digit', timeZone: config.location.timezone
-        }).format(new Date(date));
+    const formatTimeFromMinutes = (minutes) => {
+        if (minutes === null || isNaN(minutes)) return '--:--';
+        const hours = Math.floor(minutes / 60).toString().padStart(2, '0');
+        const mins = (minutes % 60).toString().padStart(2, '0');
+        return `${hours}:${mins}`;
     };
 
     const formatDuration = (minutes) => {
@@ -184,9 +184,9 @@ function generateSolarConfig(config) {
         solarDetailsHtml = `<p><strong>Polar Night:</strong> Sun does not rise.</p>`;
     } else {
         solarDetailsHtml = `
-            <p><strong>Sun Rise:</strong> <span id="sunrise-time">${formatTime(solarInfo.sunrise)}</span></p>
-            <p><strong>Solar Noon:</strong> <span id="solarnoon-time">${formatTime(solarInfo.solarNoon)}</span></p>
-            <p><strong>Sun Set:</strong> <span id="sunset-time">${formatTime(solarInfo.sunset)}</span></p>
+            <p><strong>Sun Rise:</strong> <span id="sunrise-time">${formatTimeFromMinutes(solarInfo.sunrise)}</span></p>
+            <p><strong>Solar Noon:</strong> <span id="solarnoon-time">${formatTimeFromMinutes(solarInfo.solarNoon)}</span></p>
+            <p><strong>Sun Set:</strong> <span id="sunset-time">${formatTimeFromMinutes(solarInfo.sunset)}</span></p>
             <p><strong>Daytime:</strong> <span id="daylight-duration">${formatDuration(solarInfo.daylightMinutes)}</span></p>
         `;
     }

@@ -322,9 +322,15 @@ code --install-extension ms-vscode.vscode-typescript-next
 // >Board: BANGLEJS2
 ```
 
-### 2.6 エミュレータでの開発
+### 2.6 エミュレータファーストの開発
 
-#### エミュレータの起動と使用
+#### なぜエミュレータファーストなのか
+- **即座にテスト可能**：コード変更後すぐに動作確認
+- **デバッグが容易**：ブラウザの開発者ツールを活用
+- **実機不要**：購入前でも開発開始可能
+- **CI/CD対応**：自動テストに組み込み可能
+
+#### エミュレータの起動と基本操作
 
 ```bash
 # ローカルサーバーが起動している状態で
@@ -333,15 +339,208 @@ http://localhost:8080/emulator.html
 
 # パラメータ付き起動（特定のアプリを自動読み込み）
 http://localhost:8080/emulator.html?app=anotherhour
+
+# デバッグモードで起動
+http://localhost:8080/emulator.html?app=anotherhour&debug=1
 ```
 
-#### エミュレータの制限事項
-- Bluetoothは完全にはエミュレートされない
-- バッテリー関連の機能は固定値を返す
-- パフォーマンスが実機と異なる
-- タッチの精度が実機と異なる
+#### エミュレータの画面構成
+```
+┌─────────────────────────────┐
+│  Bangle.js 2 Emulator      │
+├─────────────────────────────┤
+│  ┌───────────────────┐      │
+│  │                   │      │ ← 176×176px ディスプレイ
+│  │   Watch Display   │      │    マウスでタッチ操作
+│  │                   │      │
+│  └───────────────────┘      │
+│                             │
+│  [BTN1] (Physical Button)   │ ← クリックまたは'B'キー
+│                             │
+│  Console Output:            │
+│  ┌─────────────────────┐   │
+│  │ > App loaded        │   │ ← リアルタイムログ
+│  │ > Memory: 64KB free │   │
+│  └─────────────────────┘   │
+└─────────────────────────────┘
+```
 
-### 2.7 デバッグ環境の構築
+#### エミュレータでの操作方法
+- **タッチ**: マウスクリック/ドラッグ
+- **ボタン**: 画面上のBTN1クリック または キーボード'B'
+- **スワイプ**: マウスドラッグ
+- **長押し**: マウスボタン長押し
+
+#### エミュレータ専用の開発支援機能
+
+```javascript
+// anotherhour.app.js に追加
+const IS_EMULATOR = g.drawString.toString().includes('Emulator');
+
+if (IS_EMULATOR) {
+  // エミュレータ専用のデバッグUI
+  global.showDebugPanel = function() {
+    const debugInfo = {
+      mode: state.active ? 'Active' : 'Inactive',
+      designed: state.designedHours + 'h',
+      memory: process.memory(),
+      time: new Date().toISOString()
+    };
+    
+    // 画面右側にデバッグ情報を表示
+    g.setColor(0, 0, 0);
+    g.fillRect(120, 0, 175, 80);
+    g.setColor(1, 1, 1);
+    g.setFont('6x8:1');
+    
+    let y = 5;
+    Object.entries(debugInfo).forEach(([key, value]) => {
+      g.drawString(`${key}: ${value}`, 125, y);
+      y += 10;
+    });
+  };
+  
+  // F12キーでデバッグパネルの表示/非表示
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'F12') {
+      global.debugPanelVisible = !global.debugPanelVisible;
+    }
+  });
+}
+```
+
+#### エミュレータでのBluetooth開発
+
+```javascript
+// lib/ble-service-emulator.js
+if (IS_EMULATOR) {
+  // Bluetoothサービスのモック実装
+  window.NRF = {
+    _services: {},
+    _connected: false,
+    
+    setServices: function(services, options) {
+      console.log('📡 BLE Services registered:', services);
+      this._services = services;
+      
+      // エミュレータ用のBLE UIを表示
+      showBLEEmulatorUI(services);
+      return true;
+    },
+    
+    setAdvertising: function(data, options) {
+      console.log('📢 BLE Advertising:', data, options);
+      return true;
+    },
+    
+    getSecurityStatus: function() {
+      return { connected: this._connected };
+    },
+    
+    // テスト用：接続シミュレーション
+    simulateConnection: function() {
+      this._connected = true;
+      if (global.onBLEConnect) global.onBLEConnect();
+    }
+  };
+  
+  // BLEエミュレータUIの表示
+  function showBLEEmulatorUI(services) {
+    const bleUI = document.createElement('div');
+    bleUI.style.cssText = `
+      position: fixed;
+      right: 10px;
+      top: 10px;
+      background: white;
+      border: 2px solid #0066cc;
+      padding: 10px;
+      font-family: monospace;
+      z-index: 1000;
+    `;
+    
+    bleUI.innerHTML = `
+      <h3>BLE Emulator</h3>
+      <button onclick="NRF.simulateConnection()">Simulate Connect</button>
+      <pre>${JSON.stringify(services, null, 2)}</pre>
+    `;
+    
+    document.body.appendChild(bleUI);
+  }
+}
+```
+
+#### ホットリロード開発環境
+
+```bash
+# watch-and-reload.js
+const chokidar = require('chokidar');
+const { exec } = require('child_process');
+
+// ファイル変更を監視
+chokidar.watch('apps/anotherhour/*.js').on('change', (path) => {
+  console.log(`File changed: ${path}`);
+  
+  // エミュレータをリロード
+  exec('curl http://localhost:8080/reload', (err) => {
+    if (!err) console.log('Emulator reloaded');
+  });
+});
+
+# 実行
+node watch-and-reload.js
+```
+
+#### エミュレータでのテスト自動化
+
+```javascript
+// test/emulator-test.js
+const puppeteer = require('puppeteer');
+
+async function runEmulatorTests() {
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
+  
+  // エミュレータを開く
+  await page.goto('http://localhost:8080/emulator.html?app=anotherhour');
+  
+  // アプリの読み込みを待つ
+  await page.waitForTimeout(2000);
+  
+  // タッチ操作のシミュレーション
+  await page.mouse.click(88, 88); // 画面中央をタップ
+  
+  // コンソール出力を取得
+  const logs = await page.evaluate(() => {
+    return window.consoleLogs || [];
+  });
+  
+  console.log('Test logs:', logs);
+  
+  // スクリーンショットを保存
+  await page.screenshot({ path: 'test-screenshot.png' });
+  
+  await browser.close();
+}
+
+runEmulatorTests();
+```
+
+#### エミュレータの制限事項と回避策
+
+| 機能 | エミュレータ | 回避策 |
+|------|------------|---------|
+| Bluetooth通信 | ❌ 実通信不可 | モックAPIで動作確認 |
+| GPS | ❌ 利用不可 | 固定座標を返す |
+| 心拍センサー | ❌ 利用不可 | ダミーデータ生成 |
+| バッテリー残量 | ⚠️ 固定値 | 複数の値でテスト |
+| パフォーマンス | ⚠️ 実機と異なる | 実機で最終確認 |
+| メモリ制限 | ✅ 再現可能 | 実際の制限を適用 |
+| タッチ操作 | ✅ マウスで代用 | - |
+| 画面表示 | ✅ 完全再現 | - |
+
+### 2.7 実機での開発（エミュレータ開発後）
+
+エミュレータで十分にテストした後、実機での最終確認を行います。
 
 #### コンソールログの設定
 
@@ -540,13 +739,19 @@ PORT=3000 npm start
 }
 ```
 
-## 3. アプリケーション構造の詳細設計
+## 3. アプリケーション構造の詳細設計（エミュレータベース開発）
 
-### 3.1 状態管理アーキテクチャ
+エミュレータでの開発を前提とした設計を行います。
+
+### 3.1 状態管理アーキテクチャ（エミュレータ対応）
 
 ```javascript
-// anotherhour.lib.js - 共有ライブラリ
+// anotherhour.lib.js - 共有ライブラリ（エミュレータ/実機両対応）
 (function() {
+  // 環境検出
+  const IS_EMULATOR = typeof g !== 'undefined' && 
+                      g.drawString.toString().includes('Emulator');
+  
   const STATE_FILE = 'anotherhour.json';
   const LOG_FILE = 'anotherhour.log.json';
   
@@ -554,6 +759,25 @@ PORT=3000 npm start
     constructor() {
       this.state = this.loadState();
       this.listeners = [];
+      
+      // エミュレータ用のデバッグ機能
+      if (IS_EMULATOR) {
+        this.enableEmulatorFeatures();
+      }
+    }
+    
+    enableEmulatorFeatures() {
+      // 状態変更をコンソールに出力
+      this.addListener((state) => {
+        console.log('📊 State changed:', JSON.stringify(state, null, 2));
+      });
+      
+      // グローバルに状態操作関数を公開（デバッグ用）
+      global.ahState = {
+        get: () => this.state,
+        set: (updates) => this.updateState(updates),
+        reset: () => this.resetToDefaults()
+      };
     }
     
     loadState() {
@@ -1801,89 +2025,254 @@ const RenderOptimizer = {
 };
 ```
 
-## 8. テストとデバッグ
+## 8. テストとデバッグ（エミュレータ優先）
 
-### 8.1 ユニットテスト
+### 8.1 エミュレータでの自動テスト
 
 ```javascript
-// test/time-calculator.test.js
-function runTests() {
-  const testResults = [];
-  
-  // テスト1: 基本的な時間計算
-  function testBasicCalculation() {
-    const calc = new TimeCalculator(16);
-    const realTime = new Date('2024-01-01T08:00:00');
-    const result = calc.calculateCustomTime(realTime);
-    
-    const expected = new Date('2024-01-01T12:00:00');
-    const passed = result.time.getTime() === expected.getTime();
-    
-    return {
-      name: 'Basic time calculation',
-      passed: passed,
-      expected: expected.toString(),
-      actual: result.time.toString()
-    };
+// test/run-emulator-tests.js
+const puppeteer = require('puppeteer');
+const assert = require('assert');
+
+class EmulatorTestRunner {
+  constructor() {
+    this.browser = null;
+    this.page = null;
   }
   
-  // テスト2: モード切り替え境界
-  function testModeBoundary() {
-    const calc = new TimeCalculator(16);
-    const boundaryTime = new Date('2024-01-01T16:00:00');
-    const result = calc.calculateCustomTime(boundaryTime);
+  async setup() {
+    this.browser = await puppeteer.launch({ 
+      headless: process.env.CI === 'true',
+      devtools: true 
+    });
+    this.page = await this.browser.newPage();
     
-    const passed = result.mode === 'anotherhour';
+    // コンソール出力をキャプチャ
+    this.page.on('console', msg => {
+      console.log('Emulator:', msg.text());
+    });
     
-    return {
-      name: 'Mode boundary detection',
-      passed: passed,
-      expected: 'anotherhour',
-      actual: result.mode
-    };
+    // エミュレータを起動
+    await this.page.goto('http://localhost:8080/emulator.html?app=anotherhour&debug=1');
+    await this.page.waitForTimeout(3000); // アプリ読み込み待機
   }
   
-  // テスト3: 逆計算
-  function testReverseCalculation() {
-    const calc = new TimeCalculator(16);
-    const customTime = new Date('2024-01-01T12:00:00');
-    const realTime = calc.calculateRealTime(customTime, 'designed24');
-    
-    const expected = new Date('2024-01-01T08:00:00');
-    const passed = Math.abs(realTime.getTime() - expected.getTime()) < 1000;
-    
-    return {
-      name: 'Reverse time calculation',
-      passed: passed,
-      expected: expected.toString(),
-      actual: realTime.toString()
-    };
-  }
-  
-  // テスト実行
-  testResults.push(testBasicCalculation());
-  testResults.push(testModeBoundary());
-  testResults.push(testReverseCalculation());
-  
-  // 結果表示
-  console.log('=== Another Hour Test Results ===');
-  testResults.forEach(result => {
-    console.log(`${result.passed ? '✓' : '✗'} ${result.name}`);
-    if (!result.passed) {
-      console.log(`  Expected: ${result.expected}`);
-      console.log(`  Actual: ${result.actual}`);
+  async runTest(name, testFn) {
+    console.log(`Running test: ${name}`);
+    try {
+      await testFn(this.page);
+      console.log(`✅ ${name} passed`);
+    } catch (error) {
+      console.error(`❌ ${name} failed:`, error);
+      throw error;
     }
-  });
+  }
   
-  const passed = testResults.filter(r => r.passed).length;
-  console.log(`\nTotal: ${passed}/${testResults.length} passed`);
-  
-  return testResults;
+  async cleanup() {
+    if (this.browser) {
+      await this.browser.close();
+    }
+  }
 }
 
-// エミュレータでの実行
-if (process.env.EMULATOR) {
-  runTests();
+// テストケースの実装
+async function runAllTests() {
+  const runner = new EmulatorTestRunner();
+  await runner.setup();
+  
+  try {
+    // Test 1: 初期表示の確認
+    await runner.runTest('Initial display', async (page) => {
+      const displayText = await page.evaluate(() => {
+        return document.querySelector('canvas').toDataURL();
+      });
+      assert(displayText, 'Display should be rendered');
+    });
+    
+    // Test 2: タッチ操作のテスト
+    await runner.runTest('Touch interaction', async (page) => {
+      // 画面中央をタップ
+      await page.mouse.click(88, 88);
+      await page.waitForTimeout(500);
+      
+      // 状態が変更されたか確認
+      const state = await page.evaluate(() => {
+        return global.ahState ? global.ahState.get() : null;
+      });
+      assert(state, 'State should be accessible');
+    });
+    
+    // Test 3: 時間計算のテスト
+    await runner.runTest('Time calculation', async (page) => {
+      const result = await page.evaluate(() => {
+        const calc = new global.TimeCalculator(16);
+        const testDate = new Date('2024-01-01T08:00:00');
+        return calc.calculateCustomTime(testDate);
+      });
+      
+      assert(result.mode === 'designed24', 'Should be in designed24 mode');
+      assert(result.time.getHours() === 12, 'Time should be scaled correctly');
+    });
+    
+    // Test 4: メモリリークテスト
+    await runner.runTest('Memory stability', async (page) => {
+      const initialMemory = await page.evaluate(() => process.memory());
+      
+      // 100回状態更新
+      for (let i = 0; i < 100; i++) {
+        await page.evaluate(() => {
+          global.ahState.set({ designedHours: Math.floor(Math.random() * 23) + 1 });
+        });
+      }
+      
+      const finalMemory = await page.evaluate(() => process.memory());
+      const memoryGrowth = finalMemory.usage - initialMemory.usage;
+      
+      assert(memoryGrowth < 10000, `Memory growth ${memoryGrowth} should be minimal`);
+    });
+    
+  } finally {
+    await runner.cleanup();
+  }
+}
+
+// CI環境対応
+if (require.main === module) {
+  runAllTests().catch(err => {
+    console.error('Test suite failed:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = { EmulatorTestRunner, runAllTests };
+```
+
+### 8.2 エミュレータでのデバッグテクニック
+
+```javascript
+// debug-helpers.js - エミュレータ専用デバッグヘルパー
+if (IS_EMULATOR) {
+  // 1. ビジュアルデバッグ
+  global.visualDebug = {
+    // タッチポイントの可視化
+    showTouchPoint: function(x, y) {
+      g.setColor(1, 0, 0);
+      g.fillCircle(x, y, 5);
+      setTimeout(() => draw(), 500); // 0.5秒後に再描画
+    },
+    
+    // メモリ使用量のグラフ表示
+    showMemoryGraph: function() {
+      const history = [];
+      setInterval(() => {
+        const mem = process.memory();
+        history.push(mem.usage);
+        if (history.length > 50) history.shift();
+        
+        // グラフ描画
+        g.clearRect(0, 150, 175, 175);
+        g.setColor(0, 0, 1);
+        history.forEach((usage, i) => {
+          const height = (usage / mem.total) * 25;
+          g.fillRect(i * 3, 175 - height, (i * 3) + 2, 175);
+        });
+      }, 1000);
+    }
+  };
+  
+  // 2. インタラクティブコンソール
+  global.debug = {
+    // 現在の状態をダンプ
+    dumpState: () => {
+      console.log('=== Another Hour State Dump ===');
+      console.log('State:', JSON.stringify(global.AnotherHourState.state, null, 2));
+      console.log('Memory:', process.memory());
+      console.log('Time:', new Date());
+    },
+    
+    // 時間を任意に設定
+    setTime: (hours, minutes) => {
+      const fakeDate = new Date();
+      fakeDate.setHours(hours, minutes, 0, 0);
+      Date = function() { return fakeDate; };
+      draw();
+    },
+    
+    // アニメーションテスト
+    testAnimation: () => {
+      let hour = 0;
+      const interval = setInterval(() => {
+        debug.setTime(hour, 0);
+        hour++;
+        if (hour >= 24) {
+          clearInterval(interval);
+          Date = global._originalDate; // 元に戻す
+        }
+      }, 100);
+    }
+  };
+  
+  // 3. エラーハンドリングの強化
+  process.on('uncaughtException', (error) => {
+    // エラーを画面に表示
+    g.clearRect(0, 50, 175, 100);
+    g.setColor(1, 0, 0);
+    g.fillRect(0, 50, 175, 100);
+    g.setColor(1, 1, 1);
+    g.setFont('6x8:1');
+    g.drawString('ERROR:', 5, 55);
+    g.drawString(error.message.substr(0, 20), 5, 65);
+    console.error('Uncaught:', error);
+  });
+}
+```
+
+### 8.3 実機テスト（エミュレータテスト後）
+
+エミュレータで十分にテストした後のみ、実機で以下を確認：
+
+```javascript
+// test/device-specific-tests.js
+// 実機でのみ実行するテスト
+
+function runDeviceTests() {
+  const tests = [];
+  
+  // バッテリー持続テスト
+  function batteryDurationTest() {
+    const startBattery = E.getBattery();
+    const startTime = Date.now();
+    
+    // 1時間後に確認
+    setTimeout(() => {
+      const endBattery = E.getBattery();
+      const duration = (Date.now() - startTime) / 1000 / 60; // 分
+      const drain = startBattery - endBattery;
+      const drainPerHour = (drain / duration) * 60;
+      
+      console.log(`Battery drain: ${drainPerHour}% per hour`);
+    }, 3600000);
+  }
+  
+  // Bluetooth実通信テスト
+  function bluetoothRealTest() {
+    NRF.setServices({
+      '12345678-1234-1234-1234-123456789abc': {
+        '12345678-1234-1234-1234-123456789abd': {
+          value: [1, 2, 3],
+          readable: true,
+          notify: true
+        }
+      }
+    });
+    
+    // 実際の接続を待つ
+    NRF.on('connect', () => {
+      console.log('Real BLE connection established');
+    });
+  }
+  
+  return tests;
 }
 ```
 
