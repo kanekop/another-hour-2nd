@@ -3,7 +3,7 @@
 import { ClassicMode } from './modes/ClassicMode.js';
 import { CoreTimeMode } from './modes/CoreTimeMode.js';
 // import { WakeBasedMode } from './modes/WakeBasedMode.js';
-// import { SolarMode } from './modes/SolarMode.js';
+import { SolarMode } from './modes/SolarMode.js';
 
 export class ModeRegistry {
   constructor() {
@@ -22,9 +22,9 @@ export class ModeRegistry {
       // if (typeof WakeBasedMode !== 'undefined') {
       //   this.register(new WakeBasedMode());
       // }
-      // if (typeof SolarMode !== 'undefined') {
-      //   this.register(new SolarMode());
-      // }
+      if (typeof SolarMode !== 'undefined') {
+        this.register(new SolarMode());
+      }
     } catch (error) {
       console.error('Error registering default modes:', error);
     }

@@ -1,119 +1,101 @@
 // SolarMode.js - Time based on solar cycles
 
-class SolarMode extends BaseMode {
+import { BaseMode } from './BaseMode.js';
+
+/**
+ * SolarMode - Time synchronized with sunrise and sunset cycles
+ * This is a placeholder implementation.
+ * It requires a library or API to get sunrise/sunset times for a given location.
+ */
+export class SolarMode extends BaseMode {
   constructor() {
     super(
       'solar',
       'Solar Mode',
-      'Time synchronized with sunrise and sunset cycles'
+      'Time synchronized with sunrise and sunset cycles. (Location features coming soon)',
+      {
+        latitude: { type: 'number', label: 'Latitude', default: 35.68, disabled: true },
+        longitude: { type: 'number', label: 'Longitude', default: 139.76, disabled: true },
+      }
     );
   }
 
   getDefaultConfig() {
     return {
-      location: {
-        latitude: 35.6762, // Tokyo
-        longitude: 139.6503
-      },
-      dayNightRatio: {
-        day: 16,   // hours
-        night: 8   // hours
-      }
+      latitude: 35.68, // Tokyo
+      longitude: 139.76,
     };
   }
 
   validate(config) {
-    const errors = [];
+    // For now, no validation is needed as the inputs are disabled
+    return { valid: true, errors: [] };
+  }
 
-    if (!config.location || typeof config.location !== 'object') {
-      errors.push('Location must be an object');
-    } else {
-      if (typeof config.location.latitude !== 'number' || config.location.latitude < -90 || config.location.latitude > 90) {
-        errors.push('Latitude must be between -90 and 90');
-      }
-      if (typeof config.location.longitude !== 'number' || config.location.longitude < -180 || config.location.longitude > 180) {
-        errors.push('Longitude must be between -180 and 180');
-      }
-    }
+  // This is a simplified placeholder. A real implementation would use a library
+  // like SunCalc.js or an API call.
+  _getSunriseSunset(date, lat, lon) {
+    // Placeholder: Fixed sunrise/sunset for simplicity
+    // March equinox-ish times
+    const sunrise = 6 * 60; // 6:00 AM
+    const sunset = 18 * 60; // 6:00 PM
+    return { sunrise, sunset };
+  }
 
-    if (!config.dayNightRatio || typeof config.dayNightRatio !== 'object') {
-      errors.push('Day/night ratio must be an object');
-    } else {
-      if (typeof config.dayNightRatio.day !== 'number' || config.dayNightRatio.day <= 0) {
-        errors.push('Day hours must be a positive number');
-      }
-      if (typeof config.dayNightRatio.night !== 'number' || config.dayNightRatio.night <= 0) {
-        errors.push('Night hours must be a positive number');
-      }
-    }
+  _buildSegments(config, date) {
+    const { sunrise, sunset } = this._getSunriseSunset(date, config.latitude, config.longitude);
+    const dayDuration = sunset - sunrise;
+    const nightDuration = (1440 - dayDuration);
 
-    return {
-      valid: errors.length === 0,
-      errors
-    };
+    const dayScaleFactor = dayDuration > 0 ? (12 * 60) / dayDuration : 1;
+    const nightScaleFactor = nightDuration > 0 ? (12 * 60) / nightDuration : 1;
+
+    const segments = [
+      this.createSegment('night', 0, sunrise, nightScaleFactor, 'Night'),
+      this.createSegment('day', sunrise, sunset, dayScaleFactor, 'Daylight'),
+      this.createSegment('night', sunset, 1440, nightScaleFactor, 'Night'),
+    ];
+
+    return segments.filter(s => s.duration > 0);
   }
 
   calculate(date, timezone, config) {
-    const now = new Date(date);
+    const minutes = this.getMinutesSinceMidnight(date, timezone);
+    const segments = this._buildSegments(config, date);
+    const activeSegment = this.findActiveSegment(minutes, segments);
 
-    // Simplified solar calculation (would use proper solar library in production)
-    const dayOfYear = this.getDayOfYear(now);
-    const sunriseHour = 6 + Math.sin((dayOfYear - 81) * Math.PI / 182) * 2;
-    const sunsetHour = 18 + Math.sin((dayOfYear - 81) * Math.PI / 182) * 2;
-
-    const currentHour = now.getHours() + now.getMinutes() / 60;
-    const isDaytime = currentHour >= sunriseHour && currentHour <= sunsetHour;
-
-    let scaleFactor = 1;
-    let periodName = isDaytime ? 'Solar Day' : 'Solar Night';
-
-    // Scale day/night periods to configured ratios
-    if (isDaytime) {
-      const dayLength = sunsetHour - sunriseHour;
-      scaleFactor = config.dayNightRatio.day / dayLength;
-    } else {
-      const nightLength = 24 - (sunsetHour - sunriseHour);
-      scaleFactor = config.dayNightRatio.night / nightLength;
+    if (!activeSegment) {
+      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' } };
     }
 
-    // Calculate scaled time
-    const totalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-    const scaledSeconds = totalSeconds * scaleFactor;
+    let scaledTime = 0;
+    // Calculate total scaled minutes passed before this segment
+    for (const seg of segments) {
+      if (seg.endTime <= activeSegment.startTime) {
+        scaledTime += seg.duration * seg.scaleFactor;
+      }
+    }
 
-    const hours = Math.floor(scaledSeconds / 3600) % 24;
-    const minutes = Math.floor((scaledSeconds % 3600) / 60);
-    const seconds = scaledSeconds % 60;
+    const segmentElapsed = minutes - activeSegment.startTime;
+    scaledTime += segmentElapsed * activeSegment.scaleFactor;
+
+    const displayHours = Math.floor(scaledTime / 60) % 24;
+    const displayMinutes = Math.floor(scaledTime % 60);
+    const displaySeconds = Math.floor((scaledTime * 60) % 60);
+
+    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
+
+    const isDesigned = activeSegment.type === 'day';
 
     return {
-      hours,
-      minutes,
-      seconds,
-      periodName,
-      scaleFactor,
-      segmentInfo: {
-        type: 'designed',
-        label: periodName,
-        progress: isDaytime 
-          ? ((currentHour - sunriseHour) / (sunsetHour - sunriseHour)) * 100
-          : ((currentHour < sunriseHour ? currentHour + 24 : currentHour) - sunsetHour) / (24 - (sunsetHour - sunriseHour)) * 100,
-        remaining: isDaytime 
-          ? (sunsetHour - currentHour) * 60
-          : ((sunriseHour < currentHour ? sunriseHour + 24 : sunriseHour) - currentHour) * 60
-      },
-      solarInfo: {
-        sunrise: sunriseHour,
-        sunset: sunsetHour,
-        isDaytime: isDaytime,
-        location: `${config.location.latitude.toFixed(2)}, ${config.location.longitude.toFixed(2)}`
-      }
+      hours: displayHours,
+      minutes: displayMinutes,
+      seconds: displaySeconds,
+      scaleFactor: activeSegment.scaleFactor,
+      isAnotherHour: !isDesigned,
+      segmentInfo: { type: isDesigned ? 'designed' : 'another', label: activeSegment.label, progress, remaining, duration: activeSegment.duration },
+      periodName: activeSegment.label,
     };
-  }
-
-  getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
   }
 }
 
