@@ -258,3 +258,134 @@ export class CoreTimeMode extends BaseMode {
     return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
   }
 }
+// CoreTimeMode.js - Core Time Mode implementation
+import { BaseMode } from './BaseMode.js';
+
+export class CoreTimeMode extends BaseMode {
+  getName() {
+    return 'coreTime';
+  }
+
+  getDisplayName() {
+    return 'Core Time Mode';
+  }
+
+  getDescription() {
+    return 'Another Hour periods surround your core active hours';
+  }
+
+  getDefaultConfig() {
+    return {
+      coreStartHour: 7,
+      coreEndHour: 22,
+      morningAhDuration: 120,
+      eveningAhDuration: 120
+    };
+  }
+
+  getConfigSchema() {
+    return {
+      coreStartHour: {
+        type: 'number',
+        label: 'Core Time Start Hour',
+        min: 0,
+        max: 23,
+        step: 1,
+        default: 7
+      },
+      coreEndHour: {
+        type: 'number',
+        label: 'Core Time End Hour',
+        min: 1,
+        max: 24,
+        step: 1,
+        default: 22
+      },
+      morningAhDuration: {
+        type: 'number',
+        label: 'Morning AH Duration (minutes)',
+        min: 30,
+        max: 480,
+        step: 30,
+        default: 120
+      },
+      eveningAhDuration: {
+        type: 'number',
+        label: 'Evening AH Duration (minutes)',
+        min: 30,
+        max: 480,
+        step: 30,
+        default: 120
+      }
+    };
+  }
+
+  calculateAngles(date, timezone, config) {
+    const {
+      coreStartHour = 7,
+      coreEndHour = 22,
+      morningAhDuration = 120,
+      eveningAhDuration = 120
+    } = config;
+
+    const now = new Date(date);
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentSecond = now.getSeconds();
+    
+    const currentTimeMinutes = currentHour * 60 + currentMinute + currentSecond / 60;
+    const coreStartMinutes = coreStartHour * 60;
+    const coreEndMinutes = coreEndHour * 60;
+    
+    let isAnotherHour = false;
+    let scaleFactor = 1;
+    let aphHours, aphMinutes, aphSeconds;
+    
+    if (currentTimeMinutes < coreStartMinutes) {
+      // Morning AH period
+      isAnotherHour = true;
+      const morningDuration = coreStartMinutes; // from 0:00 to core start
+      scaleFactor = morningAhDuration / morningDuration;
+      
+      const scaledMinutes = currentTimeMinutes * scaleFactor;
+      aphHours = Math.floor(scaledMinutes / 60);
+      aphMinutes = Math.floor(scaledMinutes % 60);
+      aphSeconds = ((scaledMinutes % 1) * 60);
+      
+    } else if (currentTimeMinutes >= coreEndMinutes) {
+      // Evening AH period
+      isAnotherHour = true;
+      const eveningDuration = 1440 - coreEndMinutes; // from core end to 24:00
+      scaleFactor = eveningAhDuration / eveningDuration;
+      
+      const eveningMinutes = currentTimeMinutes - coreEndMinutes;
+      const scaledMinutes = eveningMinutes * scaleFactor;
+      
+      aphHours = coreEndHour + Math.floor(scaledMinutes / 60);
+      aphMinutes = Math.floor(scaledMinutes % 60);
+      aphSeconds = ((scaledMinutes % 1) * 60);
+      
+    } else {
+      // Core time period - normal time
+      aphHours = currentHour;
+      aphMinutes = currentMinute;
+      aphSeconds = currentSecond;
+    }
+    
+    // Calculate angles
+    const hourAngle = this.normalizeAngle((aphHours % 12) * 30 + aphMinutes * 0.5 + aphSeconds * (0.5 / 60));
+    const minuteAngle = this.normalizeAngle(aphMinutes * 6 + aphSeconds * 0.1);
+    const secondAngle = this.normalizeAngle(aphSeconds * 6);
+    
+    return {
+      hourAngle,
+      minuteAngle,
+      secondAngle,
+      aphHours: Math.floor(aphHours),
+      aphMinutes: Math.floor(aphMinutes),
+      aphSeconds,
+      scaleFactor,
+      isPersonalizedAhPeriod: isAnotherHour
+    };
+  }
+}

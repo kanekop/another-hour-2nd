@@ -366,3 +366,98 @@ export class WakeBasedMode extends BaseMode {
     return Math.round(totalMinutes / config.wakeHistory.length);
   }
 }
+// WakeBasedMode.js - Wake-Based Mode implementation
+import { BaseMode } from './BaseMode.js';
+
+export class WakeBasedMode extends BaseMode {
+  getName() {
+    return 'wakeBased';
+  }
+
+  getDisplayName() {
+    return 'Wake-Based Mode';
+  }
+
+  getDescription() {
+    return 'Dynamic 24-hour cycle starting from your wake time';
+  }
+
+  getDefaultConfig() {
+    return {
+      wakeTime: '07:00',
+      cycleDurationMinutes: 1440
+    };
+  }
+
+  getConfigSchema() {
+    return {
+      wakeTime: {
+        type: 'time',
+        label: 'Wake Time',
+        default: '07:00'
+      },
+      cycleDurationMinutes: {
+        type: 'number',
+        label: 'Cycle Duration (minutes)',
+        min: 720,
+        max: 2880,
+        step: 30,
+        default: 1440
+      }
+    };
+  }
+
+  calculateAngles(date, timezone, config) {
+    const { wakeTime = '07:00', cycleDurationMinutes = 1440 } = config;
+    
+    if (!wakeTime) {
+      throw new Error('Wake time must be configured for Wake-Based Mode');
+    }
+    
+    // Parse wake time
+    const [wakeHour, wakeMinute] = wakeTime.split(':').map(Number);
+    const wakeTimeMinutes = wakeHour * 60 + wakeMinute;
+    
+    const now = new Date(date);
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentSecond = now.getSeconds();
+    
+    const currentTimeMinutes = currentHour * 60 + currentMinute + currentSecond / 60;
+    
+    // Calculate minutes since wake time (handling day rollover)
+    let minutesSinceWake;
+    if (currentTimeMinutes >= wakeTimeMinutes) {
+      minutesSinceWake = currentTimeMinutes - wakeTimeMinutes;
+    } else {
+      minutesSinceWake = (1440 - wakeTimeMinutes) + currentTimeMinutes;
+    }
+    
+    // Scale the time
+    const scaleFactor = cycleDurationMinutes / 1440;
+    const scaledMinutes = minutesSinceWake * scaleFactor;
+    
+    // Convert back to hours, minutes, seconds
+    const aphHours = Math.floor(scaledMinutes / 60);
+    const aphMinutes = Math.floor(scaledMinutes % 60);
+    const aphSeconds = ((scaledMinutes % 1) * 60);
+    
+    // Calculate angles
+    const hourAngle = this.normalizeAngle((aphHours % 12) * 30 + aphMinutes * 0.5 + aphSeconds * (0.5 / 60));
+    const minuteAngle = this.normalizeAngle(aphMinutes * 6 + aphSeconds * 0.1);
+    const secondAngle = this.normalizeAngle(aphSeconds * 6);
+    
+    return {
+      hourAngle,
+      minuteAngle,
+      secondAngle,
+      aphHours,
+      aphMinutes,
+      aphSeconds,
+      scaleFactor,
+      isPersonalizedAhPeriod: true,
+      wakeTime,
+      minutesSinceWake
+    };
+  }
+}

@@ -394,3 +394,146 @@ export class SolarMode extends BaseMode {
     };
   }
 }
+// SolarMode.js - Solar Mode implementation
+import { BaseMode } from './BaseMode.js';
+
+export class SolarMode extends BaseMode {
+  getName() {
+    return 'solar';
+  }
+
+  getDisplayName() {
+    return 'Solar Mode';
+  }
+
+  getDescription() {
+    return 'Time synchronized with sunrise and sunset cycles';
+  }
+
+  getDefaultConfig() {
+    return {
+      latitude: 35.6762,
+      longitude: 139.6503,
+      dayScaleFactor: 1.0,
+      nightScaleFactor: 1.5
+    };
+  }
+
+  getConfigSchema() {
+    return {
+      latitude: {
+        type: 'number',
+        label: 'Latitude',
+        min: -90,
+        max: 90,
+        step: 0.0001,
+        default: 35.6762
+      },
+      longitude: {
+        type: 'number',
+        label: 'Longitude',
+        min: -180,
+        max: 180,
+        step: 0.0001,
+        default: 139.6503
+      },
+      dayScaleFactor: {
+        type: 'number',
+        label: 'Day Scale Factor',
+        min: 0.5,
+        max: 3.0,
+        step: 0.1,
+        default: 1.0
+      },
+      nightScaleFactor: {
+        type: 'number',
+        label: 'Night Scale Factor',
+        min: 0.5,
+        max: 3.0,
+        step: 0.1,
+        default: 1.5
+      }
+    };
+  }
+
+  calculateSunTimes(date, latitude, longitude) {
+    // Simplified sunrise/sunset calculation
+    // Note: This is a basic approximation, real implementation would use a proper solar calculation library
+    
+    const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+    const P = Math.asin(.39795 * Math.cos(.98563 * (dayOfYear - 173) * Math.PI / 180));
+    const argument = Math.tan(latitude * Math.PI / 180) * Math.tan(P);
+    
+    // Handle polar regions
+    if (Math.abs(argument) > 1) {
+      return {
+        sunrise: argument > 1 ? null : new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0),
+        sunset: argument > 1 ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59) : null
+      };
+    }
+    
+    const sunriseHour = 12 - 12 * Math.acos(argument) / Math.PI;
+    const sunsetHour = 12 + 12 * Math.acos(argument) / Math.PI;
+    
+    const sunrise = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(sunriseHour), (sunriseHour % 1) * 60);
+    const sunset = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(sunsetHour), (sunsetHour % 1) * 60);
+    
+    return { sunrise, sunset };
+  }
+
+  calculateAngles(date, timezone, config) {
+    const {
+      latitude = 35.6762,
+      longitude = 139.6503,
+      dayScaleFactor = 1.0,
+      nightScaleFactor = 1.5
+    } = config;
+    
+    if (latitude === undefined || longitude === undefined) {
+      throw new Error('Location (latitude/longitude) must be configured for Solar Mode');
+    }
+    
+    const now = new Date(date);
+    const { sunrise, sunset } = this.calculateSunTimes(now, latitude, longitude);
+    
+    let scaleFactor = 1.0;
+    let isDaytime = false;
+    
+    if (sunrise && sunset) {
+      isDaytime = now >= sunrise && now < sunset;
+      scaleFactor = isDaytime ? dayScaleFactor : nightScaleFactor;
+    }
+    
+    // Get current time
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    
+    // Apply scaling
+    const totalSecondsInDay = hours * 3600 + minutes * 60 + seconds;
+    const scaledSeconds = totalSecondsInDay * scaleFactor;
+    
+    const aphHours = Math.floor(scaledSeconds / 3600) % 24;
+    const aphMinutes = Math.floor((scaledSeconds % 3600) / 60);
+    const aphSecondsRemainder = scaledSeconds % 60;
+    
+    // Calculate angles
+    const hourAngle = this.normalizeAngle((aphHours % 12) * 30 + aphMinutes * 0.5 + aphSecondsRemainder * (0.5 / 60));
+    const minuteAngle = this.normalizeAngle(aphMinutes * 6 + aphSecondsRemainder * 0.1);
+    const secondAngle = this.normalizeAngle(aphSecondsRemainder * 6);
+    
+    return {
+      hourAngle,
+      minuteAngle,
+      secondAngle,
+      aphHours,
+      aphMinutes,
+      aphSeconds: aphSecondsRemainder,
+      scaleFactor,
+      isPersonalizedAhPeriod: scaleFactor !== 1.0,
+      isDaytime,
+      sunrise: sunrise?.toLocaleTimeString(),
+      sunset: sunset?.toLocaleTimeString()
+    };
+  }
+}

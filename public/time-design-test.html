@@ -303,7 +303,7 @@
                         });
                     } else {
                         input = document.createElement('input');
-                        input.type = fieldConfig.type || 'text';
+                        input.type = fieldConfig.type === 'time' ? 'time' : (fieldConfig.type || 'text');
                         if (fieldConfig.min !== undefined) input.min = fieldConfig.min;
                         if (fieldConfig.max !== undefined) input.max = fieldConfig.max;
                         if (fieldConfig.step !== undefined) input.step = fieldConfig.step;

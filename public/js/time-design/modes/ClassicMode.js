@@ -197,3 +197,73 @@ export class ClassicMode extends BaseMode {
     };
   }
 }
+// ClassicMode.js - Classic Another Hour implementation
+import { BaseMode } from './BaseMode.js';
+
+export class ClassicMode extends BaseMode {
+  getName() {
+    return 'classic';
+  }
+
+  getDisplayName() {
+    return 'Classic Mode';
+  }
+
+  getDescription() {
+    return 'Traditional Another Hour with customizable duration';
+  }
+
+  getDefaultConfig() {
+    return {
+      normalDayDurationMinutes: 1440 // 24 hours default
+    };
+  }
+
+  getConfigSchema() {
+    return {
+      normalDayDurationMinutes: {
+        type: 'number',
+        label: 'Normal Day Duration (minutes)',
+        min: 60,
+        max: 2880,
+        step: 1,
+        default: 1440
+      }
+    };
+  }
+
+  calculateAngles(date, timezone, config) {
+    const durationMinutes = config.normalDayDurationMinutes || 1440;
+    const scaleFactor = durationMinutes / 1440;
+    
+    // Get current time
+    const now = new Date(date);
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    
+    // Calculate Another Hour time
+    const totalSecondsInDay = hours * 3600 + minutes * 60 + seconds;
+    const scaledSeconds = totalSecondsInDay * scaleFactor;
+    
+    const aphHours = Math.floor(scaledSeconds / 3600) % 24;
+    const aphMinutes = Math.floor((scaledSeconds % 3600) / 60);
+    const aphSecondsRemainder = scaledSeconds % 60;
+    
+    // Calculate angles for Another Hour time
+    const hourAngle = this.normalizeAngle((aphHours % 12) * 30 + aphMinutes * 0.5 + aphSecondsRemainder * (0.5 / 60));
+    const minuteAngle = this.normalizeAngle(aphMinutes * 6 + aphSecondsRemainder * 0.1);
+    const secondAngle = this.normalizeAngle(aphSecondsRemainder * 6);
+    
+    return {
+      hourAngle,
+      minuteAngle,
+      secondAngle,
+      aphHours,
+      aphMinutes,
+      aphSeconds: aphSecondsRemainder,
+      scaleFactor,
+      isPersonalizedAhPeriod: true
+    };
+  }
+}
