@@ -124,7 +124,12 @@ export class SolarMode extends BaseMode {
   }
 
   calculate(date, timezone, config) {
-    const realMinutes = this._getMinutesInTimezone(date, timezone);
+    const city = this.getCityData(config.city);
+    if (!city) {
+      return this.errorState(date, 'Invalid city configuration.');
+    }
+    // Always use the city's specific timezone for calculation, not the browser's timezone.
+    const realMinutes = this._getMinutesInTimezone(date, city.tz);
     const segments = this._buildSegments(config);
     const activeSegment = this.findActiveSegment(realMinutes, segments);
 

@@ -228,14 +228,36 @@ function updateDisplay() {
         document.getElementById('timeDisplay').textContent = formatTime(result.hours, result.minutes, result.seconds);
         document.getElementById('periodLabel').textContent = result.periodName;
         document.getElementById('scaleFactor').textContent = result.scaleFactor.toFixed(2) + 'x';
-        document.getElementById('realTime').textContent = now.toTimeString().substring(0, 8);
+
+        // --- REAL TIME display logic ---
+        const currentMode = timeDesignManager.getCurrentMode();
+        let realTimeString = now.toTimeString().substring(0, 8); // Default to browser time
+
+        if (currentMode && currentMode.id === 'solar') {
+            const solarMode = timeDesignManager.registry.get('solar');
+            const cityData = solarMode.getCityData(currentMode.config.city);
+            if (cityData && cityData.tz) {
+                try {
+                    realTimeString = new Intl.DateTimeFormat('en-GB', {
+                        timeZone: cityData.tz,
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        second: 'numeric',
+                        hour12: false
+                    }).format(now);
+                } catch (e) {
+                    console.error(`Could not format real time for timezone ${cityData.tz}`, e);
+                }
+            }
+        }
+        document.getElementById('realTime').textContent = realTimeString;
+
         document.getElementById('progress').textContent = Math.round(result.segmentInfo.progress) + '%';
         document.getElementById('remaining').textContent = formatDuration(result.segmentInfo.remaining);
-        document.getElementById('phase').textContent = result.segmentInfo.type === 'designed' ? 'Designed' : result.segmentInfo.type === 'day' ? 'Day' : result.segmentInfo.type === 'night' ? 'Night' : 'Another Hour';
+        document.getElementById('phase').textContent = result.segmentInfo.type === 'designed' ? 'Designed' : 'Another Hour';
         document.getElementById('phaseInfo').textContent = result.segmentInfo.label;
 
         // Core Time Duration Display
-        const currentMode = timeDesignManager.getCurrentMode();
         const coreTimeInfoCard = document.getElementById('coreTimeInfoCard');
         if (currentMode && currentMode.id === 'core-time') {
             const config = currentMode.config;
