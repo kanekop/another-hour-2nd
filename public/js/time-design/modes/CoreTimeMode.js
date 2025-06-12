@@ -69,11 +69,13 @@ export class CoreTimeMode extends BaseMode {
 
     let displayHours, displayMinutes, displaySeconds;
 
+    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
+
     if (activeSegment.type === 'another') {
-      const d = new Date(date);
-      displayHours = d.getHours();
-      displayMinutes = d.getMinutes();
-      displaySeconds = d.getSeconds();
+      const remainingTotalSeconds = remaining * 60;
+      displayHours = Math.floor(remainingTotalSeconds / 3600);
+      displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
+      displaySeconds = Math.floor(remainingTotalSeconds % 60);
     } else { // 'designed'
       const segmentElapsed = minutes - activeSegment.startTime;
       const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
@@ -83,8 +85,6 @@ export class CoreTimeMode extends BaseMode {
       displayMinutes = Math.floor(totalDesignedMinutes % 60);
       displaySeconds = Math.floor((totalDesignedMinutes * 60) % 60);
     }
-
-    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
 
     return {
       hours: displayHours,

@@ -80,24 +80,23 @@ export class ClassicMode extends BaseMode {
       return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' }, hourAngle: 0, minuteAngle: 0, secondAngle: 0 };
     }
 
-    const segmentElapsed = minutes - activeSegment.startTime;
+    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
 
     let displayHours, displayMinutes, displaySeconds;
 
     if (activeSegment.type === 'another') {
-      const d = new Date(date);
-      displayHours = d.getHours();
-      displayMinutes = d.getMinutes();
-      displaySeconds = d.getSeconds();
+      const remainingTotalSeconds = remaining * 60;
+      displayHours = Math.floor(remainingTotalSeconds / 3600);
+      displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
+      displaySeconds = Math.floor(remainingTotalSeconds % 60);
     } else { // 'designed'
+      const segmentElapsed = minutes - activeSegment.startTime;
       const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
       const scaledTotalMinutes = scaledElapsed;
       displayHours = Math.floor(scaledTotalMinutes / 60) % 24;
       displayMinutes = Math.floor(scaledTotalMinutes % 60);
       displaySeconds = Math.floor((scaledTotalMinutes * 60) % 60);
     }
-
-    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
 
     return {
       hours: displayHours,

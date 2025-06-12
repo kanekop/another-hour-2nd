@@ -96,22 +96,21 @@ export class WakeBasedMode extends BaseMode {
 
     let displayHours, displayMinutes, displaySeconds;
 
-    const segmentElapsed = minutesSinceWake - activeSegment.startTime;
-    const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
+    const { progress, remaining } = this.calculateProgress(minutesSinceWake, activeSegment);
 
     if (activeSegment.type === 'another') {
-      const d = new Date(date);
-      displayHours = d.getHours();
-      displayMinutes = d.getMinutes();
-      displaySeconds = d.getSeconds();
+      const remainingTotalSeconds = remaining * 60;
+      displayHours = Math.floor(remainingTotalSeconds / 3600);
+      displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
+      displaySeconds = Math.floor(remainingTotalSeconds % 60);
     } else { // 'designed'
+      const segmentElapsed = minutesSinceWake - activeSegment.startTime;
+      const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
       const scaledTotalMinutes = scaledElapsed;
       displayHours = Math.floor(scaledTotalMinutes / 60) % 24;
       displayMinutes = Math.floor(scaledTotalMinutes % 60);
       displaySeconds = Math.floor((scaledTotalMinutes * 60) % 60);
     }
-
-    const { progress, remaining } = this.calculateProgress(minutesSinceWake, activeSegment);
 
     return {
       hours: displayHours,
