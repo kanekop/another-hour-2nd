@@ -123,12 +123,25 @@ export class SolarMode extends BaseMode {
         // Calculate new solar times using SunCalc
         const times = SunCalc.getTimes(date, this.config.location.lat, this.config.location.lng);
 
-        // Calculate solar noon (midpoint between sunrise and sunset)
-        const solarNoon = new Date((times.sunrise.getTime() + times.sunset.getTime()) / 2);
+        // Handle edge cases like polar day/night
+        const alwaysDay = !times.sunrise.getTime() && times.solarNoon.getTime(); // Sun is always up
+        const alwaysNight = !times.solarNoon.getTime(); // Sun is always down
 
-        // Calculate daylight and night durations
-        const daylightMinutes = (times.sunset - times.sunrise) / 60000;
-        const nightMinutes = 1440 - daylightMinutes;
+        let daylightMinutes, nightMinutes, solarNoon;
+
+        if (alwaysDay) {
+            daylightMinutes = 1440;
+            nightMinutes = 0;
+            solarNoon = times.solarNoon;
+        } else if (alwaysNight) {
+            daylightMinutes = 0;
+            nightMinutes = 1440;
+            solarNoon = null; // No solar noon in polar night
+        } else {
+            solarNoon = new Date((times.sunrise.getTime() + times.sunset.getTime()) / 2);
+            daylightMinutes = (times.sunset - times.sunrise) / 60000;
+            nightMinutes = 1440 - daylightMinutes;
+        }
 
         // Auto-adjust designed day hours if enabled
         if (this.config.autoAdjust) {
@@ -153,6 +166,14 @@ export class SolarMode extends BaseMode {
             scaleFactors: {
                 day: Math.max(0.1, Math.min(10, dayScaleFactor)),
                 night: Math.max(0.1, Math.min(10, nightScaleFactor))
+            },
+            solarInfo: { // For getConfigUI
+                sunrise: alwaysNight ? null : times.sunrise,
+                sunset: alwaysNight ? null : times.sunset,
+                solarNoon: solarNoon,
+                daylightMinutes: daylightMinutes,
+                isAlwaysDay: alwaysDay,
+                isAlwaysNight: alwaysNight
             }
         };
 
@@ -292,15 +313,11 @@ export class SolarMode extends BaseMode {
      * Get visualization data for UI
      */
     getVisualizationData() {
-        const { times, scaleFactors } = this.solarCache;
+        const { times, scaleFactors, solarInfo } = this.solarCache;
 
         return {
             mode: 'solar',
-            solarTimes: {
-                sunrise: times.sunrise,
-                sunset: times.sunset,
-                solarNoon: times.solarNoon
-            },
+            solarTimes: solarInfo,
             scaleFactors: scaleFactors,
             segments: [
                 {
@@ -390,6 +407,11 @@ export class SolarMode extends BaseMode {
      * Get configuration UI data
      */
     getConfigUI() {
+        // Ensure the cache is fresh for the current date
+        this.updateSolarTimes(new Date());
+
+        const { scaleFactors, solarInfo } = this.solarCache;
+
         return {
             fields: [
                 {
@@ -420,9 +442,9 @@ export class SolarMode extends BaseMode {
                 }
             ],
             solarInfo: {
-                sunrise: this.solarCache.times?.sunrise,
-                sunset: this.solarCache.times?.sunset,
-                daylight: this.solarCache.times?.daylightMinutes
+                ...solarInfo,
+                dayScaleFactor: scaleFactors.day,
+                nightScaleFactor: scaleFactors.night
             }
         };
     }
