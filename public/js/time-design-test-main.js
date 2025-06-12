@@ -155,25 +155,53 @@ function generateCoreTimeConfig(config) {
 }
 
 function generateSolarConfig(config) {
+    const solarMode = timeDesignManager.registry.get('solar');
+    const cityOptions = Object.entries(solarMode.cities).map(([key, city]) =>
+        `<option value="${key}" ${solarMode.findCityKey() === key ? 'selected' : ''}>${city.name}</option>`
+    ).join('');
+
+    const uiData = solarMode.getConfigUI();
+    const solarInfo = uiData.solarInfo;
+
+    const formatTime = (date) => {
+        if (!date) return '--:--';
+        return new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit', minute: '2-digit', timeZone: config.location.timezone
+        }).format(new Date(date));
+    };
+
+    const formatDuration = (minutes) => {
+        if (minutes === null || isNaN(minutes)) return '--h --m';
+        const hours = Math.floor(minutes / 60);
+        const mins = Math.round(minutes % 60);
+        return `${hours}h ${mins}m`;
+    };
+
+    let solarDetailsHtml = '';
+    if (solarInfo.isAlwaysDay) {
+        solarDetailsHtml = `<p><strong>Polar Day:</strong> Sun is up for 24 hours.</p>`;
+    } else if (solarInfo.isAlwaysNight) {
+        solarDetailsHtml = `<p><strong>Polar Night:</strong> Sun does not rise.</p>`;
+    } else {
+        solarDetailsHtml = `
+            <p><strong>Sun Rise:</strong> <span id="sunrise-time">${formatTime(solarInfo.sunrise)}</span></p>
+            <p><strong>Sun Set:</strong> <span id="sunset-time">${formatTime(solarInfo.sunset)}</span></p>
+            <p><strong>Daytime:</strong> <span id="daylight-duration">${formatDuration(solarInfo.daylightMinutes)}</span></p>
+        `;
+    }
+
     return `
         <div class="config-group">
             <label for="solar-city">City</label>
-            <select id="solar-city">
-                <option value="tokyo" ${config.city === 'tokyo' ? 'selected' : ''}>Tokyo</option>
-                <option value="kumamoto" ${config.city === 'kumamoto' ? 'selected' : ''}>Kumamoto</option>
-                <option value="newyork" ${config.city === 'newyork' ? 'selected' : ''}>New York</option>
-                <option value="london" ${config.city === 'london' ? 'selected' : ''}>London</option>
-            </select>
+            <select id="solar-city">${cityOptions}</select>
         </div>
         <div class="solar-info" id="solar-info-display" style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 15px 0;">
-            <p><strong>Sun Rise:</strong> <span id="sunrise-time">--:--</span></p>
-            <p><strong>Sun Set:</strong> <span id="sunset-time">--:--</span></p>
-            <p><strong>Daytime:</strong> <span id="daylight-duration">--h --m</span></p>
+            ${solarDetailsHtml}
         </div>
         <div class="config-group">
             <label for="solar-day-hours">Day Hours</label>
             <div id="solar-day-hours-slider" style="margin: 20px 0;"></div>
-            <div class="range-value" id="solar-day-hours-value">12 hours</div>
+            <div class="range-value" id="solar-day-hours-value">${config.designedDayHours.toFixed(1)} hours</div>
         </div>
     `;
 }
@@ -398,40 +426,46 @@ function initializeCoreTimeSlider(config) {
 }
 
 function initializeSolarMode(config) {
-    const solarMode = timeDesignManager.registry.get('solar');
-    if (!solarMode) return;
+    // City Selector
+    const citySelector = document.getElementById('solar-city');
+    citySelector.addEventListener('change', async (e) => {
+        const newCityKey = e.target.value;
+        debug(`City changed to: ${newCityKey}`);
 
-    // Update sun info when city changes
-    const citySelect = document.getElementById('solar-city');
-    if (citySelect) {
-        citySelect.addEventListener('change', () => {
-            updateSolarInfo(citySelect.value);
+        const solarMode = timeDesignManager.registry.get('solar');
+        const newLocation = solarMode.cities[newCityKey];
+
+        await timeDesignManager.updateConfig({
+            location: { ...newLocation, lng: newLocation.lon } // lon -> lng mapping if needed
         });
-    }
+        // Config change will trigger a re-render via subscription
+    });
 
-    // Initialize day hours slider
+    // Day Hours Slider
     const dayHoursSlider = document.getElementById('solar-day-hours-slider');
-    if (dayHoursSlider) {
+    const dayHoursValue = document.getElementById('solar-day-hours-value');
+
+    // Assuming a slider library like noUiSlider is used
+    if (typeof noUiSlider !== 'undefined') {
         noUiSlider.create(dayHoursSlider, {
-            start: config.dayHours || 12,
-            step: 0.5,
+            start: [config.designedDayHours],
             connect: [true, false],
             range: { 'min': 1, 'max': 23 },
-            pips: {
-                mode: 'values',
-                values: [1, 6, 12, 18, 23],
-                density: 4
-            },
+            step: 0.5,
+            tooltips: {
+                to: value => `${Number(value).toFixed(1)}h`
+            }
         });
 
         dayHoursSlider.noUiSlider.on('update', (values) => {
-            const value = parseFloat(values[0]);
-            document.getElementById('solar-day-hours-value').textContent = `${value.toFixed(1)} hours`;
+            dayHoursValue.textContent = `${Number(values[0]).toFixed(1)} hours`;
+        });
+
+        dayHoursSlider.noUiSlider.on('set', async (values) => {
+            const newDayHours = Number(values[0]);
+            await timeDesignManager.updateConfig({ designedDayHours: newDayHours });
         });
     }
-
-    // Initial update
-    updateSolarInfo(config.city);
 }
 
 function updateSolarInfo(cityKey) {
