@@ -22,7 +22,12 @@ export class SolarMode extends BaseMode {
       'Solar Mode',
       'Time synchronized with sunrise and sunset cycles. (Location features coming soon)',
       {
-        city: { type: 'select', label: 'City', options: Object.keys(CITIES), default: 'tokyo' },
+        city: {
+          type: 'select',
+          label: 'City',
+          options: Object.entries(CITIES).map(([key, value]) => ({ value: key, text: value.name })),
+          default: 'tokyo'
+        },
         dayHours: { type: 'number', label: 'Day Hours', min: 1, max: 23, default: 12 },
       }
     );
