@@ -2,6 +2,18 @@ run = "cd packages/scheduler-web && npm start"
 language = "nodejs"
 modules = ["nodejs-20"]
 
+[workflows]
+runButton = "Start Server"
+
+[[workflows.workflow]]
+name = "Start Server"
+author = 37948231
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd packages/scheduler-web && npm start"
+
 # [packager]
 # language = "nodejs"
 #
