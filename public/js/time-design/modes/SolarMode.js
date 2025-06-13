@@ -1,59 +1,19 @@
-/**
- * Solar Mode Core Implementation
- * Another Hour Project
- * 
- * This mode synchronizes time with the sun's movement,
- * always placing solar noon at 12:00 Another Hour time.
- * 
- * Version: 2.1 - Timezone-aware calculations
- */
-
+// SolarMode.js - Solar-based time with fixed solar noon at 12:00
 import { BaseMode } from './BaseMode.js';
 
-// Helper to convert a Date object to minutes from midnight in a specific timezone
-function dateToMinutesInTimezone(date, timezone) {
-    if (!date || !timezone || isNaN(date)) return null;
-    try {
-        const parts = new Intl.DateTimeFormat('en-GB', {
-            hour: 'numeric', minute: 'numeric', hourCycle: 'h23', timeZone: timezone
-        }).formatToParts(date);
-        const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
-        const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
-        return hour * 60 + minute;
-    } catch (e) {
-        console.error(`Failed to convert date to minutes for timezone ${timezone}`, e);
-        return null; // Return null on error
-    }
-}
-
 export class SolarMode extends BaseMode {
-    static getDefaultConfig() {
-        return {
-            location: {
-                lat: 35.6762,  // Tokyo
-                lng: 139.6503,
-                name: 'Tokyo',
-                timezone: 'Asia/Tokyo'
-            },
-            designedDayHours: 12,  // Will be updated based on actual daylight
-            autoAdjust: true       // Auto-adjust to actual daylight hours
-        };
-    }
     constructor() {
         super();
         this.id = 'solar';
         this.name = 'Solar Mode';
         this.description = 'Time flows with the sun - solar noon is always 12:00';
 
-        // Config will be set by initialize()
-        this.config = {};
-
-        // Solar calculation cache
+        // Initialize solar cache
         this.solarCache = {
             date: null,
-            locationName: null,
             times: null,
-            scaleFactors: null
+            scaleFactors: null,
+            solarInfo: null
         };
 
         // City presets
@@ -70,255 +30,242 @@ export class SolarMode extends BaseMode {
     }
 
     /**
-     * Initialize the mode with configuration
+     * Get default configuration for Solar Mode
      */
-    initialize(config = {}) {
-        this.config = { ...this.constructor.getDefaultConfig(), ...config };
-        this.updateSolarTimes(new Date());
-
-        // Set up daily update at midnight
-        this.scheduleDailyUpdate();
+    static getDefaultConfig() {
+        return {
+            location: {
+                key: 'tokyo',
+                lat: 35.6762,
+                lng: 139.6503,
+                name: 'Tokyo',
+                timezone: 'Asia/Tokyo'
+            },
+            designedDayHours: 12,
+            autoAdjust: true
+        };
     }
 
     /**
-     * Validate the configuration object (Required by BaseMode).
-     * @param {object} config - The configuration to validate.
-     * @returns {{valid: boolean, errors: string[]}} - The validation result.
+     * Get configuration schema
      */
-    validate(config) {
-        const errors = [];
-        if (!config.location || typeof config.location.lat !== 'number' || typeof config.location.lng !== 'number') {
-            errors.push('Configuration must include a location with lat and lng.');
-        }
-        return { valid: errors.length === 0, errors };
+    getConfigSchema() {
+        return {
+            location: {
+                type: 'select',
+                label: 'City',
+                options: Object.entries(this.cities).map(([key, city]) => ({
+                    value: key,
+                    label: city.name
+                })),
+                default: 'tokyo'
+            },
+            designedDayHours: {
+                type: 'slider',
+                label: 'Day Hours',
+                min: 1,
+                max: 23,
+                step: 0.5,
+                default: 12,
+                unit: 'hours'
+            }
+        };
     }
 
     /**
-     * Main calculation method called by the TimeDesignManager (Required by BaseMode).
-     * @param {Date} date - The current real time.
-     * @param {string} timezone - The browser's timezone (we use the city's timezone from config).
-     * @param {object} config - The mode's current configuration.
-     * @returns {object} - The calculated Another Hour time and state.
+     * Calculate Another Hour time using Solar Mode
      */
     calculate(date, timezone, config) {
-        // Ensure internal config is up-to-date
         this.config = { ...this.constructor.getDefaultConfig(), ...config };
 
         if (typeof SunCalc === 'undefined') {
             console.error('SunCalc.js library is not loaded.');
             const now = new Date();
             return {
-                hours: now.getHours(), minutes: now.getMinutes(), seconds: now.getSeconds(),
-                isError: true, errorMessage: 'SunCalc library not loaded.'
+                hours: now.getHours(), 
+                minutes: now.getMinutes(), 
+                seconds: now.getSeconds(),
+                isError: true, 
+                errorMessage: 'SunCalc library not loaded.'
             };
         }
 
-        this.updateSolarTimes(date);
-
-        const currentMinutes = dateToMinutesInTimezone(date, this.config.location.timezone);
-        const { times, scaleFactors } = this.solarCache;
-
-        // Determine current phase and calculate AH time
-        let ahTotalMinutes;
-
-        if (times.isAlwaysDay) {
-            // Polar Day: 24h of daytime
-            ahTotalMinutes = (currentMinutes / 1440) * (24 * 60);
-        } else if (times.isAlwaysNight) {
-            // Polar Night: 24h of nighttime
-            ahTotalMinutes = (currentMinutes / 1440) * (24 * 60);
-        } else if (currentMinutes >= times.sunrise && currentMinutes < times.sunset) {
-            // Day phase
-            const progress = (currentMinutes - times.sunrise) / times.daylightMinutes;
-            ahTotalMinutes = progress * (this.config.designedDayHours * 60);
-        } else {
-            // Night phase
-            let nightProgress;
-            if (currentMinutes < times.sunrise) { // After midnight, before sunrise
-                const midnightToSunrise = times.sunrise;
-                const prevSunsetToMidnight = 1440 - times.sunset;
-                nightProgress = (times.sunset + currentMinutes) / (prevSunsetToMidnight + midnightToSunrise);
-
-            } else { // After sunset, before midnight
-                nightProgress = (currentMinutes - times.sunset) / (1440 - times.sunset + times.sunrise);
-            }
-            ahTotalMinutes = (this.config.designedDayHours * 60) + (nightProgress * ((24 - this.config.designedDayHours) * 60));
-        }
-
-        const ahHours = Math.floor(ahTotalMinutes / 60) % 24;
-        const ahMinutes = Math.floor(ahTotalMinutes % 60);
-        const ahSeconds = Math.floor((ahTotalMinutes * 60) % 60);
+        const ahResult = this.realToAnotherHour(date);
 
         return {
-            hours: ahHours,
-            minutes: ahMinutes,
-            seconds: ahSeconds,
-            scaleFactor: 1, // Placeholder
+            hours: ahResult.hours,
+            minutes: ahResult.minutes,
+            seconds: ahResult.seconds,
+            scaleFactor: ahResult.scaleFactor,
             isAnotherHour: true,
-            segmentInfo: {}, // Placeholder
-            periodName: 'Solar', // Placeholder
+            segmentInfo: ahResult.segmentInfo,
+            periodName: ahResult.segmentInfo.label,
         };
     }
 
     /**
-     * Calculate solar times for a given date
+     * Update solar times for a given date
      */
     updateSolarTimes(date) {
         const dateKey = date.toDateString();
+
+        // Use cache if available
+        if (this.solarCache.date === dateKey && this.solarCache.times) {
+            return this.solarCache.times;
+        }
+
+        // Get location data
         const location = this.config.location;
+        const lat = location.lat || location.latitude;
+        const lng = location.lng || location.longitude;
 
-        // Use cache if available for the same date and location
-        if (this.solarCache.date === dateKey && this.solarCache.locationName === location.name) {
-            return this.solarCache;
-        }
+        // Calculate solar times
+        const times = SunCalc.getTimes(date, lat, lng);
+        
+        // Calculate solar noon (midpoint between sunrise and sunset)
+        const solarNoon = new Date((times.sunrise.getTime() + times.sunset.getTime()) / 2);
+        
+        // Calculate daylight and night durations
+        const daylightMinutes = (times.sunset - times.sunrise) / 60000;
+        const nightMinutes = 1440 - daylightMinutes;
 
-        // Calculate new solar times using SunCalc
-        const times = SunCalc.getTimes(date, location.lat, location.lng);
-
-        // Convert times to minutes from midnight in the target timezone
-        const sunriseMinutes = dateToMinutesInTimezone(times.sunrise, location.timezone);
-        const sunsetMinutes = dateToMinutesInTimezone(times.sunset, location.timezone);
-        const solarNoonMinutes = dateToMinutesInTimezone(times.solarNoon, location.timezone);
-
-        // Handle edge cases like polar day/night
-        const alwaysDay = sunriseMinutes === null && sunsetMinutes === null && solarNoonMinutes !== null;
-        const alwaysNight = solarNoonMinutes === null;
-
-        let daylightMinutes, nightMinutes;
-
-        if (alwaysDay) {
-            daylightMinutes = 1440;
-            nightMinutes = 0;
-        } else if (alwaysNight) {
-            daylightMinutes = 0;
-            nightMinutes = 1440;
-        } else {
-            daylightMinutes = sunsetMinutes - sunriseMinutes;
-            nightMinutes = 1440 - daylightMinutes;
-        }
-
-        // Auto-adjust designed day hours if enabled
-        if (this.config.autoAdjust && daylightMinutes > 0) {
+        // Auto-adjust if enabled
+        if (this.config.autoAdjust) {
             this.config.designedDayHours = Math.round(daylightMinutes / 60);
         }
 
-        // Calculate scale factors
-        const designedNightHours = 24 - this.config.designedDayHours;
-        const dayScaleFactor = daylightMinutes > 0 ? (this.config.designedDayHours * 60) / daylightMinutes : 1;
-        const nightScaleFactor = nightMinutes > 0 ? (designedNightHours * 60) / nightMinutes : 1;
-
-        // Cache the results
+        // Store cache
         this.solarCache = {
             date: dateKey,
-            locationName: location.name,
             times: {
-                sunrise: sunriseMinutes,
-                sunset: sunsetMinutes,
-                solarNoon: solarNoonMinutes,
+                sunrise: times.sunrise,
+                sunset: times.sunset,
+                solarNoon: solarNoon,
                 daylightMinutes: daylightMinutes,
                 nightMinutes: nightMinutes,
-                isAlwaysDay: alwaysDay,
-                isAlwaysNight: alwaysNight
+                daylightHours: daylightMinutes / 60
             },
             scaleFactors: {
-                day: Math.max(0.1, Math.min(10, dayScaleFactor)),
-                night: Math.max(0.1, Math.min(10, nightScaleFactor))
+                day: 1.0, // Will be calculated per phase
+                night: 1.0
+            },
+            solarInfo: {
+                sunrise: times.sunrise,
+                sunset: times.sunset,
+                solarNoon: solarNoon,
+                daylightHours: daylightMinutes / 60
             }
         };
 
-        return this.solarCache;
+        return this.solarCache.times;
     }
 
     /**
-     * Get current time segment information
-     */
-    getCurrentSegment(now = new Date()) {
-        this.updateSolarTimes(now);
-
-        const { times, scaleFactors } = this.solarCache;
-        const todayStart = new Date(now);
-        todayStart.setHours(0, 0, 0, 0);
-
-        // Determine current phase
-        if (now < times.sunrise) {
-            // Night phase (after midnight)
-            return {
-                phase: 'night',
-                subPhase: 'late-night',
-                scaleFactor: scaleFactors.night,
-                startTime: todayStart,
-                endTime: times.sunrise,
-                label: 'Night'
-            };
-        } else if (now < times.sunset) {
-            // Day phase
-            const subPhase = now < times.solarNoon ? 'morning' : 'afternoon';
-            return {
-                phase: 'day',
-                subPhase: subPhase,
-                scaleFactor: scaleFactors.day,
-                startTime: times.sunrise,
-                endTime: times.sunset,
-                label: subPhase === 'morning' ? 'Morning' : 'Afternoon'
-            };
-        } else {
-            // Night phase (after sunset)
-            const nextMidnight = new Date(todayStart);
-            nextMidnight.setDate(nextMidnight.getDate() + 1);
-            return {
-                phase: 'night',
-                subPhase: 'evening',
-                scaleFactor: scaleFactors.night,
-                startTime: times.sunset,
-                endTime: nextMidnight,
-                label: 'Evening'
-            };
-        }
-    }
-
-    /**
-     * Convert real time to Another Hour time
+     * Convert real time to Another Hour time with solar noon at 12:00
      */
     realToAnotherHour(realTime) {
-        const date = new Date(realTime);
-        this.updateSolarTimes(date);
-
+        this.updateSolarTimes(realTime);
         const { times } = this.solarCache;
-        const segment = this.getCurrentSegment(date);
-
-        // Calculate Another Hour time based on phase
-        let ahTime;
-
-        if (date < times.sunrise) {
-            // Night: 0:00 to 6:00
-            const progress = (date - segment.startTime) / (segment.endTime - segment.startTime);
-            ahTime = progress * 6; // 0 to 6 hours
-        } else if (date < times.solarNoon) {
-            // Morning: 6:00 to 12:00
-            const progress = (date - times.sunrise) / (times.solarNoon - times.sunrise);
-            ahTime = 6 + (progress * 6); // 6 to 12 hours
-        } else if (date < times.sunset) {
-            // Afternoon: 12:00 to 18:00
-            const progress = (date - times.solarNoon) / (times.sunset - times.solarNoon);
-            ahTime = 12 + (progress * 6); // 12 to 18 hours
-        } else {
-            // Evening: 18:00 to 24:00
-            const progress = (date - times.sunset) / (segment.endTime - times.sunset);
-            ahTime = 18 + (progress * 6); // 18 to 24 hours
+        
+        if (!times || !times.sunrise || !times.sunset) {
+            // Fallback to real time if solar calculation fails
+            return {
+                hours: realTime.getHours(),
+                minutes: realTime.getMinutes(),
+                seconds: realTime.getSeconds(),
+                scaleFactor: 1.0,
+                segmentInfo: { label: 'Error', progress: 0 }
+            };
         }
 
-        // Convert to time components
+        // Determine current phase and calculate AH time
+        let ahTime, scaleFactor, segmentInfo;
+        
+        // Get timestamps for easier comparison
+        const currentTime = realTime.getTime();
+        const sunrise = times.sunrise.getTime();
+        const sunset = times.sunset.getTime();
+        const solarNoon = times.solarNoon.getTime();
+        
+        // Calculate previous and next day boundaries
+        const todayStart = new Date(realTime);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(realTime);
+        todayEnd.setHours(23, 59, 59, 999);
+        
+        if (currentTime < sunrise) {
+            // Night phase (midnight to sunrise) -> 0:00 to 6:00 AH
+            const nightStart = todayStart.getTime();
+            const nightDuration = sunrise - nightStart;
+            const elapsed = currentTime - nightStart;
+            const progress = elapsed / nightDuration;
+            
+            ahTime = progress * 6; // 0 to 6 hours
+            scaleFactor = 6 / (nightDuration / 3600000); // AH hours / real hours
+            segmentInfo = {
+                label: 'Night (Pre-dawn)',
+                phase: 'night',
+                progress: progress,
+                scaleFactor: scaleFactor
+            };
+            
+        } else if (currentTime < solarNoon) {
+            // Morning phase (sunrise to solar noon) -> 6:00 to 12:00 AH
+            const morningDuration = solarNoon - sunrise;
+            const elapsed = currentTime - sunrise;
+            const progress = elapsed / morningDuration;
+            
+            ahTime = 6 + (progress * 6); // 6 to 12 hours
+            scaleFactor = 6 / (morningDuration / 3600000);
+            segmentInfo = {
+                label: 'Day (Morning)',
+                phase: 'day-morning',
+                progress: progress,
+                scaleFactor: scaleFactor
+            };
+            
+        } else if (currentTime < sunset) {
+            // Afternoon phase (solar noon to sunset) -> 12:00 to 18:00 AH
+            const afternoonDuration = sunset - solarNoon;
+            const elapsed = currentTime - solarNoon;
+            const progress = elapsed / afternoonDuration;
+            
+            ahTime = 12 + (progress * 6); // 12 to 18 hours
+            scaleFactor = 6 / (afternoonDuration / 3600000);
+            segmentInfo = {
+                label: 'Day (Afternoon)',
+                phase: 'day-afternoon',
+                progress: progress,
+                scaleFactor: scaleFactor
+            };
+            
+        } else {
+            // Evening phase (sunset to midnight) -> 18:00 to 24:00 AH
+            const eveningDuration = todayEnd.getTime() - sunset + 1;
+            const elapsed = currentTime - sunset;
+            const progress = elapsed / eveningDuration;
+            
+            ahTime = 18 + (progress * 6); // 18 to 24 hours
+            scaleFactor = 6 / (eveningDuration / 3600000);
+            segmentInfo = {
+                label: 'Night (Evening)',
+                phase: 'night',
+                progress: progress,
+                scaleFactor: scaleFactor
+            };
+        }
+        
+        // Convert decimal hours to hours, minutes, seconds
         const hours = Math.floor(ahTime);
         const minutes = Math.floor((ahTime - hours) * 60);
         const seconds = Math.floor(((ahTime - hours) * 60 - minutes) * 60);
-
+        
         return {
-            hours: hours,
+            hours: hours % 24,
             minutes: minutes,
             seconds: seconds,
-            totalMinutes: ahTime * 60,
-            scaleFactor: segment.scaleFactor,
-            segmentInfo: segment
+            scaleFactor: scaleFactor,
+            segmentInfo: segmentInfo
         };
     }
 
@@ -328,223 +275,133 @@ export class SolarMode extends BaseMode {
     anotherHourToReal(ahHours, ahMinutes = 0, referenceDate = new Date()) {
         this.updateSolarTimes(referenceDate);
         const { times } = this.solarCache;
-
+        
+        if (!times || !times.sunrise || !times.sunset) {
+            // Fallback if solar calculation fails
+            return new Date(referenceDate);
+        }
+        
         const ahTotalHours = ahHours + (ahMinutes / 60);
         let realTime;
-
+        
+        // Calculate based on which phase the AH time falls into
         if (ahTotalHours < 6) {
-            // Night phase (0:00 to 6:00 AH)
+            // 0:00-6:00 AH -> midnight to sunrise
             const progress = ahTotalHours / 6;
             const nightStart = new Date(referenceDate);
             nightStart.setHours(0, 0, 0, 0);
-            realTime = new Date(nightStart.getTime() + progress * (times.sunrise - nightStart));
+            const nightDuration = times.sunrise.getTime() - nightStart.getTime();
+            realTime = new Date(nightStart.getTime() + progress * nightDuration);
+            
         } else if (ahTotalHours < 12) {
-            // Morning phase (6:00 to 12:00 AH)
+            // 6:00-12:00 AH -> sunrise to solar noon
             const progress = (ahTotalHours - 6) / 6;
-            realTime = new Date(times.sunrise.getTime() + progress * (times.solarNoon - times.sunrise));
+            const morningDuration = times.solarNoon.getTime() - times.sunrise.getTime();
+            realTime = new Date(times.sunrise.getTime() + progress * morningDuration);
+            
         } else if (ahTotalHours < 18) {
-            // Afternoon phase (12:00 to 18:00 AH)
+            // 12:00-18:00 AH -> solar noon to sunset
             const progress = (ahTotalHours - 12) / 6;
-            realTime = new Date(times.solarNoon.getTime() + progress * (times.sunset - times.solarNoon));
+            const afternoonDuration = times.sunset.getTime() - times.solarNoon.getTime();
+            realTime = new Date(times.solarNoon.getTime() + progress * afternoonDuration);
+            
         } else {
-            // Evening phase (18:00 to 24:00 AH)
+            // 18:00-24:00 AH -> sunset to midnight
             const progress = (ahTotalHours - 18) / 6;
-            const nextMidnight = new Date(referenceDate);
-            nextMidnight.setDate(nextMidnight.getDate() + 1);
-            nextMidnight.setHours(0, 0, 0, 0);
-            realTime = new Date(times.sunset.getTime() + progress * (nextMidnight - times.sunset));
+            const eveningEnd = new Date(referenceDate);
+            eveningEnd.setHours(23, 59, 59, 999);
+            const eveningDuration = eveningEnd.getTime() - times.sunset.getTime() + 1;
+            realTime = new Date(times.sunset.getTime() + progress * eveningDuration);
         }
-
+        
         return realTime;
     }
 
     /**
-     * Get visualization data for UI
+     * Get city data
      */
-    getVisualizationData() {
-        this.updateSolarTimes(new Date());
-        const { times, scaleFactors } = this.solarCache;
-
-        return {
-            mode: 'solar',
-            solarTimes: times,
-            scaleFactors: scaleFactors,
-            segments: [
-                {
-                    name: 'Late Night',
-                    startAH: 0,
-                    endAH: 6,
-                    scaleFactor: scaleFactors.night,
-                    color: '#1a237e'
-                },
-                {
-                    name: 'Morning',
-                    startAH: 6,
-                    endAH: 12,
-                    scaleFactor: scaleFactors.day,
-                    color: '#ff9800'
-                },
-                {
-                    name: 'Afternoon',
-                    startAH: 12,
-                    endAH: 18,
-                    scaleFactor: scaleFactors.day,
-                    color: '#ffc107'
-                },
-                {
-                    name: 'Evening',
-                    startAH: 18,
-                    endAH: 24,
-                    scaleFactor: scaleFactors.night,
-                    color: '#3f51b5'
-                }
-            ]
-        };
+    getCityData(cityKey) {
+        return this.cities[cityKey];
     }
 
     /**
-     * Set location for solar calculations
+     * Get sun times for a city
      */
-    setLocation(location) {
-        if (typeof location === 'string' && this.cities[location]) {
-            // Use preset city
-            const city = this.cities[location];
-            this.config.location = {
-                lat: city.lat,
-                lng: city.lng,
-                name: city.name,
-                timezone: city.tz
-            };
-        } else if (location.lat && location.lng) {
-            // Use custom coordinates
-            this.config.location = location;
-        }
+    getSunTimes(cityKey) {
+        const cityData = this.getCityData(cityKey);
+        if (!cityData) return null;
 
-        // Clear cache to force recalculation
-        this.solarCache.date = null;
-        this.updateSolarTimes(new Date());
-    }
-
-    /**
-     * Set designed day hours
-     */
-    setDesignedDayHours(hours) {
-        this.config.designedDayHours = Math.max(1, Math.min(23, hours));
-        this.config.autoAdjust = false; // Disable auto-adjust when manually set
-
-        // Recalculate scale factors
-        this.updateSolarTimes(new Date());
-    }
-
-    /**
-     * Schedule daily update at midnight
-     */
-    scheduleDailyUpdate() {
         const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 1, 0); // 1 second after midnight
-
-        const msUntilMidnight = tomorrow - now;
-
-        setTimeout(() => {
-            this.updateSolarTimes(new Date());
-            this.scheduleDailyUpdate(); // Schedule next update
-        }, msUntilMidnight);
-    }
-
-    /**
-     * Get configuration UI data
-     */
-    getConfigUI() {
-        // Ensure the cache is fresh for the current date
-        this.updateSolarTimes(new Date());
-
-        const { times, scaleFactors } = this.solarCache;
+        const times = SunCalc.getTimes(now, cityData.lat, cityData.lng);
+        
+        const daylightMs = times.sunset - times.sunrise;
+        const daylightHours = daylightMs / 3600000;
 
         return {
-            fields: [
-                {
-                    type: 'select',
-                    id: 'location',
-                    label: 'Location',
-                    options: Object.entries(this.cities).map(([key, city]) => ({
-                        value: key,
-                        label: city.name
-                    })),
-                    value: this.findCityKey()
-                },
-                {
-                    type: 'slider',
-                    id: 'designedDayHours',
-                    label: 'Day Hours',
-                    min: 1,
-                    max: 23,
-                    step: 0.5,
-                    value: this.config.designedDayHours,
-                    unit: 'hours'
-                },
-                {
-                    type: 'checkbox',
-                    id: 'autoAdjust',
-                    label: 'Auto-adjust to actual daylight',
-                    value: this.config.autoAdjust
-                }
-            ],
-            solarInfo: {
-                ...times,
-                dayScaleFactor: scaleFactors.day,
-                nightScaleFactor: scaleFactors.night
-            }
+            sunrise: times.sunrise,
+            sunset: times.sunset,
+            solarNoon: new Date((times.sunrise.getTime() + times.sunset.getTime()) / 2),
+            daylightHours: daylightHours
         };
     }
 
     /**
-     * Find city key from current location
+     * Get config UI for Solar Mode
      */
-    findCityKey() {
-        const currentLat = this.config.location.lat;
-        const currentLng = this.config.location.lng;
+    getConfigUI(config) {
+        const currentCity = config.location.key || 'tokyo';
+        const solarInfo = this.solarCache.solarInfo || {};
 
-        for (const [key, city] of Object.entries(this.cities)) {
-            if (Math.abs(city.lat - currentLat) < 0.01 &&
-                Math.abs(city.lng - currentLng) < 0.01) {
-                return key;
-            }
-        }
-        return 'custom';
-    }
-
-    /**
-     * Handle configuration updates
-     */
-    updateConfig(updates) {
-        if (updates.location) {
-            this.setLocation(updates.location);
-        }
-        if (updates.designedDayHours !== undefined) {
-            this.setDesignedDayHours(updates.designedDayHours);
-        }
-        if (updates.autoAdjust !== undefined) {
-            this.config.autoAdjust = updates.autoAdjust;
-            if (updates.autoAdjust) {
-                this.updateSolarTimes(new Date());
-            }
-        }
-    }
-
-    /**
-     * Export mode configuration
-     */
-    exportConfig() {
-        return {
-            mode: 'solar',
-            location: this.config.location,
-            designedDayHours: this.config.designedDayHours,
-            autoAdjust: this.config.autoAdjust
-        };
+        return `
+            <div class="config-section">
+                <label for="solar-city">City:</label>
+                <select id="solar-city" class="config-select">
+                    ${Object.entries(this.cities).map(([key, city]) => 
+                        `<option value="${key}" ${key === currentCity ? 'selected' : ''}>${city.name}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            
+            <div class="solar-info">
+                <div class="info-item">
+                    <span class="info-label">Sunrise:</span>
+                    <span id="sunrise-time" class="info-value">${solarInfo.sunrise ? 
+                        new Date(solarInfo.sunrise).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                        }) : '--:--'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Sunset:</span>
+                    <span id="sunset-time" class="info-value">${solarInfo.sunset ? 
+                        new Date(solarInfo.sunset).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                        }) : '--:--'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Daylight:</span>
+                    <span id="daylight-duration" class="info-value">${solarInfo.daylightHours ? 
+                        `${Math.floor(solarInfo.daylightHours)}h ${Math.round((solarInfo.daylightHours % 1) * 60)}m` : 
+                        '--h --m'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Solar Noon → 12:00 AH</span>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <label for="solar-day-hours-slider">Day Hours:</label>
+                <div id="solar-day-hours-slider" class="slider"></div>
+                <span id="solar-day-hours-value" class="slider-value">${config.designedDayHours} hours</span>
+            </div>
+        `;
     }
 }
 
 // Export for module usage
-export default SolarMode;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { SolarMode };
+}

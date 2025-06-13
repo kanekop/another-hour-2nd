@@ -1,5 +1,5 @@
 feat: Update SolarMode with noon-fixed algorithm v2.0
-
+ 
 - Solar noon is now always fixed at 12:00 AH time
 - Add 8 city presets including polar regions
 - Implement auto-adjust feature for daylight hours
