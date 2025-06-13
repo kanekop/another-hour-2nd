@@ -162,7 +162,7 @@ function generateSolarConfig(config) {
     const formatTimeFromMinutes = (minutes) => {
         if (minutes === null || isNaN(minutes)) return '--:--';
         const hours = Math.floor(minutes / 60).toString().padStart(2, '0');
-        const mins = (minutes % 60).toString().padStart(2, '0');
+        const mins = Math.floor(minutes % 60).toString().padStart(2, '0');
         return `${hours}:${mins}`;
     };
 
