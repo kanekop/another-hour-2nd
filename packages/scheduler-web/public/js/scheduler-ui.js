@@ -128,68 +128,36 @@ function updateWeekDisplay() {
 // Get time slots for display based on mode and AH settings
 function getTimeSlots() {
   const slots = [];
+  const now = new Date();
 
-  if (state.timeMode === 'real') {
-    // Real time: simple 24 hours
-    for (let hour = 0; hour < 24; hour++) {
-      slots.push({
-        label: `${hour.toString().padStart(2, '0')}:00`,
-        realHour: hour,
-        isAH: false
-      });
-    }
-  } else {
-    // AH or Both mode: need to calculate based on AH settings
-    const normalDurationHours = timeDesignManager.currentMode.durationMinutes / 60;
-    const ahDurationHours = 24 - normalDurationHours;
+  // Always generate slots based on real time hours (0-23)
+  for (let hour = 0; hour < 24; hour++) {
+    const realDate = state.currentWeekStart.clone().hour(hour).minute(0).second(0).toDate();
 
-    // Designed 24 hours (0-23) - ここを修正
-    for (let ahHour = 0; ahHour < 24; ahHour++) {
-      const realHour = ahHour / timeDesignManager.currentMode.scaleFactor;
-      if (realHour < normalDurationHours) {
-        const label = state.timeMode === 'both'
-          ? `Designed ${ahHour}:00\n(${formatRealTime(realHour)})`  // "AH" を "Designed" に変更
-          : `Designed ${ahHour}:00`;  // "AH" を "Designed" に変更
+    // Get the corresponding AH time from the manager
+    const ahResult = timeDesignManager.calculate(realDate, state.selectedTimezone);
 
-        slots.push({
-          label: label,
-          realHour: realHour,
-          ahHour: ahHour,
-          isAH: false,
-          isScaled: true
-        });
+    let label = '';
+    const realTimeLabel = `${String(hour).padStart(2, '0')}:00`;
+
+    if (state.timeMode === 'real') {
+      label = realTimeLabel;
+    } else {
+      const ahTimeLabel = `${String(ahResult.hours).padStart(2, '0')}:${String(ahResult.minutes).padStart(2, '0')}`;
+      if (state.timeMode === 'both') {
+        label = `${ahTimeLabel}<br><small>(${realTimeLabel})</small>`;
+      } else { // 'ah'
+        label = ahTimeLabel;
       }
     }
 
-    // Another Hour period (24+) - ここはそのままAHを保持
-    if (ahDurationHours > 0) {
-      // Add AH 24 marker
-      slots.push({
-        label: state.timeMode === 'both'
-          ? `AH 24:00\n(${formatRealTime(normalDurationHours)})`
-          : `AH 24:00`,
-        realHour: normalDurationHours,
-        ahHour: 24,
-        isAH: true,
-        isAHStart: true
-      });
-
-      // Add remaining AH hours
-      for (let i = 1; i < Math.floor(ahDurationHours); i++) {
-        const realHour = normalDurationHours + i;
-        const ahHour = 24 + i;
-        const label = state.timeMode === 'both'
-          ? `AH ${ahHour}:00\n(${formatRealTime(realHour)})`
-          : `AH ${ahHour}:00`;
-
-        slots.push({
-          label: label,
-          realHour: realHour,
-          ahHour: ahHour,
-          isAH: true
-        });
-      }
-    }
+    slots.push({
+      label: label,
+      realHour: hour,
+      ahHour: ahResult.hours + ahResult.minutes / 60,
+      isAH: ahResult.periodName?.includes('Another Hour'),
+      isScaled: ahResult.scaleFactor !== 1
+    });
   }
 
   return slots;
