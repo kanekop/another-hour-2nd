@@ -31,7 +31,7 @@ Another Hourは「時間との関係を再定義する」革新的なプラッ�
 another-hour/
 ├── packages/
 │   ├── scheduler-web/      ✅ 実装済み
-│   ├── core/              🔄 次の優先事項
+│   ├── core/              ✅ 実装済み
 │   ├── clock-web/         📋 計画中
 │   └── watch-app/         📋 計画中
 └── docs/
@@ -96,17 +96,22 @@ another-hour/
 
 ## 現在の優先事項
 
-1. **@another-hour/coreパッケージの作成**
-   - clock-core.jsからの共通ロジック抽出
-   - Time Design Modes基盤実装
-   - テストスイート構築
+1. **coreパッケージのテスト実装**
+   - Jestなどのテストフレームワークを導入
+   - `getCustomAhAngles`の単体テストを作成
+   - テストカバレッジを向上させる
 
 2. **Time Design Modesの実装**
    - Mode Registry システム
    - 各モードの計算ロジック
    - UI/UXの統合
 
-3. **開発効率の向上**
+3. **coreパッケージのテスト実装**
+   - Jestなどのテストフレームワークを導入
+   - `getCustomAhAngles`の単体テストを作成
+   - テストカバレッジを向上させる
+
+4. **開発効率の向上**
    - TypeScript導入の検討
    - 自動テストの充実
    - ビルドプロセスの最適化
