@@ -1,6 +1,6 @@
 // public/js/scheduler-ui.js
 
-import { getCustomAhAngles } from '../clock-core.js';
+import { timeDesignManager } from './time-design/TimeDesignManager.js';
 import { getCurrentScalingInfo } from './scaling-utils.js';
 
 // Constants
@@ -12,9 +12,8 @@ const state = {
   timeMode: 'ah', // 'ah', 'real', or 'both'
   events: [],
   selectedTimezone: null,
-  isAuthenticated: false,
-  normalAphDayDurationMinutes: 1380, // Default 23 hours
-  scaleFactor: 24/23
+  isAuthenticated: false
+  // normalAphDayDurationMinutes is now handled by TimeDesignManager
 };
 
 // DOM Elements
@@ -35,18 +34,12 @@ const elements = {
 };
 
 // Initialize
-function initialize() {
+async function initialize() {
+  // Wait for TimeDesignManager to be ready
+  await timeDesignManager.initialize();
+
   // Get user's timezone
   state.selectedTimezone = localStorage.getItem('personalizedAhSelectedTimezone') || moment.tz.guess() || 'UTC';
-
-  // Get AH duration from localStorage
-  const savedDuration = localStorage.getItem('personalizedAhDurationMinutes');
-  if (savedDuration) {
-    state.normalAphDayDurationMinutes = parseInt(savedDuration, 10);
-  }
-
-  // Calculate scale factor
-  updateScaleFactor();
 
   // Set current week
   const now = moment().tz(state.selectedTimezone);
@@ -66,22 +59,11 @@ function initialize() {
 
   // Listen for storage changes (when user updates AH duration in clock settings)
   window.addEventListener('storage', (e) => {
-    if (e.key === 'personalizedAhDurationMinutes') {
-      state.normalAphDayDurationMinutes = parseInt(e.newValue, 10);
-      updateScaleFactor();
-      renderCalendar();
+    if (e.key === 'time-design-mode-configs') {
+      // Reload manager and re-render calendar when configs change
+      timeDesignManager.initialize().then(() => renderCalendar());
     }
   });
-}
-
-// Update scale factor based on AH duration
-function updateScaleFactor() {
-  const normalHours = state.normalAphDayDurationMinutes / 60;
-  if (normalHours === 0) {
-    state.scaleFactor = 1;
-  } else {
-    state.scaleFactor = 24 / normalHours;
-  }
 }
 
 // Set up event listeners
@@ -146,68 +128,36 @@ function updateWeekDisplay() {
 // Get time slots for display based on mode and AH settings
 function getTimeSlots() {
   const slots = [];
+  const now = new Date();
 
-  if (state.timeMode === 'real') {
-    // Real time: simple 24 hours
-    for (let hour = 0; hour < 24; hour++) {
-      slots.push({
-        label: `${hour.toString().padStart(2, '0')}:00`,
-        realHour: hour,
-        isAH: false
-      });
-    }
-  } else {
-    // AH or Both mode: need to calculate based on AH settings
-    const normalDurationHours = state.normalAphDayDurationMinutes / 60;
-    const ahDurationHours = 24 - normalDurationHours;
+  // Always generate slots based on real time hours (0-23)
+  for (let hour = 0; hour < 24; hour++) {
+    const realDate = state.currentWeekStart.clone().hour(hour).minute(0).second(0).toDate();
 
-    // Designed 24 hours (0-23) - ここを修正
-    for (let ahHour = 0; ahHour < 24; ahHour++) {
-      const realHour = ahHour / state.scaleFactor;
-      if (realHour < normalDurationHours) {
-        const label = state.timeMode === 'both' 
-          ? `Designed ${ahHour}:00\n(${formatRealTime(realHour)})`  // "AH" を "Designed" に変更
-          : `Designed ${ahHour}:00`;  // "AH" を "Designed" に変更
+    // Get the corresponding AH time from the manager
+    const ahResult = timeDesignManager.calculate(realDate, state.selectedTimezone);
 
-        slots.push({
-          label: label,
-          realHour: realHour,
-          ahHour: ahHour,
-          isAH: false,
-          isScaled: true
-        });
+    let label = '';
+    const realTimeLabel = `${String(hour).padStart(2, '0')}:00`;
+
+    if (state.timeMode === 'real') {
+      label = realTimeLabel;
+    } else {
+      const ahTimeLabel = `${String(ahResult.hours).padStart(2, '0')}:${String(ahResult.minutes).padStart(2, '0')}`;
+      if (state.timeMode === 'both') {
+        label = `${ahTimeLabel}<br><small>(${realTimeLabel})</small>`;
+      } else { // 'ah'
+        label = ahTimeLabel;
       }
     }
 
-    // Another Hour period (24+) - ここはそのままAHを保持
-    if (ahDurationHours > 0) {
-      // Add AH 24 marker
-      slots.push({
-        label: state.timeMode === 'both' 
-          ? `AH 24:00\n(${formatRealTime(normalDurationHours)})`
-          : `AH 24:00`,
-        realHour: normalDurationHours,
-        ahHour: 24,
-        isAH: true,
-        isAHStart: true
-      });
-
-      // Add remaining AH hours
-      for (let i = 1; i < Math.floor(ahDurationHours); i++) {
-        const realHour = normalDurationHours + i;
-        const ahHour = 24 + i;
-        const label = state.timeMode === 'both' 
-          ? `AH ${ahHour}:00\n(${formatRealTime(realHour)})`
-          : `AH ${ahHour}:00`;
-
-        slots.push({
-          label: label,
-          realHour: realHour,
-          ahHour: ahHour,
-          isAH: true
-        });
-      }
-    }
+    slots.push({
+      label: label,
+      realHour: hour,
+      ahHour: ahResult.hours + ahResult.minutes / 60,
+      isAH: ahResult.periodName?.includes('Another Hour'),
+      isScaled: ahResult.scaleFactor !== 1
+    });
   }
 
   return slots;
@@ -505,8 +455,8 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
 
   // Find the slots this event spans
   timeSlots.forEach((slot, index) => {
-    if (startSlotIndex === -1 && slot.realHour <= startHour && 
-        (index === timeSlots.length - 1 || timeSlots[index + 1].realHour > startHour)) {
+    if (startSlotIndex === -1 && slot.realHour <= startHour &&
+      (index === timeSlots.length - 1 || timeSlots[index + 1].realHour > startHour)) {
       startSlotIndex = index;
     }
     if (slot.realHour < endHour) {
@@ -587,35 +537,35 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
   const eventHeight = endRect.bottom - startRect.top;
   const isCompact = eventHeight < 50;
 
-  // Format time display - ここも修正
+  // Format time display - use the new conversion logic
+  const ahStartTime = convertRealDateToAH(eventStart.toDate());
+  const ahEndTime = convertRealDateToAH(eventEnd.toDate());
   let timeDisplay = '';
   if (state.timeMode === 'ah' || state.timeMode === 'both') {
-    const ahStartTime = convertRealToAH(startHour);
-    const ahEndTime = convertRealToAH(endHour);
     eventEl.classList.add('ah-time');
 
     if (event.isMultiDay) {
       if (event.isFirstDay) {
         // Designed期間内かAH期間内かを判定
-        const prefix = ahStartTime < 24 ? 'Designed' : 'AH';
-        timeDisplay = `${prefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} →`;
+        const prefix = ahStartTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
+        timeDisplay = `${prefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} →`;
       } else if (event.isLastDay) {
-        const prefix = ahEndTime < 24 ? 'Designed' : 'AH';
-        timeDisplay = `→ ${prefix} ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
+        const prefix = ahEndTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
+        timeDisplay = `→ ${prefix} ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}`;
       } else {
         timeDisplay = '→ All Day →';
       }
     } else {
       // 開始時間と終了時間で期間を判定
-      const startPrefix = ahStartTime < 24 ? 'Designed' : 'AH';
-      const endPrefix = ahEndTime < 24 ? 'Designed' : 'AH';
+      const startPrefix = ahStartTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
+      const endPrefix = ahEndTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
 
       if (startPrefix === endPrefix) {
         // 同じ期間内の場合
-        timeDisplay = `${startPrefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
+        timeDisplay = `${startPrefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} - ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}`;
       } else {
         // 期間をまたがる場合
-        timeDisplay = `${startPrefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${endPrefix} ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}`;
+        timeDisplay = `${startPrefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} - ${endPrefix} ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}`;
       }
     }
   } else {
@@ -679,29 +629,17 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
   contentArea.appendChild(eventEl);
 }
 
-// Convert real hours to AH hours
-function convertRealToAH(realHours) {
-  const normalDurationHours = state.normalAphDayDurationMinutes / 60;
-
-  if (realHours < normalDurationHours) {
-    // In designed period
-    return realHours * state.scaleFactor;
-  } else {
-    // In AH period
-    return 24 + (realHours - normalDurationHours);
-  }
+// Convert real Date object to AH time object
+function convertRealDateToAH(date) {
+  if (!timeDesignManager.currentMode) return { hours: 0, minutes: 0 };
+  const result = timeDesignManager.calculate(date, state.selectedTimezone);
+  return { hours: result.hours, minutes: result.minutes, isAnotherHour: result.isAnotherHour, periodName: result.periodName };
 }
 
-// Convert AH hours to real hours
-function convertAHToReal(ahHours) {
-  if (ahHours < 24) {
-    // In designed period
-    return ahHours / state.scaleFactor;
-  } else {
-    // In AH period
-    const normalDurationHours = state.normalAphDayDurationMinutes / 60;
-    return normalDurationHours + (ahHours - 24);
-  }
+// Format time display - use the new conversion logic
+function formatAhTime(hours, minutes, periodName) {
+  const prefix = periodName.includes('Another Hour') ? 'AH' : 'Designed';
+  return `${prefix} ${String(Math.floor(hours)).padStart(2, '0')}:${String(Math.floor(minutes)).padStart(2, '0')}`;
 }
 
 // Show event details - ここも修正
@@ -712,14 +650,12 @@ function showEventDetails(event) {
   const endTime = moment(event.end);
 
   // Calculate AH times
-  const startHour = startTime.hour() + startTime.minute() / 60;
-  const endHour = endTime.hour() + endTime.minute() / 60;
-  const ahStartTime = convertRealToAH(startHour);
-  const ahEndTime = convertRealToAH(endHour);
+  const ahStartTime = convertRealDateToAH(startTime.toDate());
+  const ahEndTime = convertRealDateToAH(endTime.toDate());
 
   // 期間の判定
-  const startPrefix = ahStartTime < 24 ? 'Designed' : 'AH';
-  const endPrefix = ahEndTime < 24 ? 'Designed' : 'AH';
+  const startPrefix = ahStartTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
+  const endPrefix = ahEndTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
 
   elements.eventInfo.innerHTML = `
     <div class="event-info-row">
@@ -732,7 +668,7 @@ function showEventDetails(event) {
     </div>
     <div class="event-info-row">
       <span class="event-info-label">AH Time:</span>
-      <span>${startPrefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${endPrefix} ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}</span>
+      <span>${startPrefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} - ${endPrefix} ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}</span>
     </div>
     ${event.description ? `
     <div class="event-info-row">
@@ -760,14 +696,12 @@ function showEventDetailsModal(event) {
   const endTime = moment(event.end);
 
   // Calculate AH times
-  const startHour = startTime.hour() + startTime.minute() / 60;
-  const endHour = endTime.hour() + endTime.minute() / 60;
-  const ahStartTime = convertRealToAH(startHour);
-  const ahEndTime = convertRealToAH(endHour);
+  const ahStartTime = convertRealDateToAH(startTime.toDate());
+  const ahEndTime = convertRealDateToAH(endTime.toDate());
 
   // 期間の判定
-  const startPrefix = ahStartTime < 24 ? 'Designed' : 'AH';
-  const endPrefix = ahEndTime < 24 ? 'Designed' : 'AH';
+  const startPrefix = ahStartTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
+  const endPrefix = ahEndTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
 
   elements.eventModalContent.innerHTML = `
     <div class="event-info-row">
@@ -780,7 +714,7 @@ function showEventDetailsModal(event) {
     </div>
     <div class="event-info-row">
       <span class="event-info-label">AH Time:</span>
-      <span>${startPrefix} ${Math.floor(ahStartTime)}:${Math.round((ahStartTime % 1) * 60).toString().padStart(2, '0')} - ${endPrefix} ${Math.floor(ahEndTime)}:${Math.round((ahEndTime % 1) * 60).toString().padStart(2, '0')}</span>
+      <span>${startPrefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} - ${endPrefix} ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}</span>
     </div>
     ${event.description ? `
     <div class="event-info-row">

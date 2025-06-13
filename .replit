@@ -1,30 +1,14 @@
-entrypoint = "index.js"
-modules = ["nodejs-22"]
-hidden = [".config", "package-lock.json"]
+run = "cd packages/scheduler-web && npm start"
+language = "nodejs"
+modules = ["nodejs-20"]
 
-[gitHubImport]
-requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
+[packager]
+language = "nodejs"
 
-[nix]
-channel = "stable-24_11"
-packages = ["remote-exec"]
-
-[deployment]
-run = ["sh", "-c", "node server.js"]
-deploymentTarget = "autoscale"
-ignorePorts = false
-
-[workflows]
-runButton = "Run"
-
-[[workflows.workflow]]
-name = "Run"
-author = 37948231
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm start"
+[packager.features]
+packageSearch = true
+guessImports = true
+enabledForHosting = false 
 
 [[ports]]
 localPort = 3000

@@ -1,16 +1,16 @@
 // public/js/personalized-ah-clock-ui.js
 
-import { getCustomAhAngles } from "../clock-core.js";
+import { timeDesignManager } from "./time-design/TimeDesignManager.js";
 import {
   getDisplayTimezones,
   getUserLocalTimezone,
   getCityNameByTimezone,
 } from "./timezone-manager.js";
 import { drawAphGraph, updateAphAxisLabels } from "./aph-graph-demo.js";
-import { 
-  initializeThemeManager, 
-  applyClockFace, 
-  applyColorTheme, 
+import {
+  initializeThemeManager,
+  applyClockFace,
+  applyColorTheme,
   saveColorPreferences,
   createThemeSettingsUI,
   CLOCK_FACES,
@@ -25,19 +25,19 @@ const LOCAL_STORAGE_KEY_SELECTED_TIMEZONE = 'personalizedAhSelectedTimezone';
 
 // 実時間グラフ描画関数
 function drawRealTimeGraph(realHoursBarElement) {
-    if (!realHoursBarElement) {
-        console.error("Real hours bar element not provided for drawing.");
-        return;
-    }
-    realHoursBarElement.innerHTML = '';
+  if (!realHoursBarElement) {
+    console.error("Real hours bar element not provided for drawing.");
+    return;
+  }
+  realHoursBarElement.innerHTML = '';
 
-    for (let i = 0; i < 24; i++) {
-        const segment = document.createElement('div');
-        segment.classList.add('bar-segment');
-        segment.style.height = `${100 / 24}%`;
-        segment.textContent = i;
-        realHoursBarElement.appendChild(segment);
-    }
+  for (let i = 0; i < 24; i++) {
+    const segment = document.createElement('div');
+    segment.classList.add('bar-segment');
+    segment.style.height = `${100 / 24}%`;
+    segment.textContent = i;
+    realHoursBarElement.appendChild(segment);
+  }
 }
 
 // DOM Elements
@@ -121,7 +121,7 @@ function updateSliderRelatedDisplays() {
   const aphHourEquivalent = Math.floor(aphDurationMinutes / 60);
   const aphMinuteEquivalent = aphDurationMinutes % 60;
   elements.sliderRealTimeLabel.textContent = `${String(aphHourEquivalent).padStart(2, "0")}:${String(aphMinuteEquivalent).padStart(2, "0")}`;
-  
+
   // const totalRealMinutesInDay = 24 * 60;
   // const aphDurationMinutes = totalRealMinutesInDay - normalAphDayMinutes;
   // elements.anotherHourDurationDisplay.textContent = `${formatDuration(aphDurationMinutes)}`;
@@ -223,7 +223,7 @@ function initializeSlider() {
     state.normalAphDayDurationMinutes.toString();
 
   if (elements.personalizedRealHoursBar) {
-      drawRealTimeGraph(elements.personalizedRealHoursBar);
+    drawRealTimeGraph(elements.personalizedRealHoursBar);
   }
 
   updateSliderRelatedDisplays();
@@ -380,12 +380,12 @@ function initializeViewToggle() {
       elements.toggleViewBtn.textContent = 'Show Clock';
       localStorage.setItem(LOCAL_STORAGE_KEY_CURRENT_VIEW, 'settings');
       if (elements.personalizedRealHoursBar) {
-          drawRealTimeGraph(elements.personalizedRealHoursBar);
+        drawRealTimeGraph(elements.personalizedRealHoursBar);
       }
       if (elements.normalDurationSlider && elements.personalizedAphGraphBar && elements.personalizedAphAxisLabels && elements.personalizedAphGraphContainer) {
-          const currentSliderValue = parseInt(elements.normalDurationSlider.value, 10);
-          drawAphGraph(elements.personalizedAphGraphBar, currentSliderValue);
-          updateAphAxisLabels(elements.personalizedAphAxisLabels, elements.personalizedAphGraphContainer, currentSliderValue);
+        const currentSliderValue = parseInt(elements.normalDurationSlider.value, 10);
+        drawAphGraph(elements.personalizedAphGraphBar, currentSliderValue);
+        updateAphAxisLabels(elements.personalizedAphAxisLabels, elements.personalizedAphGraphContainer, currentSliderValue);
       }
     }
   }
@@ -586,7 +586,7 @@ function updatePersonalizedClock() {
     ahSectorStartAngleDegrees,
     ahSectorSweepAngleDegrees,
     isPersonalizedAhPeriod,
-  } = getCustomAhAngles(
+  } = timeDesignManager.getCustomAhAngles(
     now,
     state.selectedTimezone,
     currentNormalAphDayDurationMinutes,
