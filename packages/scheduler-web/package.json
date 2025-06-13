@@ -8,6 +8,7 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "@another-hour/core": "workspace:^",
     "concurrently": "^9.1.2",
     "express": "^4.21.2",
     "express-session": "^1.18.1",

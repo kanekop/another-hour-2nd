@@ -1,53 +1,4 @@
-// clock-core.js - Core time calculation functions
-
-// Fallback implementation for getCustomAhAngles
-function getCustomAhAngles(date, timezone, designed24Duration = 1380) {
-  const now = new Date(date);
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const currentSeconds = now.getSeconds();
-
-  // Calculate if we're in Another Hour period
-  const anotherHourStart = designed24Duration;
-  const isPersonalizedAhPeriod = currentMinutes >= anotherHourStart;
-
-  let scaleFactor, displayHours, displayMinutes, displaySeconds;
-
-  if (isPersonalizedAhPeriod) {
-    // Another Hour period - normal time
-    scaleFactor = 1.0;
-    displayHours = now.getHours();
-    displayMinutes = now.getMinutes();
-    displaySeconds = now.getSeconds();
-  } else {
-    // Designed 24 period - scaled time
-    scaleFactor = designed24Duration / 1440;
-    const scaledMinutes = currentMinutes / scaleFactor;
-    displayHours = Math.floor(scaledMinutes / 60);
-    displayMinutes = Math.floor(scaledMinutes % 60);
-    displaySeconds = Math.floor((scaledMinutes % 1) * 60);
-  }
-
-  // Calculate angles for clock display
-  const hourAngle = (displayHours % 12) * 30 + displayMinutes * 0.5;
-  const minuteAngle = displayMinutes * 6 + displaySeconds * 0.1;
-  const secondAngle = displaySeconds * 6;
-
-  return {
-    aphHours: displayHours,
-    aphMinutes: displayMinutes,
-    aphSeconds: displaySeconds,
-    scaleFactor: scaleFactor,
-    isPersonalizedAhPeriod: isPersonalizedAhPeriod,
-    hourAngle: hourAngle,
-    minuteAngle: minuteAngle,
-    secondAngle: secondAngle
-  };
-}
-
-// Make function globally available
-if (typeof window !== 'undefined') {
-  window.getCustomAhAngles = getCustomAhAngles;
-}
+// clock-core.js - Core time calculation functions for scheduler UI
 
 // public/clock-core.js
 
@@ -57,7 +8,7 @@ if (typeof window !== 'undefined') {
  * For the first 23 real hours, time runs slightly faster.
  * The 24th real hour (23:00-00:00) is the "Another Hour".
  */
-const SCALE_AH = 24/23;
+const SCALE_AH = 24 / 23;
 
 /**
  * Calculates the angles for analog clock hands and AH digital time components for the standard Main/World Clock.
@@ -74,8 +25,6 @@ const SCALE_AH = 24/23;
  * - {number} ahSeconds - AH seconds for digital display.
  */
 function getAngles(date, timezone) {
-  // ... (既存の getAngles 関数の実装はそのまま)
-  // ... (念のため、Moment.jsの存在チェックはここにもあった方が良いかもしれません)
   if (typeof moment === 'undefined' || typeof moment.tz === 'undefined') {
     console.error("Moment.js and Moment Timezone are not loaded. Cannot calculate standard AH angles.");
     return { hourAngle: 0, minuteAngle: 0, secondAngle: 0, ahHours: 0, ahMinutes: 0, ahSeconds: 0 };
