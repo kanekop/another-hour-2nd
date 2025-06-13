@@ -40,7 +40,7 @@ class TimeDesignManager {
     }
 
     // Combine loaded config with defaults to ensure all keys are present for validation.
-    const defaultConfig = mode.constructor.getDefaultConfig();
+    const defaultConfig = mode.getDefaultConfig();
     const modeConfig = { ...defaultConfig, ...(config || {}) };
 
     // HACK: Migrate legacy config from localStorage to prevent validation errors.
