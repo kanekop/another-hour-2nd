@@ -162,8 +162,8 @@ function generateSolarConfig(config) {
         `<option value="${key}" ${currentCityKey === key ? 'selected' : ''}>${city.name}</option>`
     ).join('');
 
-    const uiData = solarMode.getConfigUI();
-    const solarInfo = uiData.solarInfo;
+    const uiData = solarMode.getConfigUI(config);
+    const solarInfo = uiData ? uiData.solarInfo : null;
 
     const formatTimeFromMinutes = (minutes) => {
         if (minutes === null || isNaN(minutes)) return '--:--';
@@ -180,17 +180,21 @@ function generateSolarConfig(config) {
     };
 
     let solarDetailsHtml = '';
-    if (solarInfo.isAlwaysDay) {
-        solarDetailsHtml = `<p><strong>Polar Day:</strong> Sun is up for 24 hours.</p>`;
-    } else if (solarInfo.isAlwaysNight) {
-        solarDetailsHtml = `<p><strong>Polar Night:</strong> Sun does not rise.</p>`;
+    if (solarInfo) {
+        if (solarInfo.isAlwaysDay) {
+            solarDetailsHtml = `<p><strong>Polar Day:</strong> Sun is up for 24 hours.</p>`;
+        } else if (solarInfo.isAlwaysNight) {
+            solarDetailsHtml = `<p><strong>Polar Night:</strong> Sun does not rise.</p>`;
+        } else {
+            solarDetailsHtml = `
+                <p><strong>Sun Rise:</strong> <span id="sunrise-time">${formatTimeFromMinutes(solarInfo.sunrise)}</span></p>
+                <p><strong>Solar Noon:</strong> <span id="solarnoon-time">${formatTimeFromMinutes(solarInfo.solarNoon)}</span></p>
+                <p><strong>Sun Set:</strong> <span id="sunset-time">${formatTimeFromMinutes(solarInfo.sunset)}</span></p>
+                <p><strong>Daytime:</strong> <span id="daylight-duration">${formatDuration(solarInfo.daylightMinutes)}</span></p>
+            `;
+        }
     } else {
-        solarDetailsHtml = `
-            <p><strong>Sun Rise:</strong> <span id="sunrise-time">${formatTimeFromMinutes(solarInfo.sunrise)}</span></p>
-            <p><strong>Solar Noon:</strong> <span id="solarnoon-time">${formatTimeFromMinutes(solarInfo.solarNoon)}</span></p>
-            <p><strong>Sun Set:</strong> <span id="sunset-time">${formatTimeFromMinutes(solarInfo.sunset)}</span></p>
-            <p><strong>Daytime:</strong> <span id="daylight-duration">${formatDuration(solarInfo.daylightMinutes)}</span></p>
-        `;
+        solarDetailsHtml = '<p>Could not retrieve solar data. Please select a city.</p>';
     }
 
     return `
