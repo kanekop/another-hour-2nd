@@ -156,8 +156,10 @@ function generateCoreTimeConfig(config) {
 
 function generateSolarConfig(config) {
     const solarMode = timeDesignManager.registry.get('solar');
+    const currentCityKey = config.location?.key || 'tokyo';
+
     const cityOptions = Object.entries(solarMode.cities).map(([key, city]) =>
-        `<option value="${key}" ${solarMode.findCityKey() === key ? 'selected' : ''}>${city.name}</option>`
+        `<option value="${key}" ${currentCityKey === key ? 'selected' : ''}>${city.name}</option>`
     ).join('');
 
     const uiData = solarMode.getConfigUI();
@@ -333,10 +335,23 @@ async function saveConfig() {
             newConfig.coreTimeEnd = parseInt(values[1]);
         } else if (current.id === 'solar') {
             // Solar mode configuration
-            newConfig.city = document.getElementById('solar-city').value;
+            const cityKey = document.getElementById('solar-city').value;
+            const solarMode = timeDesignManager.registry.get('solar');
+            const cityData = solarMode.getCityData(cityKey);
+
+            if (cityData) {
+                newConfig.location = {
+                    key: cityKey,
+                    lat: cityData.lat,
+                    lng: cityData.lng,
+                    name: cityData.name,
+                    timezone: cityData.tz
+                };
+            }
+
             const sliderElement = document.getElementById('solar-day-hours-slider');
             if (sliderElement && sliderElement.noUiSlider) {
-                newConfig.dayHours = parseFloat(sliderElement.noUiSlider.get());
+                newConfig.designedDayHours = parseFloat(sliderElement.noUiSlider.get());
             }
         } else {
             // Generic configuration handling
