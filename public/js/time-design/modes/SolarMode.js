@@ -3,10 +3,11 @@ import { BaseMode } from './BaseMode.js';
 
 export class SolarMode extends BaseMode {
     constructor() {
-        super();
-        this.id = 'solar';
-        this.name = 'Solar Mode';
-        this.description = 'Time flows with the sun - solar noon is always 12:00';
+        super(
+            'solar',
+            'Solar Mode',
+            'Time flows with the sun - solar noon is always 12:00'
+        );
 
         // Initialize solar cache
         this.solarCache = {
@@ -44,6 +45,10 @@ export class SolarMode extends BaseMode {
             designedDayHours: 12,
             autoAdjust: true
         };
+    }
+
+    getDefaultConfig() {
+        return SolarMode.getDefaultConfig();
     }
 
     /**
