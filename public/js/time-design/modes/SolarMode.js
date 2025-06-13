@@ -50,20 +50,20 @@ export class SolarMode extends BaseMode {
         config = { ...this.getDefaultConfig(), ...config };
         const { location, designedDayHours } = config;
 
-        // --- 1. Get Sun Times ---
+        // --- 1. Get Sun Times For Yesterday, Today, and Tomorrow ---
         const today = new Date(date);
-        const yesterday = new Date(date);
-        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterday = new Date(date); yesterday.setDate(today.getDate() - 1);
+        const tomorrow = new Date(date); tomorrow.setDate(today.getDate() + 1);
 
         const timesToday = SunCalc.getTimes(today, location.lat, location.lng);
         const timesYesterday = SunCalc.getTimes(yesterday, location.lat, location.lng);
+        const timesTomorrow = SunCalc.getTimes(tomorrow, location.lat, location.lng);
 
-        // --- 2. Get critical timestamps (milliseconds) ---
+        // --- 2. Get Critical Timestamps (milliseconds) ---
         const nowTs = today.getTime();
         const sunriseTs = timesToday.sunrise.getTime();
         const sunsetTs = timesToday.sunset.getTime();
         const solarNoonTs = timesToday.solarNoon.getTime();
-        const prevSunsetTs = timesYesterday.sunset.getTime();
 
         // --- 3. Designed Durations and Anchor Points in AH Minutes ---
         const designedDayMinutes = designedDayHours * 60;
@@ -77,27 +77,36 @@ export class SolarMode extends BaseMode {
 
         if (nowTs >= sunriseTs && nowTs < sunsetTs) {
             // DAY
+            periodName = nowTs <= solarNoonTs ? 'Day (Morning)' : 'Day (Afternoon)';
             const actualDaylightMs = sunsetTs - sunriseTs;
             scaleFactor = actualDaylightMs > 0 ? (designedDayMinutes * 60 * 1000) / actualDaylightMs : 1;
 
             if (nowTs <= solarNoonTs) {
-                periodName = 'Day (Morning)';
                 const realMorningMs = solarNoonTs - sunriseTs;
                 const progress = realMorningMs > 0 ? (nowTs - sunriseTs) / realMorningMs : 0;
                 ahTotalMinutes = ahDayStartMinutes + progress * (designedDayMinutes / 2);
             } else {
-                periodName = 'Day (Afternoon)';
                 const realAfternoonMs = sunsetTs - solarNoonTs;
                 const progress = realAfternoonMs > 0 ? (nowTs - solarNoonTs) / realAfternoonMs : 0;
                 ahTotalMinutes = ahNoonMinutes + progress * (designedDayMinutes / 2);
             }
         } else {
             // NIGHT
-            periodName = nowTs < sunriseTs ? 'Night (Pre-dawn)' : 'Night (Evening)';
-            const actualNightMs = sunriseTs - prevSunsetTs;
+            let nightStartTs, nightEndTs;
+            if (nowTs < sunriseTs) {
+                periodName = 'Night (Pre-dawn)';
+                nightStartTs = timesYesterday.sunset.getTime();
+                nightEndTs = sunriseTs;
+            } else { // nowTs >= sunsetTs
+                periodName = 'Night (Evening)';
+                nightStartTs = sunsetTs;
+                nightEndTs = timesTomorrow.sunrise.getTime();
+            }
+
+            const actualNightMs = nightEndTs - nightStartTs;
             scaleFactor = actualNightMs > 0 ? (designedNightMinutes * 60 * 1000) / actualNightMs : 1;
 
-            const elapsedRealNightMs = nowTs - prevSunsetTs;
+            const elapsedRealNightMs = nowTs - nightStartTs;
             const progress = actualNightMs > 0 ? elapsedRealNightMs / actualNightMs : 0;
 
             ahTotalMinutes = ahDayEndMinutes + progress * designedNightMinutes;
@@ -110,10 +119,7 @@ export class SolarMode extends BaseMode {
         const seconds = Math.floor((ahTotalMinutes * 60) % 60);
 
         return {
-            hours,
-            minutes,
-            seconds,
-            scaleFactor,
+            hours, minutes, seconds, scaleFactor,
             isAnotherHour: false,
             segmentInfo: { label: periodName },
             periodName,

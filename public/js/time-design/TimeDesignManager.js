@@ -39,9 +39,18 @@ class TimeDesignManager {
       throw new Error(`Mode '${modeId}' not found`);
     }
 
-    // Combine loaded config with defaults to ensure all keys are present for validation.
+    // Perform a safer merge for the configuration
     const defaultConfig = mode.getDefaultConfig();
-    const modeConfig = { ...defaultConfig, ...(config || {}) };
+    const providedConfig = config || {};
+    const modeConfig = {
+      ...defaultConfig,
+      ...providedConfig,
+      // Ensure the location object is properly merged, not just overwritten
+      location: {
+        ...(defaultConfig.location || {}),
+        ...(providedConfig.location || {})
+      }
+    };
 
     // HACK: Migrate legacy config from localStorage to prevent validation errors.
     // This handles the renaming of 'designed24Minutes' to 'designed24Duration'.
