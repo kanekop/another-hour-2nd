@@ -103,7 +103,6 @@ export class SolarMode extends BaseMode {
             ahTotalMinutes = ahDayEndMinutes + progress * designedNightMinutes;
         }
 
-        // Normalize AH minutes to be within [0, 1440)
         ahTotalMinutes = (ahTotalMinutes % 1440 + 1440) % 1440;
 
         const hours = Math.floor(ahTotalMinutes / 60);
@@ -115,7 +114,7 @@ export class SolarMode extends BaseMode {
             minutes,
             seconds,
             scaleFactor,
-            isAnotherHour: false, // Concept doesn't directly apply here
+            isAnotherHour: false,
             segmentInfo: { label: periodName },
             periodName,
         };
@@ -129,14 +128,13 @@ export class SolarMode extends BaseMode {
     }
 
     /**
-     * Get sun times for a city
+     * Get sun times for a city for a specific date.
      */
-    getSunTimes(cityKey) {
+    getSunTimes(cityKey, date) {
         const cityData = this.getCityData(cityKey);
         if (!cityData) return null;
 
-        const now = new Date();
-        const times = SunCalc.getTimes(now, cityData.lat, cityData.lng);
+        const times = SunCalc.getTimes(date, cityData.lat, cityData.lng);
         const solarNoon = new Date((times.sunrise.getTime() + times.sunset.getTime()) / 2);
 
         return {
@@ -161,7 +159,6 @@ export class SolarMode extends BaseMode {
 
     /**
      * Collects configuration from the UI elements.
-     * @returns {object} The configuration object.
      */
     collectConfigFromUI() {
         const cityKey = document.getElementById('solar-city').value;
@@ -188,19 +185,16 @@ export class SolarMode extends BaseMode {
         }
 
         const cityKey = config.location.key || 'tokyo';
-        const cityData = this.getCityData(cityKey);
-        const sunTimes = this.getSunTimes(cityKey);
+        const sunTimes = this.getSunTimes(cityKey, new Date()); // Get sun times for today
 
-        if (!sunTimes || !cityData) {
+        if (!sunTimes) {
             return { solarInfo: null };
         }
 
         const solarInfo = {
-            isAlwaysDay: false, // Placeholder for polar day logic
-            isAlwaysNight: false, // Placeholder for polar night logic
-            sunrise: this.getMinutesSinceMidnight(sunTimes.sunrise, cityData.timezone),
-            solarNoon: this.getMinutesSinceMidnight(sunTimes.solarNoon, cityData.timezone),
-            sunset: this.getMinutesSinceMidnight(sunTimes.sunset, cityData.timezone),
+            sunrise: sunTimes.sunrise,
+            solarNoon: sunTimes.solarNoon,
+            sunset: sunTimes.sunset,
             daylightMinutes: sunTimes.daylightHours * 60,
         };
 

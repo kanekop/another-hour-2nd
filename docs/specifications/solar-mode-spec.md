@@ -105,6 +105,14 @@ map_night_time(real_time, start_time, end_time):
 
 ## 🌍 Location-Based Calculations
 
+### Timezone Principle
+
+**All time calculations must be performed relative to the local timezone of the selected location.**
+
+-   **Input**: The current time (`date`) is a standard JavaScript `Date` object (which is timezone-agnostic, based on a UTC timestamp).
+-   **Calculation**: `SunCalc.js` is used to get solar events (sunrise, sunset, etc.). These events are also returned as `Date` objects.
+-   **Interpretation**: All `Date` objects representing solar events must be interpreted in the selected city's local timezone to determine the correct local date and time (e.g., "04:26" for sunrise in Tokyo). The UI must display these localized times.
+
 ### サポート都市（初期実装）
 
 | 都市 | 緯度 | 経度 | タイムゾーン |
