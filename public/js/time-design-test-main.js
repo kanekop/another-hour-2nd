@@ -38,6 +38,10 @@ async function initialize() {
             loadModeConfig();
         });
 
+        // Setup event listeners for config buttons
+        document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
+        document.getElementById('resetConfigBtn').addEventListener('click', resetConfig);
+
         // Initial load
         const initialMode = timeDesignManager.getCurrentMode();
         if (initialMode) {
@@ -75,13 +79,15 @@ async function selectMode(modeId, isInitialLoad = false) {
             el.classList.toggle('active', el.dataset.mode === modeId);
         });
 
-        if (!isInitialLoad) {
+        if (isInitialLoad) {
+            // On initial load, the mode is already set by the manager.
+            // We just need to load the config UI.
+            loadModeConfig();
+        } else {
+            // For user-driven changes, set the mode in the manager.
+            // The subscription will handle UI updates.
             await timeDesignManager.setMode(modeId);
         }
-
-        debug(`Mode set successfully: ${modeId}`);
-        loadModeConfig();
-
     } catch (error) {
         debug(`Error setting mode: ${error.message}`);
         console.error('Failed to set mode:', error);
@@ -98,17 +104,8 @@ function loadModeConfig() {
     }
     debug('Loading config for mode:', current.id);
 
-    // Start with buttons and status message container
-    let configHtml = `
-        <div class="button-group">
-            <button class="btn-primary" id="saveConfigBtn">Save Configuration</button>
-            <button class="btn-secondary" id="resetConfigBtn">Reset to Default</button>
-        </div>
-        <div class="status-message" id="statusMessage" style="display: none;"></div>
-        <hr>
-    `;
-
     // Append mode-specific config UI
+    let configHtml = '';
     switch (current.id) {
         case 'classic':
             configHtml += generateClassicConfig(current.config);
@@ -133,9 +130,6 @@ function loadModeConfig() {
     } else if (current.id === 'solar') {
         initializeSolarMode(current.config);
     }
-
-    document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
-    document.getElementById('resetConfigBtn').addEventListener('click', resetConfig);
 }
 
 function generateClassicConfig(config) {

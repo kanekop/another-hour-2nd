@@ -321,16 +321,22 @@
         }
 
         @keyframes dots {
-            0%, 20% {
+
+            0%,
+            20% {
                 content: '';
             }
+
             40% {
                 content: '.';
             }
+
             60% {
                 content: '..';
             }
-            80%, 100% {
+
+            80%,
+            100% {
                 content: '...';
             }
         }
@@ -399,6 +405,12 @@
         <!-- Configuration Panel -->
         <div class="config-panel" id="configPanel">
             <h2>Mode Configuration</h2>
+            <div class="button-group">
+                <button class="btn-primary" id="saveConfigBtn">Save Configuration</button>
+                <button class="btn-secondary" id="resetConfigBtn">Reset to Default</button>
+            </div>
+            <div class="status-message" id="statusMessage" style="display: none;"></div>
+            <hr>
             <div id="configContent">
                 <p>Select a mode to configure...</p>
             </div>
@@ -415,7 +427,8 @@
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 
