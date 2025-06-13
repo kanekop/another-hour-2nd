@@ -89,14 +89,16 @@ All documentation is located in the `/docs` directory and is written in Markdown
 
 ## 🛠️ Development Environment
 
-### Replit Instance
-- **URL**: https://replit.com/@yoshimunekaneko/another-hour-scheduler
-- **Type**: Node.js environment
+### Replit Environment
+
+- **URL**: https://replit.com/@yoshimunekaneko/another-hour
+- **Environment Variables**:
+  - `GOOGLE_CLIENT_ID`
 - **Auto-deploy**: Enabled for `.replit.app` domain
 
 ### Development URLs
 - **Development**: Dynamic URL (check Replit Webview for current URL)
-- **Deployment**: `https://another-hour-scheduler.replit.app`
+- **Deployment**: `https://another-hour.replit.app`
 
 ### Testing Environment
 - **Primary Browser**: Chrome (latest version)
@@ -117,7 +119,7 @@ All documentation is located in the `/docs` directory and is written in Markdown
 - **OAuth 2.0 Client ID**: `578245430016-ttvhcmddnsfun67vqo45l4na0nuvkagf.apps.googleusercontent.com`
 - **Authorized Redirect URIs**:
   1. `http://localhost:3000/auth/google/callback`
-  2. `https://another-hour-scheduler.replit.app/auth/google/callback`
+  2. `https://another-hour.replit.app/auth/google/callback`
   3. Dynamic Replit dev URLs (automatically detected by GoogleCalendarService)
 
 ## 📋 Development Workflow

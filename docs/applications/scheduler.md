@@ -52,7 +52,7 @@ This is a **Fork & Extend** version of the original Another Hour Clock project, 
 ## 🏗️ Architecture
 
 ```
-another-hour-scheduler/
+another-hour/
 ├── 📅 Calendar & Scheduling (NEW)
 │   ├── Google Calendar API Integration
 │   ├── Microsoft Graph API Integration  
@@ -114,8 +114,8 @@ another-hour-scheduler/
 
 1. **Clone & Navigate**
    ```bash
-   git clone https://github.com/your-username/another-hour-scheduler.git
-   cd another-hour-scheduler
+   git clone https://github.com/your-username/another-hour.git
+   cd another-hour
    ```
 
 2. **Install Dependencies**
@@ -418,8 +418,8 @@ We welcome contributions to make AH Scheduler even better!
 
 ## 📬 Contact
 
-- **Project Repository**: [GitHub](https://github.com/your-username/another-hour-scheduler)
-- **Issues & Feature Requests**: [GitHub Issues](https://github.com/your-username/another-hour-scheduler/issues)
+- **Project Repository**: [GitHub](https://github.com/your-username/another-hour)
+- **Issues & Feature Requests**: [GitHub Issues](https://github.com/your-username/another-hour/issues)
 - **Original Project**: [Another Hour Clock](https://github.com/kanekop/another-hour-gen2-Claude)
 
 ---
@@ -427,3 +427,7 @@ We welcome contributions to make AH Scheduler even better!
 **Schedule time differently. Make every appointment count. 📅⏰**
 
 *© 2025 Another Hour Scheduler Project. All Rights Reserved.* 
+
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details. 

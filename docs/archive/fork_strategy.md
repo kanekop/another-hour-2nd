@@ -18,7 +18,7 @@ another-hour-clock/
 └── 👥 既存ユーザーの継続利用
 
 🚀 Fork Repository (新規開発)
-another-hour-scheduler/
+another-hour/
 ├── 📅 Schedule管理機能
 │   ├── Google Calendar同期 ✅
 │   ├── Outlook Calendar同期 🔄
