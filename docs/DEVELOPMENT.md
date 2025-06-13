@@ -1,3 +1,90 @@
+# Development Guide
+
+This guide provides instructions for setting up the development environment for the Another Hour project.
+
+## Prerequisites
+
+-   Node.js (v16.0.0 or higher)
+-   npm (v7.0.0 or higher, comes with Node.js)
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/kanekop/another-hour.git
+cd another-hour
+```
+
+### 2. Install Dependencies
+
+This project uses [NPM Workspaces](https://docs.npmjs.com/cli/v7/using-npm/workspaces) to manage the monorepo. Running `npm install` from the root directory will install dependencies for all packages.
+
+```bash
+# From the project root
+npm install
+```
+
+This will also install `lerna`, which is used for managing package versions and publishing.
+
+## 🛠️ Development Workflow
+
+### Running the Main Application
+
+To run the `scheduler-web` application, use the script defined in the root `package.json`.
+
+```bash
+# Runs the scheduler-web application
+npm run dev
+```
+
+This command executes the `dev` script within the `@another-hour/scheduler-web` workspace.
+
+### Running a Specific Package
+
+If you need to run a command for a specific package, you can use the `--workspace` flag.
+
+```bash
+# Example: Run the 'test' script only for the 'scheduler-web' package
+npm run test --workspace=@another-hour/scheduler-web
+```
+
+### Running a Command Across All Packages
+
+To run a script across all packages that have it defined, use the `--workspaces` flag.
+
+```bash
+# Example: Run the 'lint' script in all packages
+npm run lint --workspaces --if-present
+```
+
+## 📦 Package Management
+
+### Adding a Dependency to a Specific Package
+
+To add a new dependency to a package, use the `--workspace` flag with `npm install`.
+
+```bash
+# Example: Add 'date-fns' to the scheduler-web package
+npm install date-fns --workspace=@another-hour/scheduler-web
+```
+
+### Adding a New Package
+
+1.  Create a new directory under `packages/`.
+2.  `cd` into the new directory.
+3.  Run `npm init` to create a `package.json` file.
+    -   Make sure to use the `@another-hour/` scope for the package name (e.g., `@another-hour/new-package`).
+4.  Run `npm install` from the root directory to link the new package.
+
+## 📝 Coding Style
+
+Please adhere to the existing coding style. We use Prettier and ESLint to maintain a consistent style (configuration to be added).
+
+## 📄 Documentation
+
+All documentation is located in the `/docs` directory and is written in Markdown. Please keep documentation up-to-date with any changes you make.
+
 # Development Environment & Setup
 
 ## 🛠️ Development Environment

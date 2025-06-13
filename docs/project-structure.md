@@ -1,6 +1,54 @@
 # Project Structure
 
-This document provides a comprehensive overview of the file and directory structure of the "Another Hour Scheduler" project.
+This document outlines the monorepo structure for the Another Hour project.
+
+## Root Directory
+
+The root directory contains configuration files for the entire monorepo and the `packages` and `docs` directories.
+
+```
+another-hour/
+├── packages/             -- Contains all individual packages (applications and libraries).
+├── docs/                 -- Contains all project documentation.
+├── .replit               -- Configuration for the Replit environment.
+├── lerna.json            -- Configuration for Lerna, the monorepo management tool.
+├── package.json          -- Root package file, defines workspaces and root scripts.
+└── README.md             -- Main project README.
+```
+
+## `packages/` Directory
+
+This directory houses all the independent packages of the project, managed by NPM Workspaces and Lerna.
+
+### `@another-hour/scheduler-web`
+
+This is the main web application for the Another Hour scheduler.
+
+-   **`public/`**: Contains all static assets like HTML, CSS, images, and client-side JavaScript.
+    -   **`js/`**: Holds the UI logic for different parts of the application.
+        -   **`time-design/`**: Contains the core logic for the different time design modes. This is a candidate for being extracted into its own `@another-hour/core` package.
+-   **`src/`**: Contains server-side source code, primarily for handling API routes and backend logic.
+-   **`server.js`**: The main entry point for the Node.js/Express server.
+-   **`package.json`**: Defines dependencies and scripts specific to the `scheduler-web` application.
+
+### (Future) `@another-hour/core`
+
+This package will contain shared logic, constants, and utility functions used across multiple applications (e.g., `scheduler-web`, `watch-app`).
+
+-   Time design mode calculations.
+-   Common timezone utilities.
+-   Shared data structures.
+
+## `docs/` Directory
+
+This directory contains all documentation for the project.
+
+-   **`specifications/`**: Detailed technical specifications for core features and modes.
+-   **`time-design-modes/`**: User-friendly explanations of how each time design mode works.
+-   **`MONOREPO_GUIDE.md`**: This guide, explaining the structure and development workflow of the monorepo.
+-   **`DEVELOPMENT.md`**: Instructions for setting up the development environment and running the project.
+
+This structured approach allows for clear separation of concerns, easier dependency management, and better scalability as the project grows.
 
 ## 🌳 Directory Tree
 
