@@ -24,6 +24,10 @@ export class ClassicMode extends BaseMode {
     );
   }
 
+  getDefaultConfig() {
+    return ClassicMode.getDefaultConfig();
+  }
+
   /**
    * Get default configuration
    */
