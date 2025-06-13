@@ -1,5 +1,6 @@
 run = "cd packages/scheduler-web && npm start"
 language = "nodejs"
+modules = ["nodejs-20"]
 
 [packager]
 language = "nodejs"
@@ -8,3 +9,7 @@ language = "nodejs"
 packageSearch = true
 guessImports = true
 enabledForHosting = false 
+
+[[ports]]
+localPort = 3000
+externalPort = 80
