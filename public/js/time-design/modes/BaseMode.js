@@ -30,11 +30,22 @@ export class BaseMode {
     throw new Error('calculate() must be implemented by subclass');
   }
 
+  collectConfigFromUI() {
+    throw new Error('collectConfigFromUI() must be implemented by subclass');
+  }
+
   // Utility methods available to all modes
   getMinutesSinceMidnight(date, timezone) {
     // Use moment.js if available, otherwise fallback to basic calculation
     if (typeof moment !== 'undefined' && typeof moment.tz !== 'undefined') {
-      const localTime = moment(date).tz(timezone);
+      // Use moment.tz to interpret the date directly in the target timezone
+      const localTime = moment.tz(date, timezone);
+
+      // Add a validity check for robustness
+      if (!localTime.isValid()) {
+        console.error("Could not create a valid moment object.", { date, timezone });
+        return NaN;
+      }
       return localTime.hours() * 60 + localTime.minutes() + localTime.seconds() / 60 + localTime.milliseconds() / 60000;
     } else {
       // Fallback: convert to specified timezone

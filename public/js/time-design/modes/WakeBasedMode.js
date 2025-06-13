@@ -33,6 +33,20 @@ export class WakeBasedMode extends BaseMode {
     };
   }
 
+  /**
+   * Collects configuration from the UI elements.
+   * @returns {object} The configuration object.
+   */
+  collectConfigFromUI() {
+    const wakeTime = document.getElementById('wakeTime').value;
+    const anotherHourDuration = document.getElementById('anotherHourDuration').value;
+
+    return {
+      wakeTime: wakeTime,
+      anotherHourDuration: parseInt(anotherHourDuration, 10)
+    };
+  }
+
   validate(config) {
     const errors = [];
     if (!config.wakeTime || !/^\d{2}:\d{2}$/.test(config.wakeTime)) {

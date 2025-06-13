@@ -29,6 +29,17 @@ export class ClassicMode extends BaseMode {
   }
 
   /**
+   * Collects configuration from the UI elements.
+   * @returns {object} The configuration object.
+   */
+  collectConfigFromUI() {
+    const designed24Duration = document.getElementById('designed24Duration').value;
+    return {
+      designed24Duration: parseInt(designed24Duration, 10)
+    };
+  }
+
+  /**
    * Get default configuration
    */
   static getDefaultConfig() {

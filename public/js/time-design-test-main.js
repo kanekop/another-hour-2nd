@@ -327,52 +327,16 @@ async function saveConfig() {
     try {
         const current = timeDesignManager.getCurrentMode();
         if (!current) return;
-        let newConfig = { ...current.config };
 
-        // Special handling for Core Time slider
-        if (current.id === 'core-time') {
-            const slider = document.getElementById('coreTimeSlider').noUiSlider;
-            const values = slider.get();
-            newConfig.coreTimeStart = parseInt(values[0]);
-            newConfig.coreTimeEnd = parseInt(values[1]);
-        } else if (current.id === 'solar') {
-            // Solar mode configuration
-            const cityKey = document.getElementById('solar-city').value;
-            const solarMode = timeDesignManager.registry.get('solar');
-            const cityData = solarMode.getCityData(cityKey);
-
-            if (cityData) {
-                newConfig.location = {
-                    key: cityKey,
-                    lat: cityData.lat,
-                    lng: cityData.lng,
-                    name: cityData.name,
-                    timezone: cityData.tz
-                };
-            }
-
-            const sliderElement = document.getElementById('solar-day-hours-slider');
-            if (sliderElement && sliderElement.noUiSlider) {
-                newConfig.designedDayHours = parseFloat(sliderElement.noUiSlider.get());
-            }
-        } else {
-            // Generic configuration handling
-            const schema = timeDesignManager.registry.get(current.id).configSchema;
-            for (const key in schema) {
-                const el = document.getElementById(key);
-                if (el) {
-                    switch (schema[key].type) {
-                        case 'number':
-                            newConfig[key] = parseInt(el.value);
-                            break;
-                        case 'select':
-                        case 'time':
-                            newConfig[key] = el.value;
-                            break;
-                    }
-                }
-            }
+        // Get the actual mode object from the registry
+        const modeInstance = timeDesignManager.registry.get(current.id);
+        if (!modeInstance) {
+            throw new Error(`Mode instance for ${current.id} not found.`);
         }
+
+        // Each mode now knows how to collect its own config from the UI.
+        // The complex if/else logic is no longer needed here.
+        const newConfig = modeInstance.collectConfigFromUI();
 
         await timeDesignManager.setMode(current.id, newConfig);
         showStatus('Configuration saved successfully!', 'success');

@@ -104,4 +104,21 @@ export class CoreTimeMode extends BaseMode {
       periodName: activeSegment.label,
     };
   }
+
+  /**
+   * Collects configuration from the UI elements.
+   * @returns {object} The configuration object.
+   */
+  collectConfigFromUI() {
+    const slider = document.getElementById('coreTimeSlider');
+    if (slider && slider.noUiSlider) {
+      const values = slider.noUiSlider.get();
+      return {
+        coreTimeStart: parseInt(values[0], 10),
+        coreTimeEnd: parseInt(values[1], 10)
+      };
+    }
+    // Return a default or empty object if the slider isn't ready
+    return {};
+  }
 }

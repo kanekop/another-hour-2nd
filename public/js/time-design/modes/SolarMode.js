@@ -160,6 +160,26 @@ export class SolarMode extends BaseMode {
     }
 
     /**
+     * Collects configuration from the UI elements.
+     * @returns {object} The configuration object.
+     */
+    collectConfigFromUI() {
+        const cityKey = document.getElementById('solar-city').value;
+        const cityData = this.getCityData(cityKey);
+
+        const sliderElement = document.getElementById('solar-day-hours-slider');
+        const designedDayHours = sliderElement && sliderElement.noUiSlider ? parseFloat(sliderElement.noUiSlider.get()) : this.getDefaultConfig().designedDayHours;
+
+        return {
+            location: {
+                key: cityKey,
+                ...cityData
+            },
+            designedDayHours: designedDayHours
+        };
+    }
+
+    /**
      * Get config UI data for Solar Mode
      */
     getConfigUI(config) {
