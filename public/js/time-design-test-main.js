@@ -240,6 +240,8 @@ function generateRangeConfig(item, value) {
         displayValue = `${hours}h ${minutes}m`;
     } else if (item.id === 'dayHours') {
         displayValue = `${value} hours`;
+    } else if (item.id === 'anotherHourDuration') {
+        displayValue = `${value} min`;
     } else {
         displayValue = `${value} min`;
     }
@@ -320,6 +322,8 @@ window.updateRangeValue = function (input) {
         valueDiv.textContent = `${hours}h ${minutes}m`;
     } else if (input.id === 'dayHours') {
         valueDiv.textContent = `${input.value} hours`;
+    } else if (input.id === 'anotherHourDuration') {
+        valueDiv.textContent = `${input.value} min`;
     } else {
         valueDiv.textContent = `${input.value} min`;
     }
