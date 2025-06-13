@@ -455,6 +455,7 @@ function initializeSolarMode(config) {
         const newConfig = {
             ...current.config,
             location: {
+                key: newCityKey,
                 lat: newCityData.lat,
                 lng: newCityData.lng,
                 name: newCityData.name,
