@@ -1,6 +1,6 @@
 # Monorepo Migration Status
 
-## 🗓️ Last Updated: 2025-06-14
+## 🗓️ Last Updated: 2025-06-15
 
 ## ✅ Completed Tasks
 
@@ -9,15 +9,13 @@
 - [x] Created `monorepo-migration` branch
 - [x] Completed migration and merged to main
 - [x] Deleted migration branch
-
-### Phase 1: Basic Structure (Partially Complete)
-- [x] Created packages directory structure
-- [x] Moved scheduler to `packages/scheduler-web/`
-- [x] Created root package.json with workspaces
-- [x] Updated scheduler package name to `@another-hour/scheduler-web`
 - [x] Verified application works on Replit
-- [ ] Create `@another-hour/core` package
-- [ ] Extract common logic from scheduler
+
+### Phase 1: Basic Structure
+- [x] Create `@another-hour/core` package
+- [x] Extract common logic from scheduler
+- [x] Update scheduler-web to use core package
+- [x] Troubleshoot and fix workspace dependency issues
 - [ ] Add tests for core functionality
 
 ## 📊 Current Structure
@@ -25,14 +23,17 @@
 ```
 another-hour/
 ├── packages/
-│   └── scheduler-web/      ✅ Moved and working
+│   ├── core/                ✅ Created
+│   │   └── src/
+│   │       └── time-calculation.js
+│   └── scheduler-web/       ✅ Refactored
 │       ├── public/
-│       │   └── clock-core.js  (contains shared logic to extract)
+│       │   └── clock-core.js
 │       ├── src/
 │       ├── server.js
 │       └── package.json
 ├── docs/
-├── package.json           ✅ Workspace configured
+├── package.json            ✅ Workspace configured
 └── README.md
 ```
 
@@ -40,33 +41,10 @@ another-hour/
 
 ### Immediate Tasks (Phase 1 Completion)
 
-1. **Create Core Package**
-   ```bash
-   mkdir -p packages/core/src
-   cd packages/core
-   npm init -y
-   # Set name to "@another-hour/core"
-   ```
-
-2. **Extract Common Logic**
-   - From: `packages/scheduler-web/public/clock-core.js`
-   - To: `packages/core/src/time-calculation.js`
-   - Key functions to extract:
-     - `getCustomAhAngles()`
-     - `convertToAHTime()`
-     - Time scaling calculations
-
-3. **Update Dependencies**
-   ```json
-   // packages/scheduler-web/package.json
-   "dependencies": {
-     "@another-hour/core": "workspace:*"
-   }
-   ```
-
-4. **Test Everything**
-   - Ensure scheduler still works
-   - Verify core functions are accessible
+1.  **Add Tests for Core Package**
+    -   Set up a testing framework (e.g., Jest).
+    -   Write unit tests for `getCustomAhAngles` in `packages/core/src/time-calculation.js`.
+    -   Ensure calculations are correct for various scenarios.
 
 ### Future Phases
 
@@ -94,6 +72,11 @@ npm run start --workspace=@another-hour/scheduler-web
 - All existing features preserved during migration
 
 ## 🤝 Session Summary
+
+**Date**: 2025-06-15
+**Main Achievement**: Created `@another-hour/core` package, extracted shared logic, and resolved critical `npm install` issues.
+**Time Spent**: ~1.5 hours
+**Next Session**: Implement a testing framework and write unit tests for the new `core` package.
 
 **Date**: 2025-06-14
 **Main Achievement**: Successfully restructured project as monorepo
