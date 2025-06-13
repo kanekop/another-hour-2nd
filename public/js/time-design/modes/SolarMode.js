@@ -89,10 +89,10 @@ export class SolarMode extends BaseMode {
             console.error('SunCalc.js library is not loaded.');
             const now = new Date();
             return {
-                hours: now.getHours(), 
-                minutes: now.getMinutes(), 
+                hours: now.getHours(),
+                minutes: now.getMinutes(),
                 seconds: now.getSeconds(),
-                isError: true, 
+                isError: true,
                 errorMessage: 'SunCalc library not loaded.'
             };
         }
@@ -335,7 +335,7 @@ export class SolarMode extends BaseMode {
 
         // Otherwise, search by matching lat/lng
         for (const [key, city] of Object.entries(this.cities)) {
-            if (Math.abs(city.lat - cityData.lat) < 0.001 && 
+            if (Math.abs(city.lat - cityData.lat) < 0.001 &&
                 Math.abs(city.lng - cityData.lng) < 0.001) {
                 return key;
             }
@@ -398,58 +398,28 @@ export class SolarMode extends BaseMode {
     getConfigUI(config) {
         // Ensure config has required properties
         if (!config || !config.location) {
-            config = this.constructor.getDefaultConfig();
+            config = this.getDefaultConfig();
         }
 
-        const currentCity = config.location.key || 'tokyo';
-        const solarInfo = this.solarCache.solarInfo || {};
+        const cityKey = config.location.key || 'tokyo';
 
-        return `
-            <div class="config-section">
-                <label for="solar-city">City:</label>
-                <select id="solar-city" class="config-select">
-                    ${Object.entries(this.cities).map(([key, city]) => 
-                        `<option value="${key}" ${key === currentCity ? 'selected' : ''}>${city.name}</option>`
-                    ).join('')}
-                </select>
-            </div>
+        // Get solar times for the current configuration
+        const sunTimes = this.getSunTimes(cityKey);
 
-            <div class="solar-info">
-                <div class="info-item">
-                    <span class="info-label">Sunrise:</span>
-                    <span id="sunrise-time" class="info-value">${solarInfo.sunrise ? 
-                        new Date(solarInfo.sunrise).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: true 
-                        }) : '--:--'}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Sunset:</span>
-                    <span id="sunset-time" class="info-value">${solarInfo.sunset ? 
-                        new Date(solarInfo.sunset).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: true 
-                        }) : '--:--'}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Daylight:</span>
-                    <span id="daylight-duration" class="info-value">${solarInfo.daylightHours ? 
-                        `${Math.floor(solarInfo.daylightHours)}h ${Math.round((solarInfo.daylightHours % 1) * 60)}m` : 
-                        '--h --m'}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Solar Noon → 12:00 AH</span>
-                </div>
-            </div>
+        if (!sunTimes) {
+            return { solarInfo: null };
+        }
 
-            <div class="config-section">
-                <label for="solar-day-hours-slider">Day Hours:</label>
-                <div id="solar-day-hours-slider" class="slider"></div>
-                <span id="solar-day-hours-value" class="slider-value">${config.designedDayHours || 12} hours</span>
-            </div>
-        `;
+        const solarInfo = {
+            isAlwaysDay: false, // Placeholder, implement logic if needed
+            isAlwaysNight: false, // Placeholder, implement logic if needed
+            sunrise: (sunTimes.sunrise.getHours() * 60) + sunTimes.sunrise.getMinutes(),
+            solarNoon: (sunTimes.solarNoon.getHours() * 60) + sunTimes.solarNoon.getMinutes(),
+            sunset: (sunTimes.sunset.getHours() * 60) + sunTimes.sunset.getMinutes(),
+            daylightMinutes: sunTimes.daylightHours * 60,
+        };
+
+        return { solarInfo };
     }
 }
 
