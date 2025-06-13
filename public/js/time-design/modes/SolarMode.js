@@ -49,80 +49,62 @@ export class SolarMode extends BaseMode {
     calculate(date, timezone, config) {
         config = { ...this.getDefaultConfig(), ...config };
         const { location, designedDayHours } = config;
-        const cityTz = location.timezone;
-
-        if (typeof SunCalc === 'undefined' || typeof moment === 'undefined') {
-            const now = new Date();
-            return { hours: now.getHours(), minutes: now.getMinutes(), seconds: now.getSeconds(), scaleFactor: 1, periodName: 'Error: Lib not loaded' };
-        }
 
         // --- 1. Get Sun Times ---
-        const today = moment(date).tz(cityTz);
-        const yesterday = today.clone().subtract(1, 'days');
+        const today = new Date(date);
+        const yesterday = new Date(date);
+        yesterday.setDate(yesterday.getDate() - 1);
 
-        const timesToday = SunCalc.getTimes(today.toDate(), location.lat, location.lng);
-        const timesYesterday = SunCalc.getTimes(yesterday.toDate(), location.lat, location.lng);
+        const timesToday = SunCalc.getTimes(today, location.lat, location.lng);
+        const timesYesterday = SunCalc.getTimes(yesterday, location.lat, location.lng);
 
-        // --- 2. Convert to minutes in city's timezone ---
-        const sunriseMinutes = this.getMinutesSinceMidnight(timesToday.sunrise, cityTz);
-        const sunsetMinutes = this.getMinutesSinceMidnight(timesToday.sunset, cityTz);
-        const solarNoonMinutes = this.getMinutesSinceMidnight(timesToday.solarNoon, cityTz);
-        const prevSunsetMinutes = this.getMinutesSinceMidnight(timesYesterday.sunset, cityTz);
-        const realMinutes = this.getMinutesSinceMidnight(date, cityTz);
+        // --- 2. Get critical timestamps (milliseconds) ---
+        const nowTs = today.getTime();
+        const sunriseTs = timesToday.sunrise.getTime();
+        const sunsetTs = timesToday.sunset.getTime();
+        const solarNoonTs = timesToday.solarNoon.getTime();
+        const prevSunsetTs = timesYesterday.sunset.getTime();
 
-        // --- 3. Calculate Durations and Scale Factors ---
-        const actualDaylightMinutes = sunsetMinutes - sunriseMinutes;
-        const actualNightMinutes = 1440 - actualDaylightMinutes;
+        // --- 3. Designed Durations and Anchor Points in AH Minutes ---
         const designedDayMinutes = designedDayHours * 60;
         const designedNightMinutes = (24 - designedDayHours) * 60;
-
-        const dayScaleFactor = designedDayMinutes / actualDaylightMinutes;
-        const nightScaleFactor = designedNightMinutes / actualNightMinutes;
+        const ahDayStartMinutes = 12 * 60 - designedDayMinutes / 2;
+        const ahNoonMinutes = 12 * 60;
+        const ahDayEndMinutes = 12 * 60 + designedDayMinutes / 2;
 
         // --- 4. Determine Phase and Calculate AH Time ---
         let ahTotalMinutes, scaleFactor, periodName;
 
-        if (realMinutes >= sunriseMinutes && realMinutes < sunsetMinutes) {
+        if (nowTs >= sunriseTs && nowTs < sunsetTs) {
             // DAY
-            scaleFactor = dayScaleFactor;
-            const designedDayStartAh = (12 - designedDayHours / 2) * 60;
+            const actualDaylightMs = sunsetTs - sunriseTs;
+            scaleFactor = actualDaylightMs > 0 ? (designedDayMinutes * 60 * 1000) / actualDaylightMs : 1;
 
-            if (realMinutes <= solarNoonMinutes) {
-                // Morning
+            if (nowTs <= solarNoonTs) {
                 periodName = 'Day (Morning)';
-                const realMorningMinutes = solarNoonMinutes - sunriseMinutes;
-                const progress = (realMinutes - sunriseMinutes) / realMorningMinutes;
-                ahTotalMinutes = designedDayStartAh + (progress * designedDayMinutes / 2);
+                const realMorningMs = solarNoonTs - sunriseTs;
+                const progress = realMorningMs > 0 ? (nowTs - sunriseTs) / realMorningMs : 0;
+                ahTotalMinutes = ahDayStartMinutes + progress * (designedDayMinutes / 2);
             } else {
-                // Afternoon
                 periodName = 'Day (Afternoon)';
-                const realAfternoonMinutes = sunsetMinutes - solarNoonMinutes;
-                const progress = (realMinutes - solarNoonMinutes) / realAfternoonMinutes;
-                ahTotalMinutes = (12 * 60) + (progress * designedDayMinutes / 2);
+                const realAfternoonMs = sunsetTs - solarNoonTs;
+                const progress = realAfternoonMs > 0 ? (nowTs - solarNoonTs) / realAfternoonMs : 0;
+                ahTotalMinutes = ahNoonMinutes + progress * (designedDayMinutes / 2);
             }
         } else {
             // NIGHT
-            scaleFactor = nightScaleFactor;
-            const designedNightStartAh = (12 + designedDayHours / 2) * 60;
-            const totalRealNightMinutes = (sunriseMinutes + 1440) - prevSunsetMinutes;
+            periodName = nowTs < sunriseTs ? 'Night (Pre-dawn)' : 'Night (Evening)';
+            const actualNightMs = sunriseTs - prevSunsetTs;
+            scaleFactor = actualNightMs > 0 ? (designedNightMinutes * 60 * 1000) / actualNightMs : 1;
 
-            let elapsedRealNightMinutes;
-            if (realMinutes >= sunsetMinutes) {
-                periodName = 'Night (Evening)';
-                elapsedRealNightMinutes = realMinutes - sunsetMinutes;
-            } else { // Pre-dawn
-                periodName = 'Night (Pre-dawn)';
-                elapsedRealNightMinutes = (realMinutes + 1440) - sunsetMinutes;
-            }
+            const elapsedRealNightMs = nowTs - prevSunsetTs;
+            const progress = actualNightMs > 0 ? elapsedRealNightMs / actualNightMs : 0;
 
-            const progress = (realMinutes < sunriseMinutes)
-                ? ((realMinutes + 1440) - sunsetMinutes) / ((sunriseMinutes + 1440) - sunsetMinutes)
-                : (realMinutes - sunsetMinutes) / ((sunriseMinutes + 1440) - sunsetMinutes);
-
-            ahTotalMinutes = designedNightStartAh + progress * designedNightMinutes;
+            ahTotalMinutes = ahDayEndMinutes + progress * designedNightMinutes;
         }
 
-        if (ahTotalMinutes >= 1440) ahTotalMinutes -= 1440;
+        // Normalize AH minutes to be within [0, 1440)
+        ahTotalMinutes = (ahTotalMinutes % 1440 + 1440) % 1440;
 
         const hours = Math.floor(ahTotalMinutes / 60);
         const minutes = Math.floor(ahTotalMinutes % 60);
