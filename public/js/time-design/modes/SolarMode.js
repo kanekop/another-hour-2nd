@@ -50,14 +50,16 @@ export class SolarMode extends BaseMode {
      * Get configuration schema
      */
     getConfigSchema() {
+        const cityOptions = Object.entries(this.cities).map(([key, city]) => ({
+            value: key,
+            label: city.name
+        }));
+
         return {
             location: {
                 type: 'select',
                 label: 'City',
-                options: Object.entries(this.cities).map(([key, city]) => ({
-                    value: key,
-                    label: city.name
-                })),
+                options: cityOptions,
                 default: 'tokyo'
             },
             designedDayHours: {
@@ -121,10 +123,10 @@ export class SolarMode extends BaseMode {
 
         // Calculate solar times
         const times = SunCalc.getTimes(date, lat, lng);
-        
+
         // Calculate solar noon (midpoint between sunrise and sunset)
         const solarNoon = new Date((times.sunrise.getTime() + times.sunset.getTime()) / 2);
-        
+
         // Calculate daylight and night durations
         const daylightMinutes = (times.sunset - times.sunrise) / 60000;
         const nightMinutes = 1440 - daylightMinutes;
@@ -166,7 +168,7 @@ export class SolarMode extends BaseMode {
     realToAnotherHour(realTime) {
         this.updateSolarTimes(realTime);
         const { times } = this.solarCache;
-        
+
         if (!times || !times.sunrise || !times.sunset) {
             // Fallback to real time if solar calculation fails
             return {
@@ -180,26 +182,26 @@ export class SolarMode extends BaseMode {
 
         // Determine current phase and calculate AH time
         let ahTime, scaleFactor, segmentInfo;
-        
+
         // Get timestamps for easier comparison
         const currentTime = realTime.getTime();
         const sunrise = times.sunrise.getTime();
         const sunset = times.sunset.getTime();
         const solarNoon = times.solarNoon.getTime();
-        
+
         // Calculate previous and next day boundaries
         const todayStart = new Date(realTime);
         todayStart.setHours(0, 0, 0, 0);
         const todayEnd = new Date(realTime);
         todayEnd.setHours(23, 59, 59, 999);
-        
+
         if (currentTime < sunrise) {
             // Night phase (midnight to sunrise) -> 0:00 to 6:00 AH
             const nightStart = todayStart.getTime();
             const nightDuration = sunrise - nightStart;
             const elapsed = currentTime - nightStart;
             const progress = elapsed / nightDuration;
-            
+
             ahTime = progress * 6; // 0 to 6 hours
             scaleFactor = 6 / (nightDuration / 3600000); // AH hours / real hours
             segmentInfo = {
@@ -208,13 +210,13 @@ export class SolarMode extends BaseMode {
                 progress: progress,
                 scaleFactor: scaleFactor
             };
-            
+
         } else if (currentTime < solarNoon) {
             // Morning phase (sunrise to solar noon) -> 6:00 to 12:00 AH
             const morningDuration = solarNoon - sunrise;
             const elapsed = currentTime - sunrise;
             const progress = elapsed / morningDuration;
-            
+
             ahTime = 6 + (progress * 6); // 6 to 12 hours
             scaleFactor = 6 / (morningDuration / 3600000);
             segmentInfo = {
@@ -223,13 +225,13 @@ export class SolarMode extends BaseMode {
                 progress: progress,
                 scaleFactor: scaleFactor
             };
-            
+
         } else if (currentTime < sunset) {
             // Afternoon phase (solar noon to sunset) -> 12:00 to 18:00 AH
             const afternoonDuration = sunset - solarNoon;
             const elapsed = currentTime - solarNoon;
             const progress = elapsed / afternoonDuration;
-            
+
             ahTime = 12 + (progress * 6); // 12 to 18 hours
             scaleFactor = 6 / (afternoonDuration / 3600000);
             segmentInfo = {
@@ -238,13 +240,13 @@ export class SolarMode extends BaseMode {
                 progress: progress,
                 scaleFactor: scaleFactor
             };
-            
+
         } else {
             // Evening phase (sunset to midnight) -> 18:00 to 24:00 AH
             const eveningDuration = todayEnd.getTime() - sunset + 1;
             const elapsed = currentTime - sunset;
             const progress = elapsed / eveningDuration;
-            
+
             ahTime = 18 + (progress * 6); // 18 to 24 hours
             scaleFactor = 6 / (eveningDuration / 3600000);
             segmentInfo = {
@@ -254,12 +256,12 @@ export class SolarMode extends BaseMode {
                 scaleFactor: scaleFactor
             };
         }
-        
+
         // Convert decimal hours to hours, minutes, seconds
         const hours = Math.floor(ahTime);
         const minutes = Math.floor((ahTime - hours) * 60);
         const seconds = Math.floor(((ahTime - hours) * 60 - minutes) * 60);
-        
+
         return {
             hours: hours % 24,
             minutes: minutes,
@@ -275,15 +277,15 @@ export class SolarMode extends BaseMode {
     anotherHourToReal(ahHours, ahMinutes = 0, referenceDate = new Date()) {
         this.updateSolarTimes(referenceDate);
         const { times } = this.solarCache;
-        
+
         if (!times || !times.sunrise || !times.sunset) {
             // Fallback if solar calculation fails
             return new Date(referenceDate);
         }
-        
+
         const ahTotalHours = ahHours + (ahMinutes / 60);
         let realTime;
-        
+
         // Calculate based on which phase the AH time falls into
         if (ahTotalHours < 6) {
             // 0:00-6:00 AH -> midnight to sunrise
@@ -292,19 +294,19 @@ export class SolarMode extends BaseMode {
             nightStart.setHours(0, 0, 0, 0);
             const nightDuration = times.sunrise.getTime() - nightStart.getTime();
             realTime = new Date(nightStart.getTime() + progress * nightDuration);
-            
+
         } else if (ahTotalHours < 12) {
             // 6:00-12:00 AH -> sunrise to solar noon
             const progress = (ahTotalHours - 6) / 6;
             const morningDuration = times.solarNoon.getTime() - times.sunrise.getTime();
             realTime = new Date(times.sunrise.getTime() + progress * morningDuration);
-            
+
         } else if (ahTotalHours < 18) {
             // 12:00-18:00 AH -> solar noon to sunset
             const progress = (ahTotalHours - 12) / 6;
             const afternoonDuration = times.sunset.getTime() - times.solarNoon.getTime();
             realTime = new Date(times.solarNoon.getTime() + progress * afternoonDuration);
-            
+
         } else {
             // 18:00-24:00 AH -> sunset to midnight
             const progress = (ahTotalHours - 18) / 6;
@@ -313,8 +315,28 @@ export class SolarMode extends BaseMode {
             const eveningDuration = eveningEnd.getTime() - times.sunset.getTime() + 1;
             realTime = new Date(times.sunset.getTime() + progress * eveningDuration);
         }
-        
+
         return realTime;
+    }
+
+    /**
+     * Find city key by city data
+     */
+    findCityKey(cityData) {
+        if (!cityData) return null;
+
+        // If cityData already has a key property, return it
+        if (cityData.key) return cityData.key;
+
+        // Otherwise, search by matching lat/lng
+        for (const [key, city] of Object.entries(this.cities)) {
+            if (Math.abs(city.lat - cityData.lat) < 0.001 && 
+                Math.abs(city.lng - cityData.lng) < 0.001) {
+                return key;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -333,7 +355,7 @@ export class SolarMode extends BaseMode {
 
         const now = new Date();
         const times = SunCalc.getTimes(now, cityData.lat, cityData.lng);
-        
+
         const daylightMs = times.sunset - times.sunrise;
         const daylightHours = daylightMs / 3600000;
 
@@ -346,9 +368,34 @@ export class SolarMode extends BaseMode {
     }
 
     /**
+     * Validate configuration
+     */
+    validate(config) {
+        const errors = [];
+
+        if (!config.location) {
+            errors.push('Location is required');
+        }
+
+        if (!config.designedDayHours || config.designedDayHours < 1 || config.designedDayHours > 23) {
+            errors.push('Day Hours must be between 1 and 23');
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors: errors
+        };
+    }
+
+    /**
      * Get config UI for Solar Mode
      */
     getConfigUI(config) {
+        // Ensure config has required properties
+        if (!config || !config.location) {
+            config = this.constructor.getDefaultConfig();
+        }
+
         const currentCity = config.location.key || 'tokyo';
         const solarInfo = this.solarCache.solarInfo || {};
 
@@ -361,7 +408,7 @@ export class SolarMode extends BaseMode {
                     ).join('')}
                 </select>
             </div>
-            
+
             <div class="solar-info">
                 <div class="info-item">
                     <span class="info-label">Sunrise:</span>
@@ -391,11 +438,11 @@ export class SolarMode extends BaseMode {
                     <span class="info-label">Solar Noon → 12:00 AH</span>
                 </div>
             </div>
-            
+
             <div class="config-section">
                 <label for="solar-day-hours-slider">Day Hours:</label>
                 <div id="solar-day-hours-slider" class="slider"></div>
-                <span id="solar-day-hours-value" class="slider-value">${config.designedDayHours} hours</span>
+                <span id="solar-day-hours-value" class="slider-value">${config.designedDayHours || 12} hours</span>
             </div>
         `;
     }
