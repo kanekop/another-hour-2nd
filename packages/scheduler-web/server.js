@@ -26,6 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve dev-tools directory for development and testing
+app.use('/dev-tools', express.static(path.join(__dirname, '../../dev-tools')));
+
 // Serve core package from vendor path
 app.use('/vendor/@another-hour/core', express.static(path.join(__dirname, '../core/src')));
 
