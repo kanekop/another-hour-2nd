@@ -11,9 +11,11 @@
 
 // Export all time calculation functions
 export * from './time-calculation';
-
-// Export all type definitions
+export * from './validation';
 export * from './types';
 
-// Export all validation functions
-export * from './validation';
+// Simple timeDesignManager export for compatibility
+export const timeDesignManager = {
+    initialize: () => console.log('TimeDesignManager initialized successfully'),
+    // Add other methods as needed
+};
