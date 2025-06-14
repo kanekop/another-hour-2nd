@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "private": true,
     "description": "時間との関係を再定義する - A platform to redefine your relationship with time",
+    "main": "index.js",
     "workspaces": [
         "packages/*"
     ],
@@ -13,9 +14,11 @@
         "build:clean": "tsc --build --clean",
         "build:watch": "tsc --build --watch",
         "build:packages": "npm run build --workspaces --if-present",
-        "test": "npm run test --workspaces --if-present",
+        "test": "echo \"Error: no test specified\" && exit 1",
         "lint": "npm run lint --workspaces --if-present",
-        "scheduler": "npm run start --workspace=@another-hour/scheduler-web"
+        "scheduler": "npm run start --workspace=@another-hour/scheduler-web",
+        "dev:website": "npm run dev --workspace=@another-hour/website",
+        "build:website": "npm run build --workspace=@another-hour/website"
     },
     "devDependencies": {
         "@types/express": "^5.0.3",
@@ -27,5 +30,7 @@
     "engines": {
         "node": ">=16.0.0",
         "npm": ">=7.0.0"
-    }
+    },
+    "keywords": [],
+    "author": ""
 }
