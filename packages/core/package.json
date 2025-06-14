@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "description": "Core time calculation logic for Another Hour",
   "main": "src/index.js",
+  "browser": "dist/core.browser.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build": "esbuild src/index.js --bundle --outfile=dist/core.browser.js --format=esm",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "another-hour",
@@ -16,7 +19,8 @@
   "author": "Another Hour Team",
   "license": "MIT",
   "devDependencies": {
-    "jest": "^29.5.0",
-    "@jest/globals": "^29.5.0"
+    "@jest/globals": "^29.5.0",
+    "esbuild": "^0.25.5",
+    "jest": "^29.5.0"
   }
 }

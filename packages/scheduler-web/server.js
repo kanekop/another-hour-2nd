@@ -6,8 +6,11 @@ import fs from 'fs';
 import calendarSyncRouter from './src/routes/calendar-sync.js'; // 新規追加
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import path from 'path';
+import moment from 'moment-timezone';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -45,6 +48,9 @@ app.use((req, res, next) => {
 app.use('/api/calendar', calendarSyncRouter); // 新規追加
 app.use('/auth/google', calendarSyncRouter); // OAuth コールバック用
 
+// Serve the core package for browser clients
+app.use('/vendor/@another-hour/core', express.static(path.join(__dirname, '../core/dist')));
+
 // Settings endpoints (既存)
 app.get('/api/settings', (req, res) => {
   try {
@@ -66,8 +72,8 @@ app.post('/api/settings', (req, res) => {
 
 // Health check route
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
+  res.status(200).json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     features: {
       clock: true,
@@ -86,7 +92,7 @@ app.get('/', (req, res) => {
 // エラーハンドリングミドルウェア
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
   });
@@ -94,7 +100,7 @@ app.use((err, req, res, next) => {
 
 // 404 ハンドラー
 app.use((req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'Not Found',
     message: `Route ${req.method} ${req.path} not found`
   });

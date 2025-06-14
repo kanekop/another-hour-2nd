@@ -1,5 +1,4 @@
-
-import { SCALE_AH, getAngles } from './clock-core.js';
+import { getCustomAhAngles, convertToAHTime, isInDesigned24 } from '/vendor/@another-hour/core/core.browser.js';
 import { getDisplayTimezones, getUserLocalTimezone, getCityNameByTimezone } from './js/timezone-manager.js';
 
 // DOM Elements
@@ -77,14 +76,14 @@ function initializeTimezoneSelect() {
 
   state.selectedTimezone = getInitialTimezone();
   const isValidInitial = state.displayTimezones.some(tz => tz.timezone === state.selectedTimezone);
-  
+
   if (!isValidInitial) {
     const userLocal = getUserLocalTimezone();
     const userLocalInList = state.displayTimezones.find(tz => tz.timezone === userLocal);
-    state.selectedTimezone = userLocalInList ? userLocal : 
+    state.selectedTimezone = userLocalInList ? userLocal :
       (state.displayTimezones.length > 0 ? state.displayTimezones[0].timezone : 'UTC');
   }
-  
+
   elements.timezoneSelect.value = state.selectedTimezone;
   updateMainClockCityName(state.selectedTimezone);
 }
@@ -103,135 +102,24 @@ function updateClock() {
     return;
   }
 
-  const currentTime = moment().tz(currentSelectedTimezone);
-  const { hourAngle, minuteAngle, secondAngle, ahHours, ahMinutes, ahSeconds } = 
-    getAngles(currentTime.toDate(), currentSelectedTimezone);
+  const realTime = moment().tz(currentSelectedTimezone).toDate();
 
-  const isAHHour = currentTime.hours() === 23;
+  // Define the parameters for the core calculation, replicating the old logic (23h day)
+  const designed24Duration = 23;
+  const d24StartTime = moment(realTime).tz(currentSelectedTimezone).startOf('day').toDate();
+
+  // Use the new core functions
+  const { hourAngle, minuteAngle } = getCustomAhAngles(realTime, designed24Duration, d24StartTime);
+  const { hours: ahHours, minutes: ahMinutes } = convertToAHTime(realTime, designed24Duration, d24StartTime);
+  const inD24 = isInDesigned24(realTime, designed24Duration, d24StartTime);
+
+  // The new core logic doesn't scale seconds, so we use real seconds for a smooth sweep
+  const secondAngle = (realTime.getSeconds() / 60) * 360;
+  const ahSeconds = realTime.getSeconds(); // In AH period, time is 1:1, so seconds are the same.
+
+  const isAHHour = !inD24; // The "Another Hour" is when we are NOT in the designed 24 period
   document.body.classList.toggle('inverted', isAHHour);
   elements.ahSector.style.display = isAHHour ? 'block' : 'none';
 
   // Update clock hands
-  if (elements.hands.hour) elements.hands.hour.style.transform = `rotate(${hourAngle}deg)`;
-  if (elements.hands.minute) elements.hands.minute.style.transform = `rotate(${minuteAngle}deg)`;
-  if (elements.hands.second) elements.hands.second.style.transform = `rotate(${secondAngle}deg)`;
-
-  // Update digital display
-  const mainAhTimeDiv = document.getElementById('main-ah-time');
-  const mainNormalTimeDiv = document.getElementById('main-normal-time');
-  const isDigitalClockVisible = elements.digitalClock && 
-    !elements.digitalClock.classList.contains('visually-hidden');
-
-  if (isDigitalClockVisible) {
-    const actualTimeFormatted = currentTime.format('HH:mm:ss');
-    const ahTimeFormatted = `${String(Math.floor(ahHours)).padStart(2, '0')}:${String(Math.floor(ahMinutes)).padStart(2, '0')}:${String(Math.floor(ahSeconds)).padStart(2, '0')}`;
-
-    if (state.settings.showAHTime && mainAhTimeDiv) {
-      mainAhTimeDiv.textContent = `AH: ${ahTimeFormatted}`;
-      mainAhTimeDiv.style.display = 'block';
-    } else if (mainAhTimeDiv) {
-      mainAhTimeDiv.style.display = 'none';
-    }
-
-    if (state.settings.showActualTime && mainNormalTimeDiv) {
-      mainNormalTimeDiv.textContent = `Actual: ${actualTimeFormatted}`;
-      mainNormalTimeDiv.style.display = 'block';
-    } else if (mainNormalTimeDiv) {
-      mainNormalTimeDiv.style.display = 'none';
-    }
-  }
-
-  requestAnimationFrame(updateClock);
-}
-
-// Event Listeners
-function initializeEventListeners() {
-  elements.timezoneSelect.addEventListener('change', (event) => {
-    state.selectedTimezone = event.target.value;
-    updateMainClockCityName(state.selectedTimezone);
-  });
-
-  const allTimeZoneButton = document.getElementById('all-time-zone-button');
-  if (allTimeZoneButton) {
-    allTimeZoneButton.addEventListener('click', () => {
-      window.location.href = '/pages/world-clock.html';
-    });
-  }
-}
-
-// Initialization
-function initializeApplication() {
-  fetch('/api/settings')
-    .then(res => res.json())
-    .then(data => {
-      state.settings.showAHTime = data.showAHTime !== undefined ? data.showAHTime : true;
-      state.settings.showActualTime = data.showActualTime !== undefined ? data.showActualTime : true;
-
-      initializeTimezoneSelect();
-      drawTicks();
-      drawAhSector();
-
-      if (elements.toggleCheckbox) {
-        const shouldBeCheckedByDefault = state.settings.showAHTime || state.settings.showActualTime;
-        elements.toggleCheckbox.checked = shouldBeCheckedByDefault;
-        if (elements.digitalClock) {
-          elements.digitalClock.classList.toggle('visually-hidden', !shouldBeCheckedByDefault);
-        }
-
-        // Set initial display state
-        const mainAhTimeDiv = document.getElementById('main-ah-time');
-        const mainNormalTimeDiv = document.getElementById('main-normal-time');
-        if (mainAhTimeDiv) mainAhTimeDiv.style.display = state.settings.showAHTime ? 'block' : 'none';
-        if (mainNormalTimeDiv) mainNormalTimeDiv.style.display = state.settings.showActualTime ? 'block' : 'none';
-
-        elements.toggleCheckbox.addEventListener('change', () => {
-          const isChecked = elements.toggleCheckbox.checked;
-          
-          // Toggle both time displays
-          if (elements.digitalClock) {
-            elements.digitalClock.classList.toggle('visually-hidden', !isChecked);
-          }
-          
-          if (mainAhTimeDiv) {
-            state.settings.showAHTime = isChecked;
-            mainAhTimeDiv.style.display = isChecked ? 'block' : 'none';
-          }
-          
-          if (mainNormalTimeDiv) {
-            state.settings.showActualTime = isChecked;
-            mainNormalTimeDiv.style.display = isChecked ? 'block' : 'none';
-          }
-
-          // Save settings
-          fetch('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(state.settings)
-          }).catch(err => console.error('Failed to save settings:', err));
-        });
-      }
-
-      initializeEventListeners();
-      updateClock();
-    })
-    .catch(error => {
-      console.error("Failed to load settings, using defaults:", error);
-      initializeTimezoneSelect();
-      drawTicks();
-      drawAhSector();
-      
-      if (elements.toggleCheckbox) {
-        elements.toggleCheckbox.checked = true;
-        if (elements.digitalClock) {
-          elements.digitalClock.classList.remove('visually-hidden');
-        }
-        elements.toggleCheckbox.dispatchEvent(new Event('change'));
-      }
-      
-      initializeEventListeners();
-      updateClock();
-    });
-}
-
-// Start the application
-initializeApplication();
+  document.getElementById('hour-hand').style.transform = `

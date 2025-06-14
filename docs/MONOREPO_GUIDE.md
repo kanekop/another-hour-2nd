@@ -14,9 +14,9 @@
 ### Phase 1: Basic Structure
 - [x] Create `@another-hour/core` package
 - [x] Extract common logic from scheduler
-- [x] Update scheduler-web to use core package
 - [x] Troubleshoot and fix workspace dependency issues
 - [x] Add tests for core functionality
+- [x] Refactor `scheduler-web` to use `@another-hour/core`
 
 ## 📊 Current Structure
 
@@ -25,11 +25,12 @@ another-hour/
 ├── packages/
 │   ├── core/                ✅ Refined & Tested
 │   │   ├── src/
+│   │   ├── dist/
 │   │   ├── tests/
 │   │   └── jest.config.js
 │   └── scheduler-web/       ✅ Refactored
 │       ├── public/
-│       │   └── clock-core.js
+│       │   └── (No clock-core.js)
 │       ├── src/
 │       ├── server.js
 │       └── package.json
