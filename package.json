@@ -18,7 +18,10 @@
         "lint": "npm run lint --workspaces --if-present",
         "scheduler": "npm run start --workspace=@another-hour/scheduler-web",
         "dev:website": "npm run dev --workspace=@another-hour/website",
-        "build:website": "npm run build --workspace=@another-hour/website"
+        "build:website": "npm run build --workspace=@another-hour/website",
+        "dev:watch": "npm run dev --workspace=@another-hour/watch-app",
+        "build:watch": "npm run build --workspace=@another-hour/watch-app",
+        "start:watch": "npm run start --workspace=@another-hour/watch-app"
     },
     "devDependencies": {
         "@types/express": "^5.0.3",
