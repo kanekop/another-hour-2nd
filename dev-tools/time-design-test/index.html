@@ -1,146 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Design Modes - Comprehensive Test Page</title>
+    <title>Time Design Modes Test Interface</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-    <div class="container">
-        <!-- Compact Header -->
-        <div class="header">
-            <h1>⏰ Time Design Modes Test Interface</h1>
-            <div class="status-item">
-                <span class="status-indicator" id="statusIndicator"></span>
-                <span id="statusText">Initializing...</span>
-            </div>
+    <header class="app-header" role="banner">
+        <h1 class="app-header__title">⏰ Time Design Modes Test Interface</h1>
+        <div class="app-header__status">
+            <span class="status-indicator" id="statusIndicator" aria-live="polite"></span>
+            <span class="status-text" id="statusText">Initializing...</span>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <aside class="mode-selector" role="navigation" aria-label="Mode selection">
+            <h2 class="mode-selector__title">Mode Selection</h2>
+            <ul class="mode-selector__list" id="modeList" role="list">
+                <!-- Mode items will be dynamically inserted here -->
+                <li class="mode-selector__item mode-selector__item--loading" role="button">
+                    <h3 class="mode-selector__name">Loading...</h3>
+                </li>
+            </ul>
+        </aside>
+
+        <div class="center-panel">
+            <section class="time-display" aria-label="Current time display">
+                <div class="time-display__clock">
+                    <time class="time-display__value" id="timeDisplay" datetime="">--:--:--</time>
+                    <div class="time-display__label" id="periodLabel">Initializing...</div>
+                </div>
+
+                <div class="info-grid" role="group" aria-label="Time information">
+                    <div class="info-card" data-metric="scale">
+                        <h4 class="info-card__label">Scale</h4>
+                        <div class="info-card__value" id="scaleFactor">-</div>
+                    </div>
+                    <div class="info-card" data-metric="realTime">
+                        <h4 class="info-card__label">Real Time</h4>
+                        <div class="info-card__value" id="realTime">--:--</div>
+                    </div>
+                    <div class="info-card" data-metric="phase">
+                        <h4 class="info-card__label">Current Phase</h4>
+                        <div class="info-card__value" id="currentPhase">-</div>
+                    </div>
+                    <div class="info-card" data-metric="progress">
+                        <h4 class="info-card__label">Progress</h4>
+                        <div class="info-card__value" id="progress">-</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="timeline" aria-labelledby="timeline-title">
+                <h2 id="timeline-title" class="sr-only">24-Hour Timeline</h2>
+                <div class="timeline__container" id="timelineContainer">
+                    <div class="timeline__current" id="timelineMarker"></div>
+                    <!-- Segments will be rendered here -->
+                </div>
+            </section>
+
+            <section class="config-panel" aria-labelledby="config-panel-title">
+                <h2 id="config-panel-title" class="sr-only">Configuration Panel</h2>
+                <div class="tab-list" role="tablist" aria-label="Configuration sections">
+                    <button role="tab" aria-selected="true" class="tab-list__item" data-tab="settings">Settings</button>
+                    <button role="tab" aria-selected="false" class="tab-list__item"
+                        data-tab="advanced">Advanced</button>
+                    <button role="tab" aria-selected="false" class="tab-list__item" data-tab="presets">Presets</button>
+                </div>
+
+                <div class="config-panel__content" id="configContent">
+                    <p>Select a mode to configure...</p>
+                </div>
+
+                <div class="config-panel__actions">
+                    <button class="btn btn--primary" id="saveConfigBtn" data-testid="save-config-btn">💾 Save</button>
+                    <button class="btn" id="resetConfigBtn">↺ Reset</button>
+                    <button class="btn" id="exportConfigBtn">📤 Export</button>
+                </div>
+            </section>
         </div>
 
-        <!-- Main Content Grid -->
-        <div class="main-content">
-            <!-- Left Panel: Mode Selection -->
-            <div class="panel left-panel">
-                <h2>Mode Selection</h2>
-                <div class="mode-list" id="modeList">
-                    <div class="loading">Loading modes</div>
-                </div>
+        <aside class="debug-panel" role="complementary" aria-labelledby="debug-panel-title">
+            <h2 id="debug-panel-title" class="debug-panel__title">Debug Info</h2>
+            <div class="debug-panel__stats">
+                <!-- Debug stats -->
             </div>
-
-            <!-- Center Panel -->
-            <div class="center-panel">
-                <!-- Time Display -->
-                <div class="panel time-display-panel">
-                    <div class="time-display">
-                        <div class="time-value" id="timeDisplay">--:--:--</div>
-                        <div class="time-label" id="periodLabel">Initializing...</div>
-                    </div>
-
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="label">Scale</div>
-                            <div class="value" id="scaleFactor">-</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="label">Real Time</div>
-                            <div class="value" id="realTime">--:--</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="label">Phase</div>
-                            <div class="value" id="currentPhase">-</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="label">Progress</div>
-                            <div class="value" id="progress">-</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Timeline -->
-                <div class="panel timeline-panel">
-                    <h2>24-Hour Timeline</h2>
-                    <div class="timeline-viz" id="timelineViz">
-                        <div class="timeline-current" id="timelineMarker"></div>
-                    </div>
-                </div>
-
-                <!-- Configuration -->
-                <div class="panel config-panel">
-                    <h2>Configuration</h2>
-                    <div class="config-tabs">
-                        <div class="tab active" data-tab="settings">Settings</div>
-                        <div class="tab" data-tab="advanced">Advanced</div>
-                        <div class="tab" data-tab="presets">Presets</div>
-                    </div>
-
-                    <div class="config-panel-content">
-                        <div class="config-section" id="configContent">
-                            <p class="text-muted">Select a mode to configure...</p>
-                        </div>
-                    </div>
-
-                    <div class="btn-group">
-                        <button class="btn btn-primary" id="saveConfigBtn">💾 Save</button>
-                        <button class="btn btn-secondary" id="resetConfigBtn">↺ Reset</button>
-                        <button class="btn btn-secondary" id="exportConfigBtn">📤 Export</button>
-                    </div>
-                </div>
+            <h3 class="debug-panel__title">Console</h3>
+            <div class="debug-panel__console" id="debugConsole">
+                <!-- Log entries will be inserted here -->
             </div>
+        </aside>
+    </main>
 
-            <!-- Right Panel: Debug -->
-            <div class="panel debug-panel">
-                <h2>Debug Information</h2>
-
-                <div class="debug-stats">
-                    <div class="info-item">
-                        <div class="label">Mode</div>
-                        <div class="value text-small" id="debugModeClass">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="label">Segments</div>
-                        <div class="value" id="debugSegmentCount">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="label">Update</div>
-                        <div class="value" id="debugUpdateRate">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="label">FPS</div>
-                        <div class="value" id="fpsCounter">-</div>
-                    </div>
-                </div>
-
-                <h2 class="mt-2">Console</h2>
-                <div class="debug-console" id="debugConsole">
-                    <div class="debug-entry">
-                        <span class="debug-time">00:00:00</span>
-                        <span class="debug-event">INIT</span>
-                        <span class="debug-data">Starting...</span>
-                    </div>
-                </div>
-
-                <button class="btn btn-secondary mt-2" onclick="clearDebugConsole()">
-                    Clear Console
-                </button>
-            </div>
+    <footer class="status-bar" role="contentinfo">
+        <div class="status-bar__item">
+            <span>Last Update: <time id="lastUpdate">-</time></span>
         </div>
-
-        <!-- Status Bar -->
-        <div class="status-bar">
-            <div class="status-item">
-                <span>Last Update: <span id="lastUpdate">-</span></span>
-            </div>
-            <div class="status-item">
-                <span>Memory: <span id="memoryUsage">-</span></span>
-            </div>
-            <div class="status-item">
-                <span>Version: v1.0.0</span>
-            </div>
+        <div class="status-bar__item">
+            <span>Memory: <span id="memoryUsage">-</span></span>
         </div>
-    </div>
+        <div class="status-bar__item">
+            <span id="appVersion">Version: 1.0.0</span>
+        </div>
+    </footer>
 
     <!-- External Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
@@ -149,8 +116,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
 
-    <!-- Test Page Logic -->
-    <script type="module" src="/dev-tools/time-design-test/js/main.js"></script>
+    <!-- App Logic -->
+    <script type="module" src="js/main.js"></script>
 </body>
 
 </html>

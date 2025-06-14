@@ -18,8 +18,11 @@
         "scheduler": "npm run start --workspace=@another-hour/scheduler-web"
     },
     "devDependencies": {
+        "@types/express": "^5.0.3",
         "@types/jest": "^29.5.14",
-        "lerna": "^6.6.2"
+        "@types/node": "^24.0.1",
+        "lerna": "^6.6.2",
+        "typescript": "^5.8.3"
     },
     "engines": {
         "node": ">=16.0.0",

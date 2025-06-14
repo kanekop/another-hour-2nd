@@ -79,6 +79,20 @@ export interface AHCalculationResult {
   config: AHTimeConfig;
 }
 
+/**
+ * Represents the complete state of the clock at a moment in time
+ */
+export interface ClockState {
+  /** The current real-world time */
+  currentTime: Date;
+  /** The calculated Another Hour time */
+  ahTime: AHTime;
+  /** The calculated angles for the analog clock hands */
+  angles: ClockAngles;
+  /** A boolean indicating if the current time is within the Designed 24 period */
+  isInDesigned24: boolean;
+}
+
 // 既存のエクスポートに追加
 export * from './errors';
 export * from './constants';
