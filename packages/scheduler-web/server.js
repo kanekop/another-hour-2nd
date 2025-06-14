@@ -1,7 +1,12 @@
 
-const express = require('express');
-const path = require('path');
-const session = require('express-session');
+import express from 'express';
+import path from 'path';
+import session from 'express-session';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,9 +30,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/vendor/@another-hour/core', express.static(path.join(__dirname, '../core/src')));
 
 // Import routes
-const calendarSyncRoutes = require('./src/routes/calendar-sync');
-const stopwatchRoutes = require('./src/routes/stopwatch');
-const timerRoutes = require('./src/routes/timer');
+import calendarSyncRoutes from './src/routes/calendar-sync.js';
+import stopwatchRoutes from './src/routes/stopwatch.js';
+import timerRoutes from './src/routes/timer.js';
 
 // Use routes
 app.use('/api/calendar-sync', calendarSyncRoutes);
