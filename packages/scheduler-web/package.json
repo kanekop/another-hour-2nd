@@ -5,7 +5,7 @@
   "description": "Schedule management application with Another Hour time system and Google Calendar integration",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon --legacy-watch server.js"
   },
   "dependencies": {
     "@another-hour/core": "file:../core",
