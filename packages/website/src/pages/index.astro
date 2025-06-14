@@ -1,16 +1,39 @@
 ---
-
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Another Hour - あなたの24時間を再設計する">
+	<Header />
+	<main class="bg-ah-light text-ah-dark">
+		<!-- Hero Section -->
+		<section class="text-center py-20">
+			<h1 class="text-5xl font-bold">もう一つの時間を、あなたに。</h1>
+			<p class="mt-4 text-xl">Another Hourは、あなたの24時間を再設計し、<br>心豊かな一日をもたらすためのツールです。</p>
+			<a href="#" class="mt-8 inline-block bg-ah-blue text-white font-bold py-3 px-8 rounded-lg">
+				アプリを試す
+			</a>
+		</section>
+
+		<!-- Features Section -->
+		<section class="py-20 px-8">
+			<h2 class="text-3xl font-bold text-center mb-12">3つの主要な価値</h2>
+			<div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+				<div class="bg-white p-8 rounded-lg shadow">
+					<h3 class="text-xl font-bold mb-2">Designed 24</h3>
+					<p>あなたの理想の一日を設計し、時間の使い方を最適化します。</p>
+				</div>
+				<div class="bg-white p-8 rounded-lg shadow">
+					<h3 class="text-xl font-bold mb-2">心と体の記録</h3>
+					<p>日々の活動や感情を記録し、自分自身への理解を深めます。</p>
+				</div>
+				<div class="bg-white p-8 rounded-lg shadow">
+					<h3 class="text-xl font-bold mb-2">コミュニティストーリー</h3>
+					<p>他のユーザーの時間の使い方から、新しい発見と学びを得られます。</p>
+				</div>
+			</div>
+		</section>
+	</main>
+	<Footer />
+</Layout>
