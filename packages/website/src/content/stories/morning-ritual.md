@@ -1,7 +1,7 @@
 ---
 title: "朝の儀式"
 description: "Another Hourで始まる新しい一日"
-date: 2025-06-14
+date: "2025-06-14"
 author: "Another Hour Team"
 lang: "ja"
 ---
