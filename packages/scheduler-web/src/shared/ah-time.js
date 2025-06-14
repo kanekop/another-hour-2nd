@@ -22,3 +22,14 @@ export const convertFromScaledMs = (scaledMs, scaleFactor) => {
   if (scaleFactor === 0 || scaleFactor === Infinity) return scaledMs; // 不適切なスケールファクターの場合は入力値をそのまま返すかエラー処理
   return scaledMs / scaleFactor;
 };
+
+/**
+ * 実時間のミリ秒をAnother Hour時間のミリ秒に変換します。
+ * デフォルトのスケールファクター24を使用します。
+ * @param {number} realMs - 実時間のミリ秒。
+ * @returns {number} Another Hour時間のミリ秒。
+ */
+export const toAhMillis = (realMs) => {
+  const SCALE_AH = 24; // 1 real day = 24 AH hours
+  return convertToScaledMs(realMs, SCALE_AH);
+};
