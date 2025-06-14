@@ -1,6 +1,6 @@
 // public/js/time-design-test-main.js
 
-import { timeDesignManager } from '/vendor/@another-hour/core/index.js';
+import { timeDesignManager } from '/js/time-design/TimeDesignManager.js';
 
 // Global variables
 let updateInterval;
