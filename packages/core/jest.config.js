@@ -8,40 +8,40 @@ module.exports = {
 
     // テストファイルのパターン
     testMatch: [
-      '**/tests/**/*.test.ts',
-      '**/tests/**/*.test.js',
-      '**/__tests__/**/*.ts',
-      '**/__tests__/**/*.js'
+        '**/tests/**/*.test.ts',
+        '**/tests/**/*.test.js',
+        '**/__tests__/**/*.ts',
+        '**/__tests__/**/*.js'
     ],
 
     // カバレッジ設定
     collectCoverage: true,
     coverageDirectory: 'coverage',
     collectCoverageFrom: [
-      'src/**/*.ts',
-      'src/**/*.js',
-      '!src/index.ts',
-      '!src/index.js',
-      '!**/node_modules/**',
-      '!src/types/**/*.ts', // Exclude type definition files from coverage
+        'src/**/*.ts',
+        'src/**/*.js',
+        '!src/index.ts',
+        '!src/index.js',
+        '!**/node_modules/**',
+        '!src/types/**/*.ts', // Exclude type definition files from coverage
     ],
 
     // カバレッジ閾値
     coverageThreshold: {
-      global: {
-        branches: 80,
-        functions: 80,
-        lines: 80,
-        statements: 80
-      }
+        global: {
+            branches: 80,
+            functions: 80,
+            lines: 80,
+            statements: 80
+        }
     },
 
     // レポーター設定
     coverageReporters: [
-      'text',
-      'text-summary',
-      'lcov',
-      'html'
+        'text',
+        'text-summary',
+        'lcov',
+        'html'
     ],
 
     // テスト結果の表示設定
@@ -59,8 +59,8 @@ module.exports = {
 
     // トランスフォーム設定
     transform: {
-      '^.+\\.(ts|tsx)$': 'ts-jest',
-      '^.+\\.(js|jsx)$': 'babel-jest'
+        '^.+\\.(ts|tsx)$': 'ts-jest',
+        '^.+\\.(js|jsx)$': 'babel-jest'
     },
 
     // ファイル拡張子の解決
@@ -68,8 +68,8 @@ module.exports = {
 
     // TypeScript設定ファイル
     globals: {
-      'ts-jest': {
-        tsconfig: 'tsconfig.json'
-      }
+        'ts-jest': {
+            tsconfig: 'tsconfig.json'
+        }
     }
 };

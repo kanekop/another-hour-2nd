@@ -1,4 +1,3 @@
-
 /**
  * Another Hour Core - Main exports
  * 
@@ -15,3 +14,6 @@ export * from './time-calculation';
 
 // Export all type definitions
 export * from './types';
+
+// Export all validation functions
+export * from './validation';

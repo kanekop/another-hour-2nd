@@ -1,12 +1,10 @@
-
 import {
     getCustomAhAngles,
     convertToAHTime,
     getTimeScalingFactor,
     isInDesigned24,
-    ClockAngles,
-    AHTime
 } from '../src/time-calculation';
+import type { ClockAngles, AHTime } from '../src/types';
 
 describe('Time Calculation Module', () => {
     const d24StartTime = new Date('2025-06-14T06:00:00');

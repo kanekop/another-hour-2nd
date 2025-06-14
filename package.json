@@ -18,6 +18,7 @@
         "scheduler": "npm run start --workspace=@another-hour/scheduler-web"
     },
     "devDependencies": {
+        "@types/jest": "^29.5.14",
         "lerna": "^6.6.2"
     },
     "engines": {
