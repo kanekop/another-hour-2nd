@@ -1,3 +1,12 @@
+/**
+ * Another Hour Scheduler Web Server
+ * 
+ * 🔴 重要: 開発サーバーはポート3000で動作します
+ * URL: http://localhost:3000
+ * 
+ * ポートを変更する場合は環境変数PORTを設定してください:
+ * PORT=8080 npm run dev
+ */
 
 import express from 'express';
 import path from 'path';
@@ -9,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // デフォルトポート: 3000
 
 // Session configuration
 app.use(session({

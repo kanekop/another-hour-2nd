@@ -1,6 +1,17 @@
-# Another Hour
+# Another Hour - 時間との関係を再定義する
 
-**時間との関係を再定義する** - A platform to redefine your relationship with time
+時間との関係を再定義するプラットフォーム。Another Hour時間システムを使用して、より意味のある時間管理を実現します。
+
+## 🚀 ローカル開発
+
+### 重要: 開発サーバーはポート3000で動作します
+
+```bash
+npm run dev
+# サーバーは http://localhost:3000 で起動します
+```
+
+## プロジェクト構成
 
 ## What is Another Hour?
 
