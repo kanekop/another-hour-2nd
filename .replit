@@ -18,6 +18,9 @@ args = "cd packages/scheduler-web && npm start"
 localPort = 5000
 externalPort = 80
 
+[nix]
+channel = "stable-24_05"
+
 # [packager]
 # language = "nodejs"
 #
