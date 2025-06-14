@@ -33,3 +33,14 @@ export const toAhMillis = (realMs) => {
   const SCALE_AH = 24; // 1 real day = 24 AH hours
   return convertToScaledMs(realMs, SCALE_AH);
 };
+
+/**
+ * Another Hour時間のミリ秒を実時間のミリ秒に変換します。
+ * デフォルトのスケールファクター24を使用します。
+ * @param {number} ahMs - Another Hour時間のミリ秒。
+ * @returns {number} 実時間のミリ秒。
+ */
+export const fromAhMillis = (ahMs) => {
+  const SCALE_AH = 24; // 1 real day = 24 AH hours
+  return convertFromScaledMs(ahMs, SCALE_AH);
+};
