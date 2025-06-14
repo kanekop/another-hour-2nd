@@ -1,11 +1,17 @@
+
 // packages/core/jest.config.js
 module.exports = {
     // テスト環境
     testEnvironment: 'node',
     
+    // TypeScript設定
+    preset: 'ts-jest',
+    
     // テストファイルのパターン
     testMatch: [
+      '**/tests/**/*.test.ts',
       '**/tests/**/*.test.js',
+      '**/__tests__/**/*.ts',
       '**/__tests__/**/*.js'
     ],
     
@@ -13,7 +19,9 @@ module.exports = {
     collectCoverage: true,
     coverageDirectory: 'coverage',
     collectCoverageFrom: [
+      'src/**/*.ts',
       'src/**/*.js',
+      '!src/index.ts',
       '!src/index.js',
       '!**/node_modules/**'
     ],
@@ -49,8 +57,19 @@ module.exports = {
     clearMocks: true,
     restoreMocks: true,
     
-    // トランスフォーム設定（将来のTypeScript対応用）
+    // トランスフォーム設定
     transform: {
-      '^.+\\.js$': 'babel-jest'
+      '^.+\\.(ts|tsx)$': 'ts-jest',
+      '^.+\\.(js|jsx)$': 'babel-jest'
+    },
+    
+    // ファイル拡張子の解決
+    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+    
+    // TypeScript設定ファイル
+    globals: {
+      'ts-jest': {
+        tsconfig: 'tsconfig.json'
+      }
     }
-  };
+};
