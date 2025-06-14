@@ -1,12 +1,18 @@
+import { t } from 'astro-i18n';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
 <header class="bg-white shadow-md">
     <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
         <div class="text-xl font-bold text-ah-dark">
             <a href="/">Another Hour</a>
         </div>
-        <div>
-            <a href="/" class="mx-2 text-gray-600 hover:text-ah-blue">ホーム</a>
-            <a href="/concept" class="mx-2 text-gray-600 hover:text-ah-blue">コンセプト</a>
-            <a href="/stories" class="mx-2 text-gray-600 hover:text-ah-blue">ストーリー</a>
+        <div class="flex items-center">
+            <a href="/" class="mx-2 text-gray-600 hover:text-ah-blue">{t('nav.home')}</a>
+            <a href="/concept" class="mx-2 text-gray-600 hover:text-ah-blue">{t('nav.concept')}</a>
+            <a href="/stories" class="mx-2 text-gray-600 hover:text-ah-blue">{t('nav.stories')}</a>
+            <div class="ml-4">
+                <LanguageSwitcher />
+            </div>
         </div>
     </nav>
 </header>
