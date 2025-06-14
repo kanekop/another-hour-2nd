@@ -35,7 +35,7 @@ app.use('/shared', express.static(join(__dirname, 'src/shared')));
 app.use(express.json());
 
 // Expose dev-tools directory for testing purposes
-app.use('/dev/time-design-test', express.static(path.resolve(__dirname, '../../dev-tools/time-design-test')));
+app.use('/dev-tools/time-design-test', express.static(path.resolve(__dirname, '../../dev-tools/time-design-test')));
 
 // Set proper MIME type for ES6 modules
 app.use((req, res, next) => {
