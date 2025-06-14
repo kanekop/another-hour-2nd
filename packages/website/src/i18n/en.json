@@ -1,0 +1,10 @@
+{
+    "nav": {
+        "home": "Home",
+        "concept": "Concept",
+        "stories": "Stories"
+    },
+    "footer": {
+        "rights": "© {year} Another Hour. All rights reserved."
+    }
+} 
