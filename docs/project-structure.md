@@ -26,6 +26,8 @@ This package contains shared logic, constants, and utility functions used across
 
 -   **`src/`**: Contains the source code for the core library.
     -   **`time-calculation.js`**: Exports key functions like `getCustomAhAngles` for time scaling and clock calculations.
+-   **`tests/`**: Contains all unit and integration tests for the core package, written using Jest.
+-   **`jest.config.js`**: Configuration file for the Jest testing framework.
 -   **`package.json`**: Defines dependencies and metadata for the `@another-hour/core` library.
 
 ### `@another-hour/scheduler-web`
@@ -60,6 +62,9 @@ Here is a simplified tree of the current project structure:
 │   ├── core/
 │   │   ├── src/
 │   │   │   └── time-calculation.js
+│   │   ├── tests/
+│   │   │   └── time-calculation.test.js
+│   │   ├── jest.config.js
 │   │   └── package.json
 │   └── scheduler-web/
 │       ├── public/

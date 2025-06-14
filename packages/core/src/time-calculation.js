@@ -1,57 +1,96 @@
 /**
- * Calculates display time and clock angles for a custom-defined day length ("Designed 24").
- * This function allows for a day that can be longer or shorter than the standard 24 hours,
- * with the remaining time ("Another Hour") running at a normal pace.
- *
- * @param {Date | string} date - The date object or ISO string for the calculation.
- * @param {string} timezone - The IANA timezone string (currently unused, for future compatibility).
- * @param {number} [designed24Duration=1380] - The duration of the "Designed 24" period in minutes (defaults to 23 hours).
- * @returns {object} An object containing the calculated time components and clock angles.
+ * Another Hour Core Time Calculation Module
+ * 
+ * This module contains the core logic for calculating time in the Another Hour system.
+ * Extracted from scheduler-web/public/clock-core.js
  */
-function getCustomAhAngles(date, timezone, designed24Duration = 1380) {
-    const now = new Date(date);
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const currentSeconds = now.getSeconds();
 
-    // Calculate if we're in the "Another Hour" period
-    const anotherHourStart = designed24Duration;
-    const isPersonalizedAhPeriod = currentMinutes >= anotherHourStart;
+/**
+ * Calculate Another Hour angles for clock display
+ * @param {Date} currentTime - Current time
+ * @param {number} designed24Duration - Duration of Designed 24 in hours
+ * @param {Date} d24StartTime - Start time of Designed 24
+ * @returns {Object} Object containing hour and minute angles
+ */
+function getCustomAhAngles(currentTime, designed24Duration, d24StartTime) {
+    // Time calculations logic here
+    const elapsed = currentTime - d24StartTime;
+    const elapsedHours = elapsed / (1000 * 60 * 60);
 
-    let scaleFactor, displayHours, displayMinutes, displaySeconds;
+    let hourAngle, minuteAngle;
 
-    if (isPersonalizedAhPeriod) {
-        // "Another Hour" period - time runs at a normal 1x speed.
-        scaleFactor = 1.0;
-        displayHours = now.getHours();
-        displayMinutes = now.getMinutes();
-        displaySeconds = now.getSeconds();
+    if (elapsedHours < designed24Duration) {
+        // Within Designed 24 period
+        const scaleFactor = 24 / designed24Duration;
+        const scaledHours = elapsedHours * scaleFactor;
+        hourAngle = (scaledHours * 30) % 360;
+        minuteAngle = ((scaledHours * 60) % 60) * 6;
     } else {
-        // "Designed 24" period - time is scaled to fit.
-        const totalRealMinutesInDay = 24 * 60; // 1440
-        scaleFactor = designed24Duration / totalRealMinutesInDay; // e.g., 1380 / 1440 = 0.9583...
-        const scaledMinutes = currentMinutes / scaleFactor;
-        displayHours = Math.floor(scaledMinutes / 60);
-        displayMinutes = Math.floor(scaledMinutes % 60);
-        displaySeconds = Math.floor((scaledMinutes % 1) * 60);
+        // In Another Hour period
+        const ahElapsed = elapsedHours - designed24Duration;
+        const ahDuration = 24 - designed24Duration;
+        hourAngle = ((ahElapsed % ahDuration) * 30) % 360;
+        minuteAngle = (((ahElapsed % ahDuration) * 60) % 60) * 6;
     }
 
-    // Calculate angles for a standard analog clock display based on the potentially scaled time.
-    const hourAngle = (displayHours % 12) * 30 + displayMinutes * 0.5;
-    const minuteAngle = displayMinutes * 6 + displaySeconds * 0.1;
-    const secondAngle = displaySeconds * 6;
+    return { hourAngle, minuteAngle };
+}
 
-    return {
-        aphHours: displayHours,
-        aphMinutes: displayMinutes,
-        aphSeconds: displaySeconds,
-        scaleFactor: scaleFactor,
-        isPersonalizedAhPeriod: isPersonalizedAhPeriod,
-        hourAngle: hourAngle,
-        minuteAngle: minuteAngle,
-        secondAngle: secondAngle,
-    };
+/**
+ * Convert real time to Another Hour time
+ * @param {Date} realTime - Real world time
+ * @param {number} designed24Duration - Duration of Designed 24 in hours
+ * @param {Date} d24StartTime - Start time of Designed 24
+ * @returns {Object} Object containing AH hours and minutes
+ */
+function convertToAHTime(realTime, designed24Duration, d24StartTime) {
+    const elapsed = realTime - d24StartTime;
+    const elapsedHours = elapsed / (1000 * 60 * 60);
+
+    let ahHours, ahMinutes;
+
+    if (elapsedHours < designed24Duration) {
+        // Within Designed 24 period
+        const scaleFactor = 24 / designed24Duration;
+        const scaledHours = elapsedHours * scaleFactor;
+        ahHours = Math.floor(scaledHours) % 24;
+        ahMinutes = Math.floor((scaledHours % 1) * 60);
+    } else {
+        // In Another Hour period
+        const ahElapsed = elapsedHours - designed24Duration;
+        ahHours = Math.floor(ahElapsed) % 24;
+        ahMinutes = Math.floor((ahElapsed % 1) * 60);
+    }
+
+    return { hours: ahHours, minutes: ahMinutes };
+}
+
+/**
+ * Calculate time scaling factor
+ * @param {number} designed24Duration - Duration of Designed 24 in hours
+ * @returns {number} Scaling factor
+ */
+function getTimeScalingFactor(designed24Duration) {
+    if (designed24Duration === 0) return 1;
+    return 24 / designed24Duration;
+}
+
+/**
+ * Check if current time is within Designed 24 period
+ * @param {Date} currentTime - Current time
+ * @param {number} designed24Duration - Duration of Designed 24 in hours
+ * @param {Date} d24StartTime - Start time of Designed 24
+ * @returns {boolean} True if within Designed 24
+ */
+function isInDesigned24(currentTime, designed24Duration, d24StartTime) {
+    const elapsed = currentTime - d24StartTime;
+    const elapsedHours = elapsed / (1000 * 60 * 60);
+    return elapsedHours < designed24Duration;
 }
 
 module.exports = {
     getCustomAhAngles,
+    convertToAHTime,
+    getTimeScalingFactor,
+    isInDesigned24
 }; 

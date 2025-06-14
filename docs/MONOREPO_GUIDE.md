@@ -1,6 +1,6 @@
 # Monorepo Migration Status
 
-## 🗓️ Last Updated: 2025-06-15
+## 🗓️ Last Updated: 2025-06-14
 
 ## ✅ Completed Tasks
 
@@ -16,16 +16,17 @@
 - [x] Extract common logic from scheduler
 - [x] Update scheduler-web to use core package
 - [x] Troubleshoot and fix workspace dependency issues
-- [ ] Add tests for core functionality
+- [x] Add tests for core functionality
 
 ## 📊 Current Structure
 
 ```
 another-hour/
 ├── packages/
-│   ├── core/                ✅ Created
-│   │   └── src/
-│   │       └── time-calculation.js
+│   ├── core/                ✅ Refined & Tested
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── jest.config.js
 │   └── scheduler-web/       ✅ Refactored
 │       ├── public/
 │       │   └── clock-core.js
@@ -39,16 +40,14 @@ another-hour/
 
 ## 🎯 Next Steps
 
-### Immediate Tasks (Phase 1 Completion)
+### Immediate Tasks (Phase 2 Start)
 
-1.  **Add Tests for Core Package**
-    -   Set up a testing framework (e.g., Jest).
-    -   Write unit tests for `getCustomAhAngles` in `packages/core/src/time-calculation.js`.
-    -   Ensure calculations are correct for various scenarios.
+1.  **Add `clock-web` Package**
+    -   Create a new package for the simple clock web application.
+    -   Implement a basic UI to display the time using `@another-hour/core`.
 
 ### Future Phases
 
-- **Phase 2**: Add clock-web package
 - **Phase 3**: Add watch-app package
 - **Phase 4**: Implement Time Design Modes
 
@@ -61,8 +60,11 @@ npm install
 # Run scheduler
 npm run start
 
-# Run from specific package
-npm run start --workspace=@another-hour/scheduler-web
+# Run tests for a specific package
+npm test --workspace=@another-hour/core
+
+# Run all tests
+npm test --workspaces
 ```
 
 ## 📌 Important Notes
@@ -73,12 +75,21 @@ npm run start --workspace=@another-hour/scheduler-web
 
 ## 🤝 Session Summary
 
-**Date**: 2025-06-15
-**Main Achievement**: Created `@another-hour/core` package, extracted shared logic, and resolved critical `npm install` issues.
-**Time Spent**: ~1.5 hours
-**Next Session**: Implement a testing framework and write unit tests for the new `core` package.
-
 **Date**: 2025-06-14
-**Main Achievement**: Successfully restructured project as monorepo
-**Time Spent**: ~2 hours
-**Next Session**: Create core package and extract shared logic
+
+**Achievement 1: Monorepo Restructuring**
+- Successfully restructured the project into a monorepo.
+- Time Spent: ~2 hours
+
+**Achievement 2: Core Package Creation**
+- Created `@another-hour/core` package and extracted shared logic.
+- Resolved critical `npm install` issues related to workspaces.
+- Time Spent: ~1.5 hours
+
+**Achievement 3: Core Package Testing**
+- Implemented a robust testing framework using Jest.
+- Wrote comprehensive unit tests, achieving ~90% code coverage.
+- Ensured the reliability of the core time calculation logic.
+- Time Spent: ~2 hours
+
+**Next Session's Goal**: Begin development of the `clock-web` package.

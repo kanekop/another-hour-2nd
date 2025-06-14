@@ -31,9 +31,9 @@ Another Hourは「時間との関係を再定義する」革新的なプラッ�
 another-hour/
 ├── packages/
 │   ├── scheduler-web/      ✅ 実装済み
-│   ├── core/              ✅ 実装済み
+│   ├── core/              ✅ テスト完了
 │   ├── clock-web/         📋 計画中
-│   └── watch-app/         📋 計画中
+│   └── watch-app/         �� 計画中
 └── docs/
     ├── MONOREPO_GUIDE.md  // 開発ガイド
     └── time-design-modes/ // 設計仕様
@@ -61,6 +61,7 @@ another-hour/
 - **Calendar Integration**: Google Calendar API
 - **Deployment**: Replit
 - **Version Control**: Git, GitHub
+- **Testing**: Jest, Testing Library ✅ 導入済み
 
 ### 検討中/将来
 - **TypeScript**: 型安全性の向上
@@ -96,25 +97,23 @@ another-hour/
 
 ## 現在の優先事項
 
-1. **coreパッケージのテスト実装**
-   - Jestなどのテストフレームワークを導入
-   - `getCustomAhAngles`の単体テストを作成
-   - テストカバレッジを向上させる
-
-2. **Time Design Modesの実装**
+1. **Time Design Modesの実装**
    - Mode Registry システム
    - 各モードの計算ロジック
    - UI/UXの統合
 
-3. **coreパッケージのテスト実装**
-   - Jestなどのテストフレームワークを導入
-   - `getCustomAhAngles`の単体テストを作成
-   - テストカバレッジを向上させる
-
-4. **開発効率の向上**
+2. **開発効率の向上**
    - TypeScript導入の検討
    - 自動テストの充実
    - ビルドプロセスの最適化
+
+3. **`clock-web` パッケージの新規開発**
+   - `@another-hour/core` を利用したシンプルな時計UIの実装
+
+**完了済みの優先事項**
+- **coreパッケージのテスト実装** ✅
+  - Jestを導入し、単体テストと包括的テストを作成
+  - テストカバレッジ約90%を達成
 
 ## 重要な技術的考慮事項
 

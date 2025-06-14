@@ -1,14 +1,22 @@
 {
   "name": "@another-hour/core",
   "version": "1.0.0",
-  "description": "Core logic for Another Hour project",
-  "main": "src/time-calculation.js",
-  "private": true,
-  "devDependencies": {},
+  "description": "Core time calculation logic for Another Hour",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "keywords": [
+    "another-hour",
+    "time",
+    "calculation"
+  ],
+  "author": "Another Hour Team",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "@jest/globals": "^29.5.0"
+  }
 }

@@ -58,6 +58,45 @@ To run a script across all packages that have it defined, use the `--workspaces`
 npm run lint --workspaces --if-present
 ```
 
+## 🧪 Testing
+
+This project uses [Jest](https://jestjs.io/) as its testing framework. Tests are located in the `tests` directory within each package.
+
+### Running All Tests
+
+To run all tests across all packages, use the following command from the root directory:
+
+```bash
+npm test --workspaces
+```
+
+### Running Tests for a Specific Package
+
+You can run tests for a single package using the `--workspace` flag. This is useful for focusing on a specific part of the codebase.
+
+```bash
+# Run all tests in the @another-hour/core package
+npm test --workspace=@another-hour/core
+```
+
+### Running Tests in Watch Mode
+
+During development, it's helpful to run tests in watch mode, which automatically re-runs tests when files change.
+
+```bash
+# Watch for changes and re-run tests in @another-hour/core
+npm run test:watch --workspace=@another-hour/core
+```
+
+### Checking Test Coverage
+
+The `@another-hour/core` package is configured to generate a test coverage report. After running the tests, you can find a detailed HTML report in `packages/core/coverage/lcov-report/index.html`.
+
+```bash
+# Run tests and generate a coverage report for the core package
+npm run test:coverage --workspace=@another-hour/core
+```
+
 ## 📦 Package Management
 
 ### Adding a Dependency to a Specific Package
