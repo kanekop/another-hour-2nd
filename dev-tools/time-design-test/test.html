@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Time Design Test - Debug</title>
+</head>
+
+<body>
+    <h1>Time Design Test - Debug</h1>
+    <div id="status">Loading...</div>
+    <pre id="log"></pre>
+
+    <!-- External Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+
+    <script type="module">
+        const log = (msg) => {
+            console.log(msg);
+            document.getElementById('log').textContent += msg + '\n';
+        };
+
+        const updateStatus = (msg) => {
+            document.getElementById('status').textContent = msg;
+        };
+
+        try {
+            log('Testing library loading...');
+            log(`moment: ${typeof moment !== 'undefined' ? 'OK' : 'NOT FOUND'}`);
+            log(`noUiSlider: ${typeof noUiSlider !== 'undefined' ? 'OK' : 'NOT FOUND'}`);
+            log(`SunCalc: ${typeof SunCalc !== 'undefined' ? 'OK' : 'NOT FOUND'}`);
+
+            log('\nImporting TimeDesignManager...');
+            const { timeDesignManager } = await import('./js/time-design/TimeDesignManager.js');
+            log('TimeDesignManager imported successfully');
+
+            log('\nInitializing TimeDesignManager...');
+            await timeDesignManager.initialize();
+            log('TimeDesignManager initialized successfully');
+
+            log('\nAvailable modes:');
+            const modes = timeDesignManager.getAvailableModes();
+            modes.forEach(mode => {
+                log(`- ${mode.id}: ${mode.name}`);
+            });
+
+            updateStatus('All tests passed!');
+        } catch (error) {
+            log(`\nERROR: ${error.message}`);
+            log(`Stack: ${error.stack}`);
+            updateStatus(`Error: ${error.message}`);
+        }
+    </script>
+</body>
+
+</html>

@@ -42,7 +42,8 @@ export class SolarMode extends BaseMode {
                 lat: 35.6762,
                 lng: 139.6503,
                 name: 'Tokyo',
-                timezone: 'Asia/Tokyo'
+                timezone: 'Asia/Tokyo',
+                tz: 'Asia/Tokyo'
             },
             designedDayHours: 12,
             autoAdjust: true // Note: autoAdjust logic is not fully implemented in this version
@@ -186,7 +187,8 @@ export class SolarMode extends BaseMode {
         return {
             location: {
                 key: cityKey,
-                ...cityData
+                ...cityData,
+                timezone: cityData.tz
             },
             designedDayHours: designedDayHours
         };
@@ -218,6 +220,70 @@ export class SolarMode extends BaseMode {
         };
 
         return { solarInfo };
+    }
+
+    /**
+     * Get segments for timeline display
+     */
+    getSegments(config) {
+        if (!config || !config.location || !config.location.key) {
+            config = this.getDefaultConfig();
+        }
+
+        const cityKey = config.location.key;
+        const sunTimes = this.getSunTimes(cityKey, new Date());
+
+        if (!sunTimes) {
+            return [];
+        }
+
+        const segments = [];
+
+        // Convert times to minutes since midnight
+        const sunriseMinutes = sunTimes.sunrise.getHours() * 60 + sunTimes.sunrise.getMinutes();
+        const sunsetMinutes = sunTimes.sunset.getHours() * 60 + sunTimes.sunset.getMinutes();
+
+        // Night (midnight to sunrise)
+        if (sunriseMinutes > 0) {
+            segments.push({
+                type: 'night',
+                label: 'Night',
+                shortLabel: 'Night',
+                startMinutes: 0,
+                durationMinutes: sunriseMinutes,
+                style: {
+                    background: 'linear-gradient(to right, #1A237E, #283593)'
+                }
+            });
+        }
+
+        // Day (sunrise to sunset)
+        segments.push({
+            type: 'day',
+            label: 'Day',
+            shortLabel: 'Day',
+            startMinutes: sunriseMinutes,
+            durationMinutes: sunsetMinutes - sunriseMinutes,
+            style: {
+                background: 'linear-gradient(to right, #FFB300, #FFD600, #FFB300)'
+            }
+        });
+
+        // Night (sunset to midnight)
+        if (sunsetMinutes < 24 * 60) {
+            segments.push({
+                type: 'night',
+                label: 'Night',
+                shortLabel: 'Night',
+                startMinutes: sunsetMinutes,
+                durationMinutes: 24 * 60 - sunsetMinutes,
+                style: {
+                    background: 'linear-gradient(to right, #283593, #1A237E)'
+                }
+            });
+        }
+
+        return segments;
     }
 }
 

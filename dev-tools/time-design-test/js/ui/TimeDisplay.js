@@ -8,6 +8,7 @@ export class TimeDisplay {
             period: $('#periodLabel'),
             scale: $('#scaleFactor'),
             realTime: $('#realTime'),
+            phase: $('#currentPhase'),
             progress: $('#progress'),
         };
 
@@ -49,6 +50,13 @@ export class TimeDisplay {
             }
         }
         this.elements.realTime.textContent = realTimeString;
+
+        // Update current phase
+        if (this.elements.phase && timeData.segmentInfo?.label) {
+            this.elements.phase.textContent = timeData.segmentInfo.label;
+        } else if (this.elements.phase) {
+            this.elements.phase.textContent = '-';
+        }
 
         // Update progress info
         if (timeData.segmentInfo?.progress !== undefined) {

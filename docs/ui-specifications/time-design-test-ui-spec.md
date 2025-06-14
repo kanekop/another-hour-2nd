@@ -71,6 +71,17 @@ Time Design Test UIは、Another Hourプロジェクトの新しい時間設計�
 - **境界線**: 4px radius
 - **マージン**: 上部8px
 
+##### ラベル表示
+- **テキスト**: "24-TIMELINE"
+- **位置**: タイムラインコンテナの上部
+- **スタイル**:
+  - フォントサイズ: 0.875rem（14px）
+  - フォントウェイト: 600（太字）
+  - 文字色: #666666（セカンダリテキスト色）
+  - 文字変換: 大文字（text-transform: uppercase）
+  - 文字間隔: 0.5px
+  - 下マージン: 8px
+
 ##### セグメント表示
 各時間設計モードに応じて、24時間を異なるセグメントに分割して表示：
 
@@ -88,8 +99,13 @@ Time Design Test UIは、Another Hourプロジェクトの新しい時間設計�
 - Another Hour: グレー（#95A5A6）
 
 **Solar Mode**
-- Daytime: 黄色～オレンジのグラデーション（#F39C12 → #E67E22）
-- Nighttime: 紺色～黒のグラデーション（#34495E → #2C3E50）
+- **配色**: 実際の太陽の位置に基づく色
+  - 日の出前: 濃紺（#1A237E）
+  - 日の出: オレンジグラデーション（#FF6F00 → #FFB300）
+  - 昼間: 明るい黄色（#FFD600）
+  - 日の入り: 赤オレンジグラデーション（#FF6F00 → #D32F2F）
+  - 夜: 濃紺から黒へ（#1A237E → #000000）
+- **リアルタイム更新**: 1分ごとに色を微調整
 
 ##### セグメント要素
 ```css
@@ -393,6 +409,25 @@ import { timeDesignManager } from './js/time-design/TimeDesignManager.js';
       <div class="info-card__value" id="scaleFactor">-</div>
     </div>
     <!-- 他の情報カード -->
+  </div>
+</section>
+```
+
+#### タイムライン部
+```html
+<section class="timeline" aria-labelledby="timeline-title">
+  <h2 id="timeline-title" class="timeline__title">24-Timeline</h2>
+  <div class="timeline__container" id="timelineContainer">
+    <div class="timeline__current" id="timelineMarker"></div>
+    <!-- 時刻ラベル -->
+    <div class="timeline-hours">
+      <span class="hour-mark" style="left: 0%">0</span>
+      <span class="hour-mark" style="left: 25%">6</span>
+      <span class="hour-mark" style="left: 50%">12</span>
+      <span class="hour-mark" style="left: 75%">18</span>
+      <span class="hour-mark" style="left: 100%">24</span>
+    </div>
+    <!-- セグメントは動的に生成される -->
   </div>
 </section>
 ```
@@ -1456,6 +1491,53 @@ class TimelineRenderer {
   - 日の入り: 赤オレンジグラデーション（#FF6F00 → #D32F2F）
   - 夜: 濃紺から黒へ（#1A237E → #000000）
 - **リアルタイム更新**: 1分ごとに色を微調整
+
+##### Solar Mode 日の出・日の入り表示仕様
+
+**重要**: 日の出・日の入り時刻は必ず**選択された都市の現地時間**で表示すること。
+
+**アルゴリズム**:
+1. **都市データ構造**:
+   ```javascript
+   {
+     key: 'tokyo',
+     name: 'Tokyo',
+     lat: 35.6762,
+     lng: 139.6503,
+     tz: 'Asia/Tokyo'  // IANAタイムゾーン識別子
+   }
+   ```
+
+2. **日の出・日の入り計算**:
+   - SunCalc.getTimesを使用して、緯度・経度から太陽時刻を計算
+   - 返されるDateオブジェクトはUTCベース
+
+3. **現地時間への変換**:
+   ```javascript
+   // 正しい実装例
+   const format = (date, timezone) => {
+     if (!date) return '--:--';
+     return date.toLocaleTimeString('en-GB', {
+       timeZone: timezone,  // 都市のタイムゾーンを使用
+       hour: '2-digit',
+       minute: '2-digit',
+       second: '2-digit',
+       hour12: false
+     });
+   };
+   ```
+
+4. **データフロー**:
+   - SolarMode.getSunTimes() → Dateオブジェクト（UTC）を返す
+   - ConfigPanel.generateSolarConfig() → 都市のタイムゾーンで表示
+   - 都市変更時 → 完全な都市データ（タイムゾーン含む）を渡す
+
+**よくある間違いと対策**:
+- ❌ ブラウザのローカルタイムゾーンで表示してしまう
+- ❌ タイムゾーン情報を渡し忘れる
+- ❌ location.timezoneとlocation.tzの不一致
+- ✅ 常に都市データのtzプロパティを使用する
+- ✅ toLocaleTimeString()にtimeZoneオプションを必ず指定する
 
 ### 19.5 アクセシビリティ
 

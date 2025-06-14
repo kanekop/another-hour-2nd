@@ -152,8 +152,31 @@ body {
     transition: background-color var(--transition-base);
 }
 
+.status-indicator--initializing {
+    background-color: #f39c12;
+    animation: pulse 1s infinite;
+}
+
+.status-indicator--ready {
+    background-color: var(--color-success);
+}
+
 .status-indicator--error {
     background-color: var(--color-error);
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 /* Mode Selector (Left Panel) */
@@ -255,6 +278,15 @@ body {
     justify-content: center;
 }
 
+.timeline__title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .timeline__container {
     height: 40px;
     background-color: var(--color-bg-main);
@@ -262,6 +294,8 @@ body {
     position: relative;
     overflow: hidden;
     width: 100%;
+    margin-top: 20px;
+    /* 時刻ラベル用のスペース */
 }
 
 .timeline__current {
@@ -275,6 +309,23 @@ body {
     transition: left 1s linear;
 }
 
+/* Timeline hour marks */
+.timeline-hours {
+    position: absolute;
+    width: 100%;
+    height: 20px;
+    top: -20px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+
+.hour-mark {
+    position: absolute;
+    transform: translateX(-50%);
+    font-weight: 600;
+}
+
+/* Timeline segments */
 .timeline-segment {
     position: absolute;
     height: 100%;
@@ -296,43 +347,36 @@ body {
     z-index: 5;
 }
 
-/* Timeline Segment Colors */
+/* Timeline Segment Colors - These are fallbacks or for non-gradient modes */
 .timeline-segment--designed {
     background-color: #3498DB;
 }
 
-/* Classic */
 .timeline-segment--another {
     background-color: #95A5A6;
 }
 
-/* Classic */
 .timeline-segment--core {
     background-color: #2874A6;
 }
 
-/* Core Time */
 .timeline-segment--morning,
 .timeline-segment--evening {
     background-color: #85C1E9;
 }
 
-/* Core Time */
 .timeline-segment--activity {
     background-color: #5DADE2;
 }
 
-/* Wake-based (simple) */
+/* Solar mode uses inline styles for gradients, but we can define a fallback */
 .timeline-segment--day {
     background-color: #F39C12;
 }
 
-/* Solar (simple) */
 .timeline-segment--night {
     background-color: #34495E;
 }
-
-/* Solar (simple) */
 
 /* Config Panel (Center Panel) */
 .config-panel {
@@ -356,7 +400,12 @@ body {
     transition: all var(--transition-base);
 }
 
-.tab-list__item[aria-selected="true"] {
+.tab-list__item:hover {
+    background-color: var(--color-bg-main);
+}
+
+.tab-list__item[aria-selected="true"],
+.tab-list__item--active {
     color: var(--color-primary);
     border-bottom-color: var(--color-primary);
 }
@@ -386,6 +435,35 @@ body {
     margin-bottom: var(--spacing-sm);
 }
 
+.debug-panel__stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background-color: var(--color-bg-main);
+    border-radius: var(--border-radius-sm);
+}
+
+.debug-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.debug-stat__label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+}
+
+.debug-stat__value {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
 .debug-panel__console {
     flex-grow: 1;
     font-family: 'Courier New', monospace;
@@ -394,6 +472,48 @@ body {
     padding: var(--spacing-sm);
     border-radius: var(--border-radius-sm);
     overflow-y: auto;
+}
+
+/* Debug Console Entries */
+.debug-entry {
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: var(--font-size-xs);
+}
+
+.debug-entry:last-child {
+    border-bottom: none;
+}
+
+.debug-entry__time {
+    color: #569CD6;
+    margin-right: var(--spacing-sm);
+}
+
+.debug-entry__event {
+    color: #4EC9B0;
+    font-weight: 600;
+    margin-right: var(--spacing-sm);
+}
+
+.debug-entry__message {
+    color: var(--color-debug-text);
+}
+
+.debug-entry__data {
+    margin-top: var(--spacing-xs);
+    padding: var(--spacing-xs);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.7rem;
+    color: #DCDCAA;
+    overflow-x: auto;
+}
+
+/* Error entries - styled via JavaScript by adding a class */
+.debug-entry--error .debug-entry__event {
+    color: #F48771;
 }
 
 /* Status Bar */
@@ -452,6 +572,53 @@ body {
     font-size: var(--font-size-sm);
 }
 
+/* noUiSlider Custom Styles */
+.config-slider {
+    margin: var(--spacing-md) 0;
+}
+
+.noUi-target {
+    background: var(--color-bg-main);
+    border: none;
+    box-shadow: none;
+}
+
+.noUi-connect {
+    background: var(--color-primary);
+}
+
+.noUi-handle {
+    border: 2px solid var(--color-primary);
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.noUi-handle:before,
+.noUi-handle:after {
+    display: none;
+}
+
+.noUi-tooltip {
+    background: var(--color-text-primary);
+    border: none;
+    color: white;
+    font-size: var(--font-size-xs);
+}
+
+/* Info Box */
+.info-box {
+    background-color: var(--color-bg-main);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+}
+
+.info-box p {
+    margin-bottom: var(--spacing-xs);
+}
+
+.info-box p:last-child {
+    margin-bottom: 0;
+}
 
 /* 6. Utility Classes */
 .sr-only {

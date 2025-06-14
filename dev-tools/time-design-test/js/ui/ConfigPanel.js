@@ -1,5 +1,6 @@
 import { $ } from '../utils/dom.js';
 import { formatDuration } from '../utils/formatters.js';
+import SolarTimeFormatter from '../utils/SolarTimeFormatter.js';
 
 export class ConfigPanel {
     constructor(element, { onSave, onReset }) {
@@ -114,7 +115,12 @@ export class ConfigPanel {
         ).join('');
 
         const { solarInfo } = uiData;
-        const format = (date, tz) => date ? new Date(date).toLocaleTimeString('en-GB', { timeZone: tz }) : '--:--';
+
+        // SolarTimeFormatterを使用してタイムゾーンを取得
+        const timezone = SolarTimeFormatter.getTimezone(config.location);
+
+        // SolarTimeFormatterを使用して太陽情報をフォーマット
+        const formatted = SolarTimeFormatter.formatSolarInfo(solarInfo, timezone);
 
         return `
             <div class="config-group">
@@ -122,9 +128,9 @@ export class ConfigPanel {
                 <select id="solar-city">${cityOptions}</select>
             </div>
             <div class="config-group info-box">
-                <p><strong>Sunrise:</strong> ${format(solarInfo?.sunrise, config.location.timezone)}</p>
-                <p><strong>Sunset:</strong> ${format(solarInfo?.sunset, config.location.timezone)}</p>
-                <p><strong>Daylight:</strong> ${formatDuration(solarInfo?.daylightMinutes)}</p>
+                <p><strong>Sunrise:</strong> ${formatted.sunrise}</p>
+                <p><strong>Sunset:</strong> ${formatted.sunset}</p>
+                <p><strong>Daylight:</strong> ${formatted.daylight}</p>
             </div>
             <div class="config-group">
                 <label for="solar-day-hours-slider">Target Day Hours: <span>${config.designedDayHours.toFixed(1)}h</span></label>

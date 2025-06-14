@@ -4,7 +4,6 @@ export class Timeline {
     constructor(element) {
         this.container = element;
         this.marker = $('.timeline__current', this.container);
-        this.renderedSegmentsHash = null; // To track if segments need re-rendering
 
         if (!this.container || !this.marker) {
             console.error('Timeline: Required elements not found.');
@@ -12,45 +11,45 @@ export class Timeline {
     }
 
     /**
-     * Updates the timeline visualization.
-     * @param {object} timeData - The result from timeDesignManager.calculate().
-     */
-    update(timeData) {
-        if (!this.container || !timeData) return;
-
-        // Always update current time marker position
-        this.updateMarker(timeData.realTimeProgress);
-
-        // Only re-render segments if they have actually changed
-        const segmentsHash = JSON.stringify(timeData.segments);
-        if (segmentsHash !== this.renderedSegmentsHash) {
-            this.renderSegments(timeData.segments);
-            this.renderedSegmentsHash = segmentsHash;
-        }
-    }
-
-    /**
      * Updates the position of the current time marker.
+     * This is designed to be called frequently.
      * @param {number} progress - A value from 0 to 1 representing progress through the 24-hour day.
      */
     updateMarker(progress) {
-        if (!this.marker) return;
+        if (!this.marker || progress === undefined) return;
         this.marker.style.left = `${progress * 100}%`;
     }
 
     /**
      * Renders the segments for the current time design mode.
-     * @param {Array<object>} segments - Array of segment data.
+     * This should be called only when the mode or its configuration changes.
+     * @param {Array<object>} segments - Array of segment data for the full day.
      */
-    renderSegments(segments) {
-        if (!segments || segments.length === 0) {
-            // Clear existing segments if any
-            this.container.querySelectorAll('.timeline-segment').forEach(el => el.remove());
-            return;
-        }
+    render(segments) {
+        if (!this.container) return;
 
-        // Naive rendering: clear and redraw everything.
-        this.container.querySelectorAll('.timeline-segment').forEach(el => el.remove());
+        // Clear existing segments and hour marks
+        this.container.querySelectorAll('.timeline-segment, .timeline-hours').forEach(el => el.remove());
+
+        // Add hour marks
+        const hoursContainer = document.createElement('div');
+        hoursContainer.className = 'timeline-hours';
+
+        // Add major hour marks (0, 6, 12, 18, 24)
+        const majorHours = [0, 6, 12, 18, 24];
+        majorHours.forEach(hour => {
+            const mark = document.createElement('span');
+            mark.className = 'hour-mark';
+            mark.style.left = `${(hour / 24) * 100}%`;
+            mark.textContent = hour === 24 ? '0' : hour.toString();
+            hoursContainer.appendChild(mark);
+        });
+
+        this.container.appendChild(hoursContainer);
+
+        if (!segments || segments.length === 0) {
+            return; // Nothing to render
+        }
 
         const fragment = document.createDocumentFragment();
         const totalDayMinutes = 24 * 60;
@@ -64,8 +63,11 @@ export class Timeline {
 
             el.style.left = `${left}%`;
             el.style.width = `${width}%`;
-            // The color should be defined in CSS based on the segment type class
-            // e.g., .timeline-segment--designed { background-color: var(--color-primary); }
+
+            // For gradient modes like solar, the style might be set directly from segment data
+            if (segment.style?.background) {
+                el.style.background = segment.style.background;
+            }
 
             el.textContent = this.getAppropriateLabel(segment, width);
             el.title = `${segment.label}: ${this.formatMinutes(segment.startMinutes)} - ${this.formatMinutes(segment.startMinutes + segment.durationMinutes)}`;

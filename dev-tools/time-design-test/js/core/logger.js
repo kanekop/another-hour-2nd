@@ -16,8 +16,9 @@ export class Logger {
      * @param {string} event - The type of event or message (e.g., 'INIT', 'MODE_CHANGE').
      * @param {string} message - The main log message.
      * @param {any} [data=null] - Optional data to be serialized and displayed.
+     * @param {boolean} [isError=false] - Whether this is an error message.
      */
-    log(event, message, data = null) {
+    log(event, message, data = null, isError = false) {
         console.log(`[${event}]`, message, data);
 
         if (!this.consoleElement) return;
@@ -25,7 +26,7 @@ export class Logger {
         const timestamp = new Date().toLocaleTimeString('en-GB');
 
         const entry = document.createElement('div');
-        entry.className = 'debug-entry';
+        entry.className = isError ? 'debug-entry debug-entry--error' : 'debug-entry';
 
         const timeEl = document.createElement('span');
         timeEl.className = 'debug-entry__time';
@@ -50,16 +51,15 @@ export class Logger {
 
         this.consoleElement.prepend(entry);
 
-        // Limit number of entries
-        if (this.consoleElement.children.length > 100) {
+        // Limit number of entries to 50 as per spec
+        if (this.consoleElement.children.length > 50) {
             this.consoleElement.lastChild.remove();
         }
     }
 
     error(event, message, data = null) {
         console.error(`[${event}]`, message, data);
-        // In a real app, you might add a different class for error styling
-        this.log(`ERROR:${event}`, message, data);
+        this.log(`ERROR:${event}`, message, data, true);
     }
 
     clear() {
