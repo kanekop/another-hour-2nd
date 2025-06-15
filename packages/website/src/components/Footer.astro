@@ -1,0 +1,9 @@
+---
+import ja from '../i18n/ja.json';
+const rights = ja.footer.rights.replace('{year}', new Date().getFullYear());
+---
+<footer class="bg-ah-dark text-white text-sm">
+  <div class="max-w-5xl mx-auto p-4 text-center">
+    {rights}
+  </div>
+</footer>

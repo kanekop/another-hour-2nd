@@ -1,0 +1,14 @@
+---
+import ja from '../i18n/ja.json';
+const nav = ja.nav;
+---
+<header class="bg-white shadow">
+  <div class="max-w-5xl mx-auto flex justify-between items-center p-4">
+    <a href="/" class="text-ah-blue font-bold text-xl">Another Hour</a>
+    <nav class="space-x-4 text-sm">
+      <a href="/" class="hover:underline">{nav.home}</a>
+      <a href="/concept" class="hover:underline">{nav.concept}</a>
+      <a href="/stories" class="hover:underline">{nav.stories}</a>
+    </nav>
+  </div>
+</header>
