@@ -68,6 +68,7 @@ http://localhost:3000
 *For detailed setup, see the [Development Setup Guide](docs/DEVELOPMENT.md).*
 
 ## Documentation
+- [Documentation Index](docs/README.md) - overview of all docs
 - [Time Design Modes](docs/time-design-modes/) - 時間設計モードの詳細
 - [API Reference](docs/api/) - 開発者向けドキュメント
 - [Applications](docs/applications/) - 各アプリケーションの詳細
