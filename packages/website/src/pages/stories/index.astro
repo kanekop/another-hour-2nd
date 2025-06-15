@@ -1,0 +1,19 @@
+---
+import Layout from '../../layouts/Layout.astro';
+const stories = await Astro.glob('./*.md');
+---
+<Layout title="ユーザーストーリー" description="Another Hourの体験談を紹介します">
+  <main class="max-w-5xl mx-auto py-16 px-4">
+    <h1 class="text-3xl font-bold mb-8">ユーザーストーリー</h1>
+    <ul class="grid gap-8 md:grid-cols-2">
+      {stories.map(story => (
+        <li class="bg-white shadow rounded-lg p-6" style="list-style:none">
+          <a href={story.url} class="text-xl font-semibold text-ah-blue hover:underline">
+            {story.frontmatter.title || story.url.split('/').pop().replace('.md', '')}
+          </a>
+          {story.frontmatter.description && <p class="mt-2 text-sm text-ah-gray">{story.frontmatter.description}</p>}
+        </li>
+      ))}
+    </ul>
+  </main>
+</Layout>
