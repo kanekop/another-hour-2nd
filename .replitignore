@@ -1,0 +1,23 @@
+
+# Exclude website package - deployed separately on Vercel
+packages/website/
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Cache directories
+.cache/
+.parcel-cache/

@@ -14,8 +14,24 @@ export * from './time-calculation';
 export * from './validation';
 export * from './types';
 
+// Time Design Modes exports
+export { TimeDesignManager } from './TimeDesignManager';
+export { BaseMode } from './modes/BaseMode';
+export { ClassicMode } from './modes/ClassicMode';
+
+// Re-export types from time-modes
+export * from './types/time-modes';
+
 // Simple timeDesignManager export for compatibility
 export const timeDesignManager = {
     initialize: () => console.log('TimeDesignManager initialized successfully'),
     // Add other methods as needed
-};
+};// 既存のエクスポート
+export { getCustomAhAngles } from './time-calculation.js';
+
+// Time Design Modes の新しいエクスポート
+export { TimeDesignManager } from './TimeDesignManager.js';
+export { BaseMode } from './modes/BaseMode.js';
+export { ClassicMode } from './modes/ClassicMode.js';
+
+// 注: 型定義は別途 .d.ts ファイルで提供

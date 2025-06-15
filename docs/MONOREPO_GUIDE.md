@@ -18,64 +18,52 @@
 - [x] Add tests for core functionality
 - [x] Refactor `scheduler-web` to use `@another-hour/core`
 
-### Phase 2: Clock Web Application
-- [x] Create `clock-web` package
-- [x] Implement basic UI to display time using `@another-hour/core`
-- [x] Add responsive design and styling
-
-### Additional Packages
-- [x] Create `website` package
-- [x] Implement Astro-based website with specifications
-- [x] Add multi-language support structure
-
-### Phase 3: Watch Application
-- [x] Create `watch-app` package as a static PWA
-- [x] Implement mobile-first UI with analog/digital modes
-- [x] Refactor to remove server dependency
-
-## �� Current Structure
+## 📊 Current Structure
 
 ```
 another-hour/
 ├── packages/
-│   ├── core/                ✅ Refined & Tested
+│   ├── core/                ✅ Enhanced with Time Design Modes
 │   │   ├── src/
-│   │   ├── dist/
+│   │   │   ├── types/
+│   │   │   │   └── time-modes.ts    ✅ NEW
+│   │   │   ├── modes/
+│   │   │   │   ├── BaseMode.ts      ✅ NEW
+│   │   │   │   ├── ClassicMode.ts   ✅ NEW
+│   │   │   │   ├── CoreTimeMode.ts  🚧 TODO
+│   │   │   │   ├── WakeBasedMode.ts 🚧 TODO
+│   │   │   │   └── SolarMode.ts     🚧 TODO
+│   │   │   ├── TimeDesignManager.ts ✅ NEW
+│   │   │   └── index.ts             ✅ UPDATED
 │   │   ├── tests/
 │   │   └── jest.config.js
-│   ├── scheduler-web/       ✅ Refactored
-│   │   ├── public/
-│   │   ├── src/
-│   │   ├── server.js
-│   │   └── package.json
-│   ├── clock-web/          ✅ Implemented
-│   │   ├── public/
-│   │   ├── src/
-│   │   └── package.json
-│   ├── watch-app/          ✅ Implemented (Static)
-│   │   ├── public/
-│   │   ├── src/
-│   │   └── package.json
-│   └── website/            ✅ Created
-│       ├── src/
+│   └── scheduler-web/       ✅ Refactored
 │       ├── public/
-│       └── astro.config.mjs
+│       │   └── (No clock-core.js)
+│       ├── src/
+│       ├── server.js
+│       └── package.json
 ├── docs/
-├── package.json            ✅ Workspace configured
+│   ├── specifications/
+│   │   └── time-design-modes-data-spec.md    ✅ NEW
+│   ├── examples/
+│   │   └── time-design-usage.ts              ✅ NEW
+│   └── time-design-modes/                    ✅ Existing docs
 └── README.md
 ```
 
-## 🎯 Next Steps
+## 🎯 Next Development Session Goals
 
-### Immediate Tasks (Phase 4)
+### Immediate Tasks (Phase 2 Start)
 
-1.  **Implement Time Design Modes**
-    -   Add customizable time design patterns to `@another-hour/core`
-    -   Integrate across all applications (`scheduler`, `clock`, `watch`)
-    -   Create a unified configuration system
+1.  **Add `clock-web` Package**
+    -   Create a new package for the simple clock web application.
+    -   Implement a basic UI to display the time using `@another-hour/core`.
 
 ### Future Phases
-- Future features to be determined.
+
+- **Phase 3**: Add watch-app package
+- **Phase 4**: Implement Time Design Modes
 
 ## 🔧 Commands Reference
 
@@ -86,21 +74,23 @@ npm install
 # Run scheduler
 npm run start
 
-# Run clock-web
-npm run dev --workspace=clock-web
-
-# Run website
-npm run dev --workspace=website
-
-# Run watch-app (requires two terminals)
-npm run dev --workspace=@another-hour/watch-app   # Terminal 1: Watch for changes
-npm run start --workspace=@another-hour/watch-app # Terminal 2: Serve static files
-
 # Run tests for a specific package
 npm test --workspace=@another-hour/core
 
-# Run all tests
-npm test --workspaces
+# Run specific test file
+npm test --workspace=@another-hour/core -- TimeDesignManager.test.ts
+
+# Watch mode for development
+npm run test:watch --workspace=@another-hour/core
+
+# Check test coverage
+npm run test:coverage --workspace=@another-hour/core
+
+# Build TypeScript
+npm run build --workspace=@another-hour/core
+
+# Run scheduler with Time Design Modes
+npm run start
 ```
 
 ## 📌 Important Notes
@@ -108,43 +98,24 @@ npm test --workspaces
 - Google Calendar OAuth only works on Replit (not local)
 - Small issues noted in scheduler, but functional
 - All existing features preserved during migration
-- Website package uses Astro framework with Tailwind CSS
-- Multi-language support structure in place (ja/en)
 
 ## 🤝 Session Summary
 
-**Date**: 2025-06-15 (Updated)
+**Date**: 2025-06-14
 
-**Completed Achievements**:
+**Achievement 1: Monorepo Restructuring**
+- Successfully restructured the project into a monorepo.
+- Time Spent: ~2 hours
 
-1. **Monorepo Restructuring** ✅
-   - Successfully restructured the project into a monorepo
-   - Time Spent: ~2 hours
+**Achievement 2: Core Package Creation**
+- Created `@another-hour/core` package and extracted shared logic.
+- Resolved critical `npm install` issues related to workspaces.
+- Time Spent: ~1.5 hours
 
-2. **Core Package Creation** ✅
-   - Created `@another-hour/core` package and extracted shared logic
-   - Resolved critical `npm install` issues related to workspaces
-   - Time Spent: ~1.5 hours
+**Achievement 3: Core Package Testing**
+- Implemented a robust testing framework using Jest.
+- Wrote comprehensive unit tests, achieving ~90% code coverage.
+- Ensured the reliability of the core time calculation logic.
+- Time Spent: ~2 hours
 
-3. **Core Package Testing** ✅
-   - Implemented a robust testing framework using Jest
-   - Wrote comprehensive unit tests, achieving ~90% code coverage
-   - Ensured the reliability of the core time calculation logic
-   - Time Spent: ~2 hours
-
-4. **Clock Web Package** ✅
-   - Developed `clock-web` package with basic time display
-   - Integrated with `@another-hour/core` for time calculations
-   - Added responsive design
-
-5. **Website Package** ✅
-   - Created Astro-based website package
-   - Implemented according to SPECIFICATION.md
-   - Set up multi-language support structure
-
-6. **Watch App Package** ✅
-   - Created `watch-app` as a static Progressive Web App (PWA)
-   - Implemented mobile-first UI with touch gestures
-   - Refactored to be serverless, simplifying the architecture
-
-**Next Session's Goal**: Begin development of `Time Design Modes` (Phase 4)
+**Next Session's Goal**: Begin development of the `clock-web` package.

@@ -9,6 +9,26 @@ export enum TimeDesignMode {
 }
 
 /**
+ * ユーザー設定
+ */
+export interface UserSettings {
+    userId: string;
+    defaultTimezone: string;      // 例: 'Asia/Tokyo'
+    defaultLocation?: Location;   // Solar Mode用
+    dayStartTime: string;         // HH:mm形式 (デフォルト: '00:00')
+    preferredMode: TimeDesignMode;
+}
+
+/**
+ * 位置情報
+ */
+export interface Location {
+    city: string;
+    latitude: number;
+    longitude: number;
+}
+
+/**
  * モード設定の基底インターフェース
  */
 export interface TimeDesignModeConfig<T = ModeParameters> {
@@ -22,38 +42,35 @@ export interface TimeDesignModeConfig<T = ModeParameters> {
  * Classic Mode のパラメータ
  */
 export interface ClassicModeParams {
-    designed24Duration: number;
-    d24StartTime: Date;
+    designed24Duration: number;   // 分単位 (例: 1380 = 23時間)
 }
 
 /**
  * Core Time Mode のパラメータ
  */
 export interface CoreTimeModeParams {
-    coreStartTime: Date;      // コア時間の開始
-    coreEndTime: Date;        // コア時間の終了
-    designed24Duration: number;
-    bufferBefore?: number;    // コア時間前のバッファ（分）
-    bufferAfter?: number;     // コア時間後のバッファ（分）
+    coreTimeStart: string;        // HH:mm形式 (例: '07:00')
+    coreTimeEnd: string;          // HH:mm形式 (例: '22:00')
+    // Morning AH と Evening AH は自動計算
 }
 
 /**
  * Wake-Based Mode のパラメータ
  */
 export interface WakeBasedModeParams {
-    wakeUpTime: Date;         // 起床時刻
-    designed24Duration: number;
-    adaptiveLearning?: boolean; // 起床時刻の学習機能
+    defaultWakeTime: string;      // HH:mm形式 (例: '07:00')
+    todayWakeTime?: string;       // HH:mm形式 (今日の実際の起床時刻)
+    anotherHourDuration: number;  // 分単位
+    maxScaleFactor: number;       // 最大圧縮率 (例: 2.0)
 }
 
 /**
  * Solar Mode のパラメータ
  */
 export interface SolarModeParams {
-    latitude: number;         // 緯度
-    longitude: number;        // 経度
-    designed24Duration: number;
-    seasonalAdjustment?: boolean; // 季節による調整
+    location?: Location;          // ユーザーのデフォルトを上書き
+    dayHoursTarget: number;       // 昼の時間（時間単位）
+    seasonalAdjustment: boolean;  // 季節による調整
 }
 
 /**
@@ -71,4 +88,35 @@ export type ModeParameters =
 export type ClassicModeConfig = TimeDesignModeConfig<ClassicModeParams>;
 export type CoreTimeModeConfig = TimeDesignModeConfig<CoreTimeModeParams>;
 export type WakeBasedModeConfig = TimeDesignModeConfig<WakeBasedModeParams>;
-export type SolarModeConfig = TimeDesignModeConfig<SolarModeParams>; 
+export type SolarModeConfig = TimeDesignModeConfig<SolarModeParams>;
+
+/**
+ * デフォルト値
+ */
+export const DEFAULT_VALUES = {
+    user: {
+        dayStartTime: '00:00',
+        defaultTimezone: 'Asia/Tokyo',
+        preferredMode: TimeDesignMode.Classic
+    },
+
+    classic: {
+        designed24Duration: 1380  // 23時間
+    },
+
+    coreTime: {
+        coreTimeStart: '07:00',
+        coreTimeEnd: '22:00'
+    },
+
+    wakeBased: {
+        defaultWakeTime: '07:00',
+        anotherHourDuration: 60,  // 1時間
+        maxScaleFactor: 2.0
+    },
+
+    solar: {
+        dayHoursTarget: 12,
+        seasonalAdjustment: false
+    }
+};
