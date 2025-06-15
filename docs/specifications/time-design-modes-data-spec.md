@@ -31,7 +31,9 @@ Classic Mode:
 Core Time Mode:
   - Core Time Start         # コアタイム開始時刻（例：07:00）
   - Core Time End           # コアタイム終了時刻（例：22:00）
-  # Morning AH と Evening AH は上記から自動計算
+  - Min Core Hours          # 最低コアタイム時間（時間単位、デフォルト: 6）
+  - AnotherHourAllocation   # Morning/Evening AHに割り当てる合計時間（分）。省略時はCore Time以外の実時間。
+  # Morning AH と Evening AH の配分は、Day Start Time に基づいて自動計算
 ```
 
 ### Wake-Based Mode（起床ベースモード）
@@ -87,17 +89,25 @@ Solar Mode:
 function validateCoreTimeMode(config) {
   const start = parseTime(config.coreTimeStart);
   const end = parseTime(config.coreTimeEnd);
-
-  // Core Timeは最低6時間必要
+  const minCoreHours = config.minCoreHours || 6; // デフォルトは6時間
   const coreHours = (end - start) / 60;
-  if (coreHours < 6) {
-    throw new Error('Core Time must be at least 6 hours');
+
+  // Core Timeは最低でも設定された時間を確保する
+  if (coreHours < minCoreHours) {
+    throw new Error(`Core Time must be at least ${minCoreHours} hours`);
   }
 
-  // Morning + Evening AH は最大12時間
-  const totalAH = 24 - coreHours;
-  if (totalAH > 12) {
-    throw new Error('Total Another Hour cannot exceed 12 hours');
+  // anotherHourAllocation が指定されている場合、その値が妥当か検証
+  if (config.anotherHourAllocation !== undefined) {
+    if (config.anotherHourAllocation < 0 || config.anotherHourAllocation > 720) {
+        throw new Error('AnotherHourAllocation must be between 0 and 12 hours');
+    }
+  } else {
+    // 指定されていない場合、Core Time以外の時間が12時間を超えていないか検証
+    const totalAH = 24 - coreHours;
+    if (totalAH > 12) {
+      throw new Error('Total Another Hour cannot exceed 12 hours');
+    }
   }
 }
 ```
@@ -134,7 +144,9 @@ const MODE_DEFAULTS = {
 
   coreTime: {
     coreTimeStart: '07:00',
-    coreTimeEnd: '22:00'
+    coreTimeEnd: '22:00',
+    minCoreHours: 6,
+    anotherHourAllocation: null // デフォルトは未指定（null）
   },
 
   wakeBased: {

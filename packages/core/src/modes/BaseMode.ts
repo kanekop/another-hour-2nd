@@ -3,7 +3,9 @@
  * すべてのモードはこのクラスを継承する
  */
 export class BaseMode {
-    constructor(config) {
+    config: any;
+
+    constructor(config: any) {
         if (this.constructor === BaseMode) {
             throw new Error('BaseMode is an abstract class and cannot be instantiated directly');
         }
@@ -26,7 +28,7 @@ export class BaseMode {
      * @param {Date} currentTime - 現在時刻
      * @returns {number} スケールファクター（1.0 = 通常速度）
      */
-    calculateScaleFactor(currentTime) {
+    calculateScaleFactor(currentTime: Date): number {
         throw new Error('calculateScaleFactor must be implemented by subclass');
     }
 
@@ -35,7 +37,7 @@ export class BaseMode {
      * @param {Date} currentTime - 現在時刻
      * @returns {Object} { name: string, progress: number }
      */
-    getCurrentPhase(currentTime) {
+    getCurrentPhase(currentTime: Date): { name: string, progress: number } {
         throw new Error('getCurrentPhase must be implemented by subclass');
     }
 
@@ -44,7 +46,7 @@ export class BaseMode {
      * @param {Date} realTime - 実時間
      * @returns {Date} Another Hour 時間
      */
-    calculateAnotherHourTime(realTime) {
+    calculateAnotherHourTime(realTime: Date): Date {
         throw new Error('calculateAnotherHourTime must be implemented by subclass');
     }
 
@@ -53,7 +55,7 @@ export class BaseMode {
      * @param {Date} realTime - 実時間
      * @returns {Date} Another Hour 時間
      */
-    convertToAnotherHour(realTime) {
+    convertToAnotherHour(realTime: Date): Date {
         return this.calculateAnotherHourTime(realTime);
     }
 
@@ -62,7 +64,7 @@ export class BaseMode {
      * @param {Date} anotherHourTime - Another Hour 時間
      * @returns {Date} 実時間
      */
-    convertToRealTime(anotherHourTime) {
+    convertToRealTime(anotherHourTime: Date): Date {
         throw new Error('convertToRealTime must be implemented by subclass');
     }
 
@@ -71,7 +73,7 @@ export class BaseMode {
      * @param {Date} currentTime - 現在時刻
      * @returns {Object} { hours: number, minutes: number, seconds: number }
      */
-    getClockAngles(currentTime) {
+    getClockAngles(currentTime: Date): { hours: number, minutes: number, seconds: number } {
         const ahTime = this.calculateAnotherHourTime(currentTime);
 
         const hours = ahTime.getHours();
@@ -117,7 +119,7 @@ export class BaseMode {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getDebugInfo(currentTime) {
+    getDebugInfo(currentTime: Date): Record<string, any> {
         return {
             mode: this.config.mode,
             scaleFactor: this.calculateScaleFactor(currentTime),

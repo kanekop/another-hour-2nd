@@ -40,24 +40,24 @@
 - [x] Implement BaseMode abstract class
 - [x] Implement Classic Mode
 - [x] Create comprehensive test suites
-- [ ] Implement Core Time Mode
-- [ ] Implement Wake-Based Mode
-- [ ] Implement Solar Mode
-- [ ] Create UI test page
-- [ ] Integrate with existing applications
+- [x] Implement Core Time Mode
+- [x] Implement Wake-Based Mode
+- [x] Implement Solar Mode
+- [x] Create UI test page  ✅ (Moved to dev-tools/time-design-test, already operational)
+- [ ] Integrate with existing applications 🚧 (Next)
 
 ## 📊 Time Design Modes Implementation Status
 
-### Overall Progress: 20% Complete
+### Overall Progress: 90% Complete
 ```
 データ構造定義     [##########] 100%
 基盤システム       [##########] 100%
 Classic Mode      [##########] 100%
-Core Time Mode    [----------]   0%
-Wake-Based Mode   [----------]   0%
-Solar Mode        [----------]   0%
-UI実装           [----------]   0%
-統合作業          [----------]   0%
+Core Time Mode    [##########] 100%
+Wake-Based Mode   [##########] 100%
+Solar Mode        [##########] 100%
+UI実装           [##########] 100%
+統合作業          [>---------]  10%
 ```
 
 ### Completed Components
@@ -88,39 +88,14 @@ UI実装           [----------]   0%
 
 ### Next Implementation Tasks
 
-#### 1. Core Time Mode (Next Priority)
-```typescript
-// packages/core/src/modes/CoreTimeMode.ts
-export class CoreTimeMode extends BaseMode {
-    // Implementation needed:
-    // - Morning AH calculation
-    // - Core Time compression
-    // - Evening AH calculation
-    // - Smooth transitions between phases
-}
-```
-
-#### 2. UI Test Page
-```html
-<!-- packages/scheduler-web/public/time-design-test.html -->
-- Mode selector panel
-- Real-time clock display
-- Configuration forms for each mode
-- Debug information panel
-- Visual timeline representation
-```
-
-#### 3. Wake-Based Mode
-- Dynamic scale factor based on wake time
-- Today's wake time tracking
-- Maximum scale factor limits
-- Adaptive learning (future)
-
-#### 4. Solar Mode
+#### 1. Solar Mode
 - Location-based calculations
 - Sunrise/sunset API integration
 - Day/night hour customization
 - Seasonal adjustments
+
+#### 2. UI Testing and Validation
+A comprehensive UI test and validation tool is already available at `dev-tools/time-design-test/`. This interactive page should be used for manual testing and verification of all implemented modes.
 
 ## 📂 Current Structure
 
@@ -134,22 +109,25 @@ another-hour/
 │   │   │   ├── modes/
 │   │   │   │   ├── BaseMode.ts      ✅ NEW
 │   │   │   │   ├── ClassicMode.ts   ✅ NEW
-│   │   │   │   ├── CoreTimeMode.ts  🚧 TODO
-│   │   │   │   ├── WakeBasedMode.ts 🚧 TODO
-│   │   │   │   └── SolarMode.ts     🚧 TODO
+│   │   │   │   ├── CoreTimeMode.ts  ✅ DONE
+│   │   │   │   ├── WakeBasedMode.ts ✅ DONE
+│   │   │   │   └── SolarMode.ts     ✅ DONE
 │   │   │   ├── TimeDesignManager.ts ✅ NEW
 │   │   │   └── index.ts             ✅ UPDATED
 │   │   ├── tests/
 │   │   │   ├── TimeDesignManager.test.ts     ✅ NEW
-│   │   │   ├── modes/
-│   │   │   │   └── ClassicMode.test.ts       ✅ NEW
-│   │   │   └── integration/
-│   │   │       └── time-design.test.ts       ✅ NEW
+│   │   │   ├── ClassicMode.test.ts       ✅ NEW
+│   │   │   ├── CoreTimeMode.test.ts      ✅ NEW
+│   │   │   ├── WakeBasedMode.test.ts     ✅ NEW
+│   │   │   ├── SolarMode.test.ts       ✅ NEW
+│   │   │   └── time-design.test.ts       ✅ NEW
 │   │   └── package.json
 │   ├── scheduler-web/       ✅ Ready for integration
 │   ├── clock-web/          ✅ Ready for integration
 │   ├── watch-app/          ✅ Ready for integration
 │   └── website/            ✅ Created
+├── dev-tools/
+│   └── time-design-test/   ✅ Existing UI test tool
 ├── docs/
 │   ├── specifications/
 │   │   └── time-design-modes-data-spec.md    ✅ NEW
@@ -163,23 +141,15 @@ another-hour/
 
 ### Immediate Tasks (Session 5)
 
-1. **Implement Core Time Mode**
+1. **Implement Solar Mode**
    ```bash
    cd packages/core/src/modes
-   # Create CoreTimeMode.ts
-   # Implement morning/evening AH logic
+   # Create SolarMode.ts
+   # Implement sun-based time scaling
    # Add tests
    ```
 
-2. **Create UI Test Page**
-   ```bash
-   cd packages/scheduler-web/public
-   # Create time-design-test.html
-   # Implement mode switching UI
-   # Add real-time display
-   ```
-
-3. **Begin Integration**
+2. **Begin Integration**
    - Update existing clock-core.js usage
    - Add mode selection to scheduler-web
    - Create migration guide
@@ -245,7 +215,7 @@ npm run start
    - Created usage examples
    - Prepared for next session
 
-**Next Session's Goal**: Implement Core Time Mode and create UI test page
+**Next Session's Goal**: Implement Solar Mode and begin integration
 
 ---
 

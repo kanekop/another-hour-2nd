@@ -51,7 +51,8 @@ export interface ClassicModeParams {
 export interface CoreTimeModeParams {
     coreTimeStart: string;        // HH:mm形式 (例: '07:00')
     coreTimeEnd: string;          // HH:mm形式 (例: '22:00')
-    // Morning AH と Evening AH は自動計算
+    minCoreHours: number;         // 最低コアタイム時間 (時間単位、デフォルト: 6)
+    anotherHourAllocation?: number | null; // AHの合計時間（分）。null or undefinedの場合は自動計算
 }
 
 /**
@@ -106,7 +107,9 @@ export const DEFAULT_VALUES = {
 
     coreTime: {
         coreTimeStart: '07:00',
-        coreTimeEnd: '22:00'
+        coreTimeEnd: '22:00',
+        minCoreHours: 6,
+        anotherHourAllocation: null
     },
 
     wakeBased: {
