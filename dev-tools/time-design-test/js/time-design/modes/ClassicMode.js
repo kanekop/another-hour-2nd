@@ -87,40 +87,48 @@ export class ClassicMode extends BaseMode {
    */
   calculate(date, timezone, config) {
     const minutes = this.getMinutesSinceMidnight(date, timezone);
-    const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutes, segments);
+    const designedDuration = config.designed24Duration;
+    const anotherDuration = 1440 - designedDuration;
+    const scaleFactor = designedDuration > 0 ? 1440 / designedDuration : 1;
 
-    if (!activeSegment) {
-      // Fallback for safety
-      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' }, hourAngle: 0, minuteAngle: 0, secondAngle: 0 };
-    }
+    let hours, minutesOut, seconds, periodName, isAnotherHour, progress, remaining;
 
-    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
-
-    let displayHours, displayMinutes, displaySeconds;
-
-    if (activeSegment.type === 'another') {
-      const remainingTotalSeconds = remaining * 60;
-      displayHours = Math.floor(remainingTotalSeconds / 3600);
-      displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
-      displaySeconds = Math.floor(remainingTotalSeconds % 60);
-    } else { // 'designed'
-      const segmentElapsed = minutes - activeSegment.startTime;
-      const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
-      const scaledTotalMinutes = scaledElapsed;
-      displayHours = Math.floor(scaledTotalMinutes / 60) % 24;
-      displayMinutes = Math.floor(scaledTotalMinutes % 60);
-      displaySeconds = Math.floor((scaledTotalMinutes * 60) % 60);
+    if (minutes < designedDuration) {
+      // Designed 24 phase
+      const scaled = minutes * scaleFactor;
+      hours = Math.floor(scaled / 60) % 24;
+      minutesOut = Math.floor(scaled % 60);
+      seconds = Math.floor((scaled * 60) % 60);
+      periodName = 'Designed 24';
+      isAnotherHour = false;
+      progress = minutes / designedDuration;
+      remaining = designedDuration - minutes;
+    } else {
+      // Another Hour phase
+      const ahMinutes = minutes - designedDuration;
+      hours = Math.floor(ahMinutes / 60);
+      minutesOut = Math.floor(ahMinutes % 60);
+      seconds = Math.floor((ahMinutes * 60) % 60);
+      periodName = 'Another Hour';
+      isAnotherHour = true;
+      progress = ahMinutes / anotherDuration;
+      remaining = anotherDuration - ahMinutes;
     }
 
     return {
-      hours: displayHours,
-      minutes: displayMinutes,
-      seconds: displaySeconds,
-      scaleFactor: activeSegment.scaleFactor,
-      isAnotherHour: activeSegment.type === 'another',
-      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: activeSegment.duration },
-      periodName: activeSegment.label,
+      hours,
+      minutes: minutesOut,
+      seconds,
+      scaleFactor: minutes < designedDuration ? scaleFactor : 1.0,
+      isAnotherHour,
+      segmentInfo: {
+        type: isAnotherHour ? 'another' : 'designed',
+        label: periodName,
+        progress,
+        remaining,
+        duration: minutes < designedDuration ? designedDuration : anotherDuration,
+      },
+      periodName,
     };
   }
 
