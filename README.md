@@ -55,15 +55,15 @@ Another Hourは、時間の流れ方を個人がデザインできる革新的�
 ## Quick Start
 ```bash
 # Clone the repository
-git clone https://github.com/kanekop/another-hour-scheduler.git
-cd another-hour-scheduler
+git clone https://github.com/kanekop/another-hour.git
+cd another-hour
 
 # Install dependencies and run
 npm install
-npm start
+npm run dev
 
 # Open in browser
-http://localhost:8080
+http://localhost:3000
 ```
 *For detailed setup, see the [Development Setup Guide](docs/DEVELOPMENT.md).*
 
