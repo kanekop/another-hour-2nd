@@ -88,11 +88,8 @@ UI実装           [##########] 100%
 
 ### Next Implementation Tasks
 
-#### 1. Solar Mode
-- Location-based calculations
-- Sunrise/sunset API integration
-- Day/night hour customization
-- Seasonal adjustments
+#### 1. Integration with Applications
+- The next major step is to integrate the completed Time Design Modes into the existing applications (`scheduler-web`, `clock-web`, `watch-app`).
 
 #### 2. UI Testing and Validation
 A comprehensive UI test and validation tool is already available at `dev-tools/time-design-test/`. This interactive page should be used for manual testing and verification of all implemented modes.
@@ -141,24 +138,16 @@ another-hour/
 
 ### Immediate Tasks (Session 5)
 
-1. **Implement Solar Mode**
-   ```bash
-   cd packages/core/src/modes
-   # Create SolarMode.ts
-   # Implement sun-based time scaling
-   # Add tests
-   ```
-
-2. **Begin Integration**
-   - Update existing clock-core.js usage
-   - Add mode selection to scheduler-web
-   - Create migration guide
+1. **Begin Integration with Applications**
+   - Update `scheduler-web` to use the full TimeDesignManager.
+   - Update `clock-web` to support mode switching.
+   - Update `watch-app` to display time from any selected mode.
+   - Create a migration guide for existing users if necessary.
 
 ### Future Sessions
-- Session 6: Wake-Based Mode implementation
-- Session 7: Solar Mode implementation
-- Session 8: Full integration and testing
-- Session 9: Documentation and deployment
+- Session 6: Full integration testing across all apps.
+- Session 7: Documentation update and final review.
+- Session 8: Deployment preparation.
 
 ## 🔧 Commands Reference
 
@@ -215,7 +204,7 @@ npm run start
    - Created usage examples
    - Prepared for next session
 
-**Next Session's Goal**: Implement Solar Mode and begin integration
+**Next Session's Goal**: Begin integration with applications
 
 ---
 
