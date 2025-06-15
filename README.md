@@ -42,7 +42,7 @@ Another Hourは、時間の流れ方を個人がデザインできる革新的�
 ### Time Design Modes (NEW! 🎨)
 - **Classic Mode**: The original Another Hour experience with a single, continuous scaled day.
 - **Core Time Mode** - 活動時間の前後にAnother Hourを配置
-- **Wake-Based Mode** - 起床時刻から始まる動的な24時間
+- **Wake-Based Mode** - 起床時刻から深夜までを動的にスケーリングし、最後にAnother Hourを設ける
  - **Solar Mode** - 日の出・日の入りに同期した自然時間 *(v2.0: 正午を常に12:00 AHに固定し、8都市プリセットと昼時間自動調整を搭載)*
 [詳細 → docs/time-design-modes/](docs/time-design-modes/)
 
