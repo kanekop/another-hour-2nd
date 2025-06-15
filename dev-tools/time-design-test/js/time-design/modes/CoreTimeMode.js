@@ -68,40 +68,71 @@ export class CoreTimeMode extends BaseMode {
 
   calculate(date, timezone, config) {
     const minutes = this.getMinutesSinceMidnight(date, timezone);
-    const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutes, segments);
+    const start = config.coreTimeStart;
+    const end = config.coreTimeEnd;
 
-    if (!activeSegment) {
-      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' } };
+    const coreDuration = (end - start + 1440) % 1440;
+    const morningAHRealDuration = (start - 0 + 1440) % 1440;
+    const eveningAHRealDuration = (0 - end + 1440) % 1440;
+    const totalRealAADuration = morningAHRealDuration + eveningAHRealDuration;
+    const targetCoreDuration = 1440 - totalRealAADuration;
+    const scaleFactorCore = coreDuration === 0 ? 1 : targetCoreDuration / coreDuration;
+
+    let periodName, isAnotherHour, progress, remaining, scaleFactor, ahMinutes;
+
+    const inCore = start <= end
+      ? minutes >= start && minutes < end
+      : minutes >= start || minutes < end;
+
+    if (inCore) {
+      periodName = 'Core Time';
+      isAnotherHour = false;
+      const elapsed = (minutes - start + 1440) % 1440;
+      progress = coreDuration > 0 ? elapsed / coreDuration : 0;
+      remaining = coreDuration - elapsed;
+      scaleFactor = scaleFactorCore;
+      ahMinutes = morningAHRealDuration + elapsed * scaleFactorCore;
+    } else {
+      const inMorning = minutes < start && start <= end || (start > end && minutes >= end && minutes < start);
+      if (inMorning) {
+        periodName = 'Morning AH';
+        isAnotherHour = true;
+        const elapsed = (minutes - 0 + 1440) % 1440;
+        progress = morningAHRealDuration > 0 ? elapsed / morningAHRealDuration : 0;
+        remaining = morningAHRealDuration - elapsed;
+        scaleFactor = 1;
+        ahMinutes = elapsed;
+      } else {
+        periodName = 'Evening AH';
+        isAnotherHour = true;
+        const elapsed = (minutes - end + 1440) % 1440;
+        progress = eveningAHRealDuration > 0 ? elapsed / eveningAHRealDuration : 0;
+        remaining = eveningAHRealDuration - elapsed;
+        scaleFactor = 1;
+        ahMinutes = morningAHRealDuration + coreDuration * scaleFactorCore + elapsed;
+      }
     }
 
-    let displayHours, displayMinutes, displaySeconds;
+    const hours = Math.floor(ahMinutes / 60) % 24;
+    const minutesOut = Math.floor(ahMinutes % 60);
+    const seconds = Math.floor((ahMinutes * 60) % 60);
 
-    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
-
-    if (activeSegment.type === 'another') {
-      const remainingTotalSeconds = remaining * 60;
-      displayHours = Math.floor(remainingTotalSeconds / 3600);
-      displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
-      displaySeconds = Math.floor(remainingTotalSeconds % 60);
-    } else { // 'designed'
-      const segmentElapsed = minutes - activeSegment.startTime;
-      const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
-      const totalDesignedMinutes = scaledElapsed;
-
-      displayHours = Math.floor(totalDesignedMinutes / 60) % 24;
-      displayMinutes = Math.floor(totalDesignedMinutes % 60);
-      displaySeconds = Math.floor((totalDesignedMinutes * 60) % 60);
-    }
+    const duration = isAnotherHour ? (periodName === 'Morning AH' ? morningAHRealDuration : eveningAHRealDuration) : coreDuration;
 
     return {
-      hours: displayHours,
-      minutes: displayMinutes,
-      seconds: displaySeconds,
-      scaleFactor: activeSegment.scaleFactor,
-      isAnotherHour: activeSegment.type === 'another',
-      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: activeSegment.duration },
-      periodName: activeSegment.label,
+      hours,
+      minutes: minutesOut,
+      seconds,
+      scaleFactor,
+      isAnotherHour,
+      segmentInfo: {
+        type: isAnotherHour ? 'another' : 'designed',
+        label: periodName,
+        progress,
+        remaining,
+        duration,
+      },
+      periodName,
     };
   }
 
