@@ -17,6 +17,22 @@ PORT=3000 npm run dev
 
 ## プロジェクト構成
 
+Another Hourリポジトリはモノレポ形式で管理されています。ルートディレクトリには
+アプリケーションやライブラリを収めた`packages/`、ドキュメントをまとめた`docs/`
+の各ディレクトリがあり、開発環境用の`.replit`設定やLerna/npmの構成ファイル
+(`lerna.json`、`package.json`)などの共通設定が置かれています。
+以下は概要図です。
+
+```
+another-hour/
+├── packages/             -- 各パッケージ(アプリ・ライブラリ)
+├── docs/                 -- プロジェクトのドキュメント
+├── .replit               -- Replit環境設定
+├── lerna.json            -- Lerna (npm workspaces) 設定
+├── package.json          -- ルートのスクリプトとワークスペース定義
+└── README.md             -- プロジェクト概要
+```
+
 ## What is Another Hour?
 
 Another Hourは、時間の流れ方を個人がデザインできる革新的なプラットフォームです。
