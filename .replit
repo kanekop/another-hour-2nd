@@ -22,6 +22,11 @@ externalPort = 3000
 localPort = 5000
 externalPort = 80
 
+[deployment]
+run = ["sh", "-c", "cd packages/scheduler-web && npm start"]
+deploymentTarget = "cloudrun"
+ignorePorts = false
+
 [nix]
 channel = "stable-24_05"
 
