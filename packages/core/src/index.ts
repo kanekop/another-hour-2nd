@@ -1,10 +1,10 @@
 /**
  * Another Hour Core - Main exports
- * 
+ *
  * This module provides the core time calculation functionality and type definitions
  * for the Another Hour project. It enables custom time scaling and clock calculations
  * based on user-defined time design patterns.
- * 
+ *
  * @module AnotherHourCore
  * @version 1.0.0
  */
@@ -26,12 +26,6 @@ export * from './types/time-modes';
 export const timeDesignManager = {
     initialize: () => console.log('TimeDesignManager initialized successfully'),
     // Add other methods as needed
-};// 既存のエクスポート
-export { getCustomAhAngles } from './time-calculation.js';
+};
 
-// Time Design Modes の新しいエクスポート
-export { TimeDesignManager } from './TimeDesignManager.js';
-export { BaseMode } from './modes/BaseMode.js';
-export { ClassicMode } from './modes/ClassicMode.js';
-
-// 注: 型定義は別途 .d.ts ファイルで提供
+// Note: Type definitions are provided in accompanying .d.ts files
