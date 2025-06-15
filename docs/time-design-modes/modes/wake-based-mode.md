@@ -230,25 +230,10 @@ function calculateWakeBasedScale(wakeTime, ahDuration) {
 }
 ```
 
-### 日付変更の処理
+### 日付の扱い
 
-Wake-Based Modeでは、日付の変更は起床時刻に基づきます：
-
-```javascript
-function getWakeBasedDate(realDate, wakeTime) {
-  const wakeHour = wakeTime.getHours();
-  const currentHour = realDate.getHours();
-  
-  // 起床時刻より前の場合は「前日」として扱う
-  if (currentHour < wakeHour) {
-    const adjustedDate = new Date(realDate);
-    adjustedDate.setDate(adjustedDate.getDate() - 1);
-    return adjustedDate;
-  }
-  
-  return realDate;
-}
-```
+Wake-Based Mode でも1日の区切りは通常どおり`00:00`です。起床時刻は「Designed Day」
+の開始を示すだけで、日付そのものは深夜に切り替わります。
 
 ## 📱 UI/UX Guidelines
 
