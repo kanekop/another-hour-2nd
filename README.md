@@ -20,6 +20,7 @@ Another Hourは、時間の流れ方を個人がデザインできる革新的�
 ## Core Concepts
 
 ### Time Design Modes (NEW! 🎨)
+- **Classic Mode**: The original Another Hour experience with a single, continuous scaled day.
 - **Core Time Mode** - 活動時間の前後にAnother Hourを配置
 - **Wake-Based Mode** - 起床時刻から始まる動的な24時間
 - **Solar Mode** - 日の出・日の入りに同期した自然時間
@@ -63,17 +64,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Project Structure
 
 A detailed guide to the project's file and directory structure can be found in [`/docs/project-structure.md`](./docs/project-structure.md).
-
-## 🚀 Getting Started
-
-1.  Clone the repository.
-2.  Run `npm install` to install dependencies.
-
-## 🎨 Time Design Modes
-
-- **Classic Mode**: The original Another Hour experience with a single, continuous scaled day.
-- **Core Time Mode**: Define your productive hours, with Another Hour periods filling the rest of the day.
-- **Wake-Based Mode**: Your day starts when you do. Another Hour begins after a set period of activity.
-- **Solar Mode**: Synchronize your time with the natural cycles of the sun, based on your location.
-
-For more detailed technical specifications and implementation guides, please see the documents in the `/docs/time-design-modes` directory. 
