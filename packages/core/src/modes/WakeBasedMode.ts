@@ -1,19 +1,19 @@
-import { Mode } from './Mode';
+import { BaseMode } from './BaseMode.js';
 
-export class WakeBasedMode extends Mode {
+export class WakeBasedMode extends BaseMode {
     private wakeTime: number;
     private anotherHourDuration: number;
     private maxScaleFactor: number;
     private todayWakeTime: string | null;
     private defaultWakeTime: string;
 
-    constructor(wakeTime: string, anotherHourDuration: number, maxScaleFactor: number, defaultWakeTime: string) {
-        super();
-        this.wakeTime = this.convertTimeStrToMinutes(wakeTime);
-        this.anotherHourDuration = anotherHourDuration;
-        this.maxScaleFactor = maxScaleFactor;
+    constructor(config: any) {
+        super(config);
+        this.wakeTime = this.convertTimeStrToMinutes(config.parameters?.wakeTime || '07:00');
+        this.anotherHourDuration = config.parameters?.anotherHourDuration || 60;
+        this.maxScaleFactor = config.parameters?.maxScaleFactor || 3.0;
         this.todayWakeTime = null;
-        this.defaultWakeTime = defaultWakeTime;
+        this.defaultWakeTime = config.parameters?.defaultWakeTime || '07:00';
     }
 
     private convertTimeStrToMinutes(timeStr: string): number {

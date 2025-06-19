@@ -5,14 +5,14 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": [
       "jest",
       "node"
     ]
   },
   "include": [
-    "src/**/*",
-    "tests/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",

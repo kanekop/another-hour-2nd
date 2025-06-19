@@ -6,6 +6,12 @@ import { TimeDesignMode, UserSettings, DEFAULT_VALUES } from './types/time-modes
  * シングルトンパターンで実装
  */
 export class TimeDesignManager {
+    private static instance: TimeDesignManager;
+    private modes: Map<string, typeof BaseMode> = new Map();
+    private currentMode: BaseMode | null = null;
+    private listeners: Map<string, Set<Function>> = new Map();
+    private userSettings!: UserSettings;
+
     constructor() {
         if (TimeDesignManager.instance) {
             return TimeDesignManager.instance;
@@ -35,7 +41,7 @@ export class TimeDesignManager {
      * @param {string} modeName - モード名
      * @param {typeof BaseMode} ModeClass - モードクラス
      */
-    registerMode(modeName, ModeClass) {
+    registerMode(modeName: string, ModeClass: typeof BaseMode): void {
         if (!(ModeClass.prototype instanceof BaseMode)) {
             throw new Error('Mode class must extend BaseMode');
         }
@@ -57,7 +63,7 @@ export class TimeDesignManager {
      * @param {string} modeName - モード名
      * @param {Object} config - モード設定
      */
-    setMode(modeName, config) {
+    setMode(modeName: string, config: any = {}): void {
         const ModeClass = this.modes.get(modeName);
 
         if (!ModeClass) {
@@ -82,7 +88,7 @@ export class TimeDesignManager {
         this.currentMode = new ModeClass(modeConfig);
 
         // ユーザーの優先モードを更新
-        this.userSettings.preferredMode = modeName;
+        this.userSettings.preferredMode = modeName as any;
         this.saveUserSettings();
 
         // 設定を保存
@@ -101,7 +107,7 @@ export class TimeDesignManager {
      * 現在のモードを取得
      * @returns {BaseMode|null}
      */
-    getCurrentMode() {
+    getCurrentMode(): BaseMode | null {
         return this.currentMode;
     }
 
@@ -110,7 +116,7 @@ export class TimeDesignManager {
      * @param {Date} realTime - 実時間
      * @returns {Date}
      */
-    calculateAnotherHourTime(realTime = new Date()) {
+    calculateAnotherHourTime(realTime: Date = new Date()): Date {
         if (!this.currentMode) {
             throw new Error('No mode is currently set');
         }
@@ -123,7 +129,7 @@ export class TimeDesignManager {
      * @param {Date} currentTime
      * @returns {number}
      */
-    getScaleFactor(currentTime = new Date()) {
+    getScaleFactor(currentTime: Date = new Date()): number {
         if (!this.currentMode) {
             return 1.0;
         }
@@ -136,7 +142,7 @@ export class TimeDesignManager {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getCurrentPhase(currentTime = new Date()) {
+    getCurrentPhase(currentTime: Date = new Date()): any {
         if (!this.currentMode) {
             return { name: 'No Mode', progress: 0 };
         }
@@ -149,7 +155,7 @@ export class TimeDesignManager {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getClockAngles(currentTime = new Date()) {
+    getClockAngles(currentTime: Date = new Date()): any {
         if (!this.currentMode) {
             // デフォルトは通常の時計
             const hours = currentTime.getHours();
@@ -171,12 +177,12 @@ export class TimeDesignManager {
      * @param {string} event - イベント名
      * @param {Function} callback - コールバック関数
      */
-    addEventListener(event, callback) {
+    addEventListener(event: string, callback: Function): void {
         if (!this.listeners.has(event)) {
             this.listeners.set(event, new Set());
         }
 
-        this.listeners.get(event).add(callback);
+        this.listeners.get(event)?.add(callback);
     }
 
     /**
@@ -184,9 +190,9 @@ export class TimeDesignManager {
      * @param {string} event
      * @param {Function} callback
      */
-    removeEventListener(event, callback) {
+    removeEventListener(event: string, callback: Function): void {
         if (this.listeners.has(event)) {
-            this.listeners.get(event).delete(callback);
+            this.listeners.get(event)?.delete(callback);
         }
     }
 
@@ -195,9 +201,9 @@ export class TimeDesignManager {
      * @param {string} event
      * @param {Object} data
      */
-    notifyListeners(event, data) {
+    notifyListeners(event: string, data: any): void {
         if (this.listeners.has(event)) {
-            this.listeners.get(event).forEach(callback => {
+            this.listeners.get(event)?.forEach(callback => {
                 try {
                     callback(data);
                 } catch (error) {
@@ -210,22 +216,26 @@ export class TimeDesignManager {
     /**
      * ユーザー設定を保存
      */
-    saveUserSettings() {
-        localStorage.setItem('another-hour-user-settings', JSON.stringify(this.userSettings));
+    saveUserSettings(): void {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('another-hour-user-settings', JSON.stringify(this.userSettings));
+        }
     }
 
     /**
      * ユーザー設定を読み込み
      * @returns {UserSettings}
      */
-    loadUserSettings() {
-        const saved = localStorage.getItem('another-hour-user-settings');
+    loadUserSettings(): UserSettings {
+        if (typeof localStorage !== 'undefined') {
+            const saved = localStorage.getItem('another-hour-user-settings');
 
-        if (saved) {
-            try {
-                return { ...DEFAULT_VALUES.user, ...JSON.parse(saved) };
-            } catch (error) {
-                console.error('Failed to load user settings:', error);
+            if (saved) {
+                try {
+                    return { ...DEFAULT_VALUES.user, ...JSON.parse(saved) };
+                } catch (error) {
+                    console.error('Failed to load user settings:', error);
+                }
             }
         }
 
@@ -236,7 +246,7 @@ export class TimeDesignManager {
      * ユーザー設定を更新
      * @param {Partial<UserSettings>} updates
      */
-    updateUserSettings(updates) {
+    updateUserSettings(updates: Partial<UserSettings>): void {
         this.userSettings = { ...this.userSettings, ...updates };
         this.saveUserSettings();
 
@@ -250,15 +260,17 @@ export class TimeDesignManager {
     /**
      * 設定を保存
      */
-    saveConfiguration() {
+    saveConfiguration(): void {
         if (!this.currentMode) return;
 
         const config = this.currentMode.exportConfig();
         const modeKey = `another-hour-mode-${config.mode}`;
-        localStorage.setItem(modeKey, JSON.stringify(config));
-
-        // 最後に使用したモードも保存
-        localStorage.setItem('another-hour-last-mode', config.mode);
+        
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(modeKey, JSON.stringify(config));
+            // 最後に使用したモードも保存
+            localStorage.setItem('another-hour-last-mode', config.mode);
+        }
     }
 
     /**
@@ -266,15 +278,17 @@ export class TimeDesignManager {
      * @param {string} modeName
      * @returns {Object|null}
      */
-    loadConfiguration(modeName) {
-        const modeKey = `another-hour-mode-${modeName}`;
-        const saved = localStorage.getItem(modeKey);
+    loadConfiguration(modeName: string): any | null {
+        if (typeof localStorage !== 'undefined') {
+            const modeKey = `another-hour-mode-${modeName}`;
+            const saved = localStorage.getItem(modeKey);
 
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (error) {
-                console.error(`Failed to load configuration for ${modeName}:`, error);
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (error) {
+                    console.error(`Failed to load configuration for ${modeName}:`, error);
+                }
             }
         }
 
@@ -284,9 +298,9 @@ export class TimeDesignManager {
     /**
      * 初期化
      */
-    async initialize() {
+    async initialize(): Promise<void> {
         // 最後に使用したモードまたは優先モードを読み込み
-        const lastMode = localStorage.getItem('another-hour-last-mode') || this.userSettings.preferredMode;
+        const lastMode = (typeof localStorage !== 'undefined' ? localStorage.getItem('another-hour-last-mode') : null) || this.userSettings.preferredMode;
         const savedConfig = this.loadConfiguration(lastMode);
 
         if (savedConfig && this.modes.has(savedConfig.mode)) {
@@ -323,7 +337,7 @@ export class TimeDesignManager {
      * @param {string} modeName
      * @returns {Object}
      */
-    getDefaultParameters(modeName) {
+    getDefaultParameters(modeName: string): any {
         switch (modeName) {
             case TimeDesignMode.Classic:
                 return DEFAULT_VALUES.classic;

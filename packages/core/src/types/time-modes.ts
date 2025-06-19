@@ -96,6 +96,7 @@ export type SolarModeConfig = TimeDesignModeConfig<SolarModeParams>;
  */
 export const DEFAULT_VALUES = {
     user: {
+        userId: 'default-user',
         dayStartTime: '00:00',
         defaultTimezone: 'Asia/Tokyo',
         preferredMode: TimeDesignMode.Classic

@@ -6,7 +6,10 @@ import { TimeDesignMode, DEFAULT_VALUES } from '../types/time-modes.js';
  * 従来のDesigned 24 + Another Hour方式
  */
 export class ClassicMode extends BaseMode {
-    constructor(config) {
+    private designed24Duration: number;
+    private dayStartTime: number;
+
+    constructor(config: any) {
         super(config);
 
         // デフォルト値の適用
@@ -31,7 +34,7 @@ export class ClassicMode extends BaseMode {
      * @param {string} timeStr - HH:mm形式
      * @returns {number} 0時からの分数
      */
-    parseDayStartTime(timeStr) {
+    parseDayStartTime(timeStr: string): number {
         const [hours, minutes] = timeStr.split(':').map(Number);
         return hours * 60 + minutes;
     }
@@ -41,7 +44,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} currentTime
      * @returns {number}
      */
-    calculateScaleFactor(currentTime) {
+    calculateScaleFactor(currentTime: Date): number {
         const phase = this.getCurrentPhase(currentTime);
 
         if (phase.name === 'Designed 24') {
@@ -59,7 +62,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} currentTime
      * @returns {Object} { name: string, progress: number }
      */
-    getCurrentPhase(currentTime) {
+    getCurrentPhase(currentTime: Date): any {
         const minutesSinceDayStart = this.getMinutesSinceDayStart(currentTime);
 
         if (minutesSinceDayStart < this.designed24Duration) {
@@ -90,7 +93,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} currentTime
      * @returns {number}
      */
-    getMinutesSinceDayStart(currentTime) {
+    getMinutesSinceDayStart(currentTime: Date): number {
         const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
 
         // dayStartTimeを考慮
@@ -107,7 +110,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} realTime
      * @returns {Date}
      */
-    calculateAnotherHourTime(realTime) {
+    calculateAnotherHourTime(realTime: Date): Date {
         const minutesSinceDayStart = this.getMinutesSinceDayStart(realTime);
         let ahMinutes;
 
@@ -138,7 +141,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} anotherHourTime
      * @returns {Date}
      */
-    convertToRealTime(anotherHourTime) {
+    convertToRealTime(anotherHourTime: Date): Date {
         const ahMinutes = anotherHourTime.getHours() * 60 + anotherHourTime.getMinutes();
         const minutesSinceDayStart = ahMinutes - this.dayStartTime;
 
@@ -169,7 +172,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getDebugInfo(currentTime) {
+    getDebugInfo(currentTime: Date): Record<string, any> {
         const base = super.getDebugInfo(currentTime);
 
         return {
