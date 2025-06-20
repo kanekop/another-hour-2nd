@@ -24,6 +24,7 @@ User:
 ```yaml
 Classic Mode:
   - Designed 24 Duration    # Designed 24の長さ（分単位、例：1380 = 23時間）
+  - Day Start Time          # ユーザー設定から継承（TypeScript実装でサポート）
 ```
 
 ### Core Time Mode（コアタイムモード）
@@ -72,7 +73,13 @@ const effectiveWakeTime = todayWakeTime || defaultWakeTime;
 ```yaml
 Solar Mode:
   - Location                # 位置情報（ユーザーのデフォルトを上書き可能）
+    - city: string          # 都市名
+    - latitude: number      # 緯度
+    - longitude: number     # 経度
   - Day Hours Target        # 昼を何時間にしたいか（デフォルト：12）
+    - 実装での名前:
+      - TypeScript: dayHoursTarget
+      - JavaScript: designedDayHours
   - Seasonal Adjustment     # 季節による微調整（true/false）
   # Night Hours は自動計算（24 - Day Hours）
 ```
