@@ -118,22 +118,29 @@ npm run dev:all
 
 ## 🎨 Time Design Modes（重要概念）
 
+**実装状況**: 全4モードが完全実装済み（TypeScript + JavaScript版）
+
 ### 1. Classic Mode
 - 元祖Another Hour体験
-- 単一の連続スケールされた日
+- Designed 24期間 + Another Hour期間の2段階構成
+- パラメータ: designed24Duration（分）、dayStartTime（時刻）
+- Another Hour期間はカウントダウン表示
 
-### 2. Core Time Mode
-- 活動時間の前後にAnother Hourを配置
-- 集中作業時間の最適化
+### 2. Core Time Mode  
+- 朝・夜のAnother Hour + 中央のCore Time（Designed 24）
+- パラメータ: coreTimeStart, coreTimeEnd, minCoreHours, anotherHourAllocation
+- デフォルト実装差異: TS版(07:00-22:00) vs JS版(09:00-17:00)
 
 ### 3. Wake-Based Mode
-- 起床時刻から深夜までを動的にスケーリング
-- 最後にAnother Hourを設ける
+- 起床時刻ベースの動的時間スケーリング
+- パラメータ: defaultWakeTime, todayWakeTime, anotherHourDuration, maxScaleFactor
+- 毎日の起床時刻記録に対応
 
 ### 4. Solar Mode
-- 日の出・日の入りに同期した自然時間
-- v2.0: 正午を常に12:00 AHに固定
-- 8都市プリセットと昼時間自動調整を搭載
+- 太陽の動きに基づく自然時間
+- 南中時刻を常に12:00に固定、昼の長さをカスタマイズ
+- パラメータ: location, dayHoursTarget/designedDayHours, seasonalAdjustment
+- **注意**: TS実装は固定AH時刻、JS実装は動的計算（仕様準拠）
 
 ## 📁 重要なファイル・ディレクトリ
 
@@ -174,6 +181,14 @@ npm run dev:all
 2. `packages/scheduler-web/public/js/time-design/modes/` でJavaScript版同期
 3. `dev-tools/time-design-test/` でテスト実装
 4. `docs/time-design-modes/modes/` でドキュメント更新
+5. **重要**: TypeScript/JavaScript実装間の整合性を確認
+6. `docs/specifications/` の技術仕様書も更新
+
+#### 実装間整合性チェック
+- パラメータ名の統一確認
+- デフォルト値の整合性確認  
+- 計算ロジックの一致確認
+- 仕様書との齟齬がないか確認
 
 #### UI機能追加・修正
 1. `packages/scheduler-web/public/` 内の対応ファイル編集
@@ -244,6 +259,8 @@ npm run build
 3. レスポンシブ対応
 4. パフォーマンス影響
 5. ドキュメント更新の必要性
+6. **TypeScript/JavaScript実装間の一貫性**
+7. **仕様書との整合性確認**
 
 ### テスト方針
 - ユニットテスト: `packages/core/tests/`
@@ -256,5 +273,6 @@ npm run build
 
 このガイドに関する質問や、プロジェクトに関する問題が発生した場合は、GitHubのIssueを作成してください。
 
-**最終更新**: 2025年6月19日
-**バージョン**: 1.0.0
+**最終更新**: 2025年6月20日
+**バージョン**: 1.1.0
+**更新内容**: Time Design Modes仕様書と実装の整合性確認・修正完了
