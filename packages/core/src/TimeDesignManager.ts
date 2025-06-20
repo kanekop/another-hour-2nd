@@ -1,5 +1,5 @@
 import { BaseMode } from './modes/BaseMode.js';
-import { TimeDesignMode, UserSettings, DEFAULT_VALUES } from './types/time-modes.js';
+import { TimeDesignMode, UserSettings, DEFAULT_VALUES, TimeDesignModeConfig, ModeParameters } from './types/time-modes.js';
 
 /**
  * Time Design Modes の中央管理クラス
@@ -63,7 +63,7 @@ export class TimeDesignManager {
      * @param {string} modeName - モード名
      * @param {Object} config - モード設定
      */
-    setMode(modeName: string, config: any = {}): void {
+    setMode(modeName: string, config: TimeDesignModeConfig = { mode: modeName as TimeDesignMode, parameters: {} as ModeParameters }): void {
         const ModeClass = this.modes.get(modeName);
 
         if (!ModeClass) {
@@ -80,15 +80,15 @@ export class TimeDesignManager {
 
         // 新しいモードを作成（ユーザー設定を含める）
         const modeConfig = {
-            mode: modeName,
-            userSettings: this.userSettings,
-            ...config
+            ...config,
+            mode: modeName as TimeDesignMode,
+            userSettings: this.userSettings
         };
 
         this.currentMode = new ModeClass(modeConfig);
 
         // ユーザーの優先モードを更新
-        this.userSettings.preferredMode = modeName as any;
+        this.userSettings.preferredMode = modeName as TimeDesignMode;
         this.saveUserSettings();
 
         // 設定を保存
@@ -142,7 +142,7 @@ export class TimeDesignManager {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getCurrentPhase(currentTime: Date = new Date()): any {
+    getCurrentPhase(currentTime: Date = new Date()): { name: string; progress: number } {
         if (!this.currentMode) {
             return { name: 'No Mode', progress: 0 };
         }
@@ -155,7 +155,7 @@ export class TimeDesignManager {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getClockAngles(currentTime: Date = new Date()): any {
+    getClockAngles(currentTime: Date = new Date()): { hours: number; minutes: number; seconds: number } {
         if (!this.currentMode) {
             // デフォルトは通常の時計
             const hours = currentTime.getHours();
@@ -201,7 +201,7 @@ export class TimeDesignManager {
      * @param {string} event
      * @param {Object} data
      */
-    notifyListeners(event: string, data: any): void {
+    notifyListeners(event: string, data: unknown): void {
         if (this.listeners.has(event)) {
             this.listeners.get(event)?.forEach(callback => {
                 try {
@@ -278,7 +278,7 @@ export class TimeDesignManager {
      * @param {string} modeName
      * @returns {Object|null}
      */
-    loadConfiguration(modeName: string): any | null {
+    loadConfiguration(modeName: string): TimeDesignModeConfig | null {
         if (typeof localStorage !== 'undefined') {
             const modeKey = `another-hour-mode-${modeName}`;
             const saved = localStorage.getItem(modeKey);
@@ -323,10 +323,11 @@ export class TimeDesignManager {
 
         if (this.modes.has(preferredMode)) {
             const defaults = this.getDefaultParameters(preferredMode);
-            this.setMode(preferredMode, { parameters: defaults });
+            this.setMode(preferredMode, { mode: preferredMode, parameters: defaults });
         } else if (this.modes.has(TimeDesignMode.Classic)) {
             // フォールバック
             this.setMode(TimeDesignMode.Classic, {
+                mode: TimeDesignMode.Classic,
                 parameters: DEFAULT_VALUES.classic
             });
         }
@@ -337,7 +338,7 @@ export class TimeDesignManager {
      * @param {string} modeName
      * @returns {Object}
      */
-    getDefaultParameters(modeName: string): any {
+    getDefaultParameters(modeName: string): ModeParameters {
         switch (modeName) {
             case TimeDesignMode.Classic:
                 return DEFAULT_VALUES.classic;
@@ -348,7 +349,7 @@ export class TimeDesignManager {
             case TimeDesignMode.Solar:
                 return DEFAULT_VALUES.solar;
             default:
-                return {};
+                return DEFAULT_VALUES.classic;
         }
     }
 

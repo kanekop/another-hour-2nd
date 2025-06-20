@@ -1,11 +1,13 @@
+import { TimeDesignModeConfig, ModeParameters } from '../types/time-modes.js';
+
 /**
  * Time Design Mode の基底クラス
  * すべてのモードはこのクラスを継承する
  */
 export class BaseMode {
-    config: any;
+    config: TimeDesignModeConfig;
 
-    constructor(config: any) {
+    constructor(config: TimeDesignModeConfig) {
         if (this.constructor === BaseMode) {
             throw new Error('BaseMode is an abstract class and cannot be instantiated directly');
         }
@@ -119,7 +121,7 @@ export class BaseMode {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getDebugInfo(currentTime: Date): Record<string, any> {
+    getDebugInfo(currentTime: Date): Record<string, unknown> {
         return {
             mode: this.config.mode,
             scaleFactor: this.calculateScaleFactor(currentTime),

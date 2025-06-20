@@ -36,7 +36,7 @@ export type Validator<T> = (value: T) => ValidationResult<T>;
  */
 export interface FieldValidator<T> {
     field: keyof T;
-    validate: (value: any) => boolean;
+    validate: (value: unknown) => boolean;
     errorMessage: string;
     errorCode: string;
 } 

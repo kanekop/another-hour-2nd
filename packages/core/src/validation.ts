@@ -2,12 +2,18 @@ import {
     AHTimeConfig,
     TimeDesignMode,
     ModeParameters,
+    ClassicModeParams,
+    CoreTimeModeParams,
+    WakeBasedModeParams,
+    SolarModeParams
+} from './types/time-modes.js';
+import {
     ValidationResult,
     ValidationError,
     ValidationWarning
-} from './types';
-import { TIME_CONSTANTS } from './types/constants';
-import { InvalidTimeConfigError } from './types/errors';
+} from './types/validation.js';
+import { TIME_CONSTANTS } from './types/constants.js';
+import { InvalidTimeConfigError } from './types/errors.js';
 
 /**
  * Another Hour 時間設定のバリデーション
@@ -63,13 +69,13 @@ export function validateModeParameters(
 ): ValidationResult<ModeParameters> {
     switch (mode) {
         case TimeDesignMode.Classic:
-            return validateClassicMode(params as any);
+            return validateClassicMode(params as ClassicModeParams);
         case TimeDesignMode.CoreTime:
-            return validateCoreTimeMode(params as any);
+            return validateCoreTimeMode(params as CoreTimeModeParams);
         case TimeDesignMode.WakeBased:
-            return validateWakeBasedMode(params as any);
+            return validateWakeBasedMode(params as WakeBasedModeParams);
         case TimeDesignMode.Solar:
-            return validateSolarMode(params as any);
+            return validateSolarMode(params as SolarModeParams);
         default:
             return {
                 isValid: false,
@@ -83,22 +89,22 @@ export function validateModeParameters(
 }
 
 // 各モードのバリデーション関数（実装例）
-function validateClassicMode(params: any): ValidationResult<ModeParameters> {
+function validateClassicMode(params: ClassicModeParams): ValidationResult<ModeParameters> {
     // Classic mode specific validation
     return { isValid: true, value: params };
 }
 
-function validateCoreTimeMode(params: any): ValidationResult<ModeParameters> {
+function validateCoreTimeMode(params: CoreTimeModeParams): ValidationResult<ModeParameters> {
     // Core time mode specific validation
     return { isValid: true, value: params };
 }
 
-function validateWakeBasedMode(params: any): ValidationResult<ModeParameters> {
+function validateWakeBasedMode(params: WakeBasedModeParams): ValidationResult<ModeParameters> {
     // Wake-based mode specific validation
     return { isValid: true, value: params };
 }
 
-function validateSolarMode(params: any): ValidationResult<ModeParameters> {
+function validateSolarMode(params: SolarModeParams): ValidationResult<ModeParameters> {
     // Solar mode specific validation
     return { isValid: true, value: params };
 } 
