@@ -13,9 +13,9 @@ export class SolarMode extends BaseMode {
     seasonalAdjustment: boolean;
 
     // Calculated solar data
-    private todaySolarTimes: SunCalc.GetTimesResult;
-    private yesterdaySolarTimes: SunCalc.GetTimesResult;
-    private tomorrowSolarTimes: SunCalc.GetTimesResult;
+    private todaySolarTimes!: SunCalc.GetTimesResult;
+    private yesterdaySolarTimes!: SunCalc.GetTimesResult;
+    private tomorrowSolarTimes!: SunCalc.GetTimesResult;
 
     constructor(config: any) {
         super(config);
@@ -27,6 +27,13 @@ export class SolarMode extends BaseMode {
         this.seasonalAdjustment = params?.seasonalAdjustment ?? DEFAULT_VALUES.solar.seasonalAdjustment;
 
         // 3日分の太陽情報を計算
+        this.updateSolarTimes();
+    }
+
+    /**
+     * 3日分の太陽時間情報を更新
+     */
+    private updateSolarTimes() {
         const today = new Date();
         const yesterday = new Date();
         yesterday.setDate(today.getDate() - 1);
@@ -38,62 +45,230 @@ export class SolarMode extends BaseMode {
         this.tomorrowSolarTimes = SunCalc.getTimes(tomorrow, this.location.latitude, this.location.longitude);
     }
 
-    validateConfig(): void {
-        super.validateConfig();
-        if (this.dayHoursTarget < 1 || this.dayHoursTarget > 23) {
-            throw new Error('Day Hours Target must be between 1 and 23.');
-        }
-        if (!this.location.latitude || !this.location.longitude) {
-            throw new Error('Location with latitude and longitude is required.');
-        }
-    }
-
-    getCurrentPhase(currentTime: Date): { name: 'Day (AM)' | 'Day (PM)' | 'Night (Part 1)' | 'Night (Part 2)'; progress: number; } {
-        const { sunrise, sunset } = this.todaySolarTimes;
-        const previousSunset = this.yesterdaySolarTimes.sunset;
-
-        if (currentTime >= sunrise && currentTime < sunset) {
-            const solarNoon = this.todaySolarTimes.solarNoon;
-            if (currentTime <= solarNoon) {
-                const phaseDuration = solarNoon.getTime() - sunrise.getTime();
-                const elapsed = currentTime.getTime() - sunrise.getTime();
-                return { name: 'Day (AM)', progress: phaseDuration > 0 ? elapsed / phaseDuration : 1 };
-            } else {
-                const phaseDuration = sunset.getTime() - solarNoon.getTime();
-                const elapsed = currentTime.getTime() - solarNoon.getTime();
-                return { name: 'Day (PM)', progress: phaseDuration > 0 ? elapsed / phaseDuration : 1 };
-            }
-        } else if (currentTime < sunrise) { // Night Part 2 (after midnight)
-            const phaseDuration = sunrise.getTime() - previousSunset.getTime();
-            const elapsed = currentTime.getTime() - previousSunset.getTime();
-            return { name: 'Night (Part 2)', progress: phaseDuration > 0 ? elapsed / phaseDuration : 1 };
-        } else { // Night Part 1 (before midnight)
-            const nextSunrise = this.tomorrowSolarTimes.sunrise;
-            const phaseDuration = nextSunrise.getTime() - sunset.getTime();
-            const elapsed = currentTime.getTime() - sunset.getTime();
-            return { name: 'Night (Part 1)', progress: phaseDuration > 0 ? elapsed / phaseDuration : 1 };
-        }
-    }
-
+    /**
+     * スケールファクターを計算
+     * @param {Date} currentTime
+     * @returns {number}
+     */
     calculateScaleFactor(currentTime: Date): number {
-        const nightHoursTarget = 24 - this.dayHoursTarget;
+        const result = this.calculate(currentTime);
+        return result.scaleFactor;
+    }
 
-        const actualDayDuration = (this.todaySolarTimes.sunset.getTime() - this.todaySolarTimes.sunrise.getTime()) / (1000 * 60 * 60);
-        const actualNightDuration = 24 - actualDayDuration;
-
-        if (actualDayDuration <= 0 || actualNightDuration <= 0) return 1.0;
-
-        const phase = this.getCurrentPhase(currentTime);
-        let scaleFactor = 1.0;
-
-        if (phase.name.startsWith('Day')) {
-            scaleFactor = this.dayHoursTarget / actualDayDuration;
+    /**
+     * 現在のフェーズ（期間）を取得
+     * @param {Date} currentTime - 現在時刻
+     * @returns {Object} { name: string, progress: number }
+     */
+    getCurrentPhase(currentTime: Date): { name: string, progress: number } {
+        const result = this.calculate(currentTime);
+        
+        // 簡易的な進行状況計算
+        const nowTs = currentTime.getTime();
+        const sunriseTs = this.todaySolarTimes.sunrise.getTime();
+        const sunsetTs = this.todaySolarTimes.sunset.getTime();
+        
+        let progress = 0;
+        if (nowTs >= sunriseTs && nowTs < sunsetTs) {
+            // Day phase
+            progress = (nowTs - sunriseTs) / (sunsetTs - sunriseTs);
         } else {
-            scaleFactor = nightHoursTarget / actualNightDuration;
+            // Night phase - simplified calculation
+            if (nowTs < sunriseTs) {
+                const nightStartTs = this.yesterdaySolarTimes.sunset.getTime();
+                progress = (nowTs - nightStartTs) / (sunriseTs - nightStartTs);
+            } else {
+                const nightEndTs = this.tomorrowSolarTimes.sunrise.getTime();
+                progress = (nowTs - sunsetTs) / (nightEndTs - sunsetTs);
+            }
+        }
+        
+        return {
+            name: result.periodName,
+            progress: Math.max(0, Math.min(1, progress))
+        };
+    }
+
+
+    /**
+     * SolarMode用の計算ロジック（JavaScript版互換）
+     */
+    calculate(date: Date, timezone?: string): any {
+        // 太陽時間を更新（日付が変わった可能性を考慮）
+        this.updateSolarTimes();
+
+        const { dayHoursTarget: designedDayHours } = { dayHoursTarget: this.dayHoursTarget };
+
+        // --- 1. Get Critical Timestamps (milliseconds) ---
+        const nowTs = date.getTime();
+        const sunriseTs = this.todaySolarTimes.sunrise.getTime();
+        const sunsetTs = this.todaySolarTimes.sunset.getTime();
+        const solarNoonTs = this.todaySolarTimes.solarNoon.getTime();
+
+        // --- 2. Designed Durations and Anchor Points in AH Minutes ---
+        const designedDayMinutes = designedDayHours * 60;
+        const designedNightMinutes = (24 - designedDayHours) * 60;
+        const ahDayStartMinutes = 12 * 60 - designedDayMinutes / 2;
+        const ahNoonMinutes = 12 * 60;
+        const ahDayEndMinutes = 12 * 60 + designedDayMinutes / 2;
+
+        // --- 3. Determine Phase and Calculate AH Time ---
+        let ahTotalMinutes: number, scaleFactor: number, periodName: string;
+
+        if (nowTs >= sunriseTs && nowTs < sunsetTs) {
+            // DAY
+            periodName = nowTs <= solarNoonTs ? 'Day (Morning)' : 'Day (Afternoon)';
+            const actualDaylightMs = sunsetTs - sunriseTs;
+            scaleFactor = actualDaylightMs > 0 ? (designedDayMinutes * 60 * 1000) / actualDaylightMs : 1;
+
+            if (nowTs <= solarNoonTs) {
+                const realMorningMs = solarNoonTs - sunriseTs;
+                const progress = realMorningMs > 0 ? (nowTs - sunriseTs) / realMorningMs : 0;
+                ahTotalMinutes = ahDayStartMinutes + progress * (designedDayMinutes / 2);
+            } else {
+                const realAfternoonMs = sunsetTs - solarNoonTs;
+                const progress = realAfternoonMs > 0 ? (nowTs - solarNoonTs) / realAfternoonMs : 0;
+                ahTotalMinutes = ahNoonMinutes + progress * (designedDayMinutes / 2);
+            }
+        } else {
+            // NIGHT
+            let nightStartTs: number, nightEndTs: number;
+            if (nowTs < sunriseTs) {
+                periodName = 'Night (Pre-dawn)';
+                nightStartTs = this.yesterdaySolarTimes.sunset.getTime();
+                nightEndTs = sunriseTs;
+            } else { // nowTs >= sunsetTs
+                periodName = 'Night (Evening)';
+                nightStartTs = sunsetTs;
+                nightEndTs = this.tomorrowSolarTimes.sunrise.getTime();
+            }
+
+            const actualNightMs = nightEndTs - nightStartTs;
+            scaleFactor = actualNightMs > 0 ? (designedNightMinutes * 60 * 1000) / actualNightMs : 1;
+
+            const elapsedRealNightMs = nowTs - nightStartTs;
+            const progress = actualNightMs > 0 ? elapsedRealNightMs / actualNightMs : 0;
+
+            ahTotalMinutes = ahDayEndMinutes + progress * designedNightMinutes;
         }
 
-        // Apply limits
-        return Math.max(0.1, Math.min(scaleFactor, 10.0));
+        ahTotalMinutes = (ahTotalMinutes % 1440 + 1440) % 1440;
+
+        const hours = Math.floor(ahTotalMinutes / 60);
+        const minutes = Math.floor(ahTotalMinutes % 60);
+        const seconds = Math.floor((ahTotalMinutes * 60) % 60);
+
+        return {
+            hours, minutes, seconds, scaleFactor,
+            isAnotherHour: false,
+            segmentInfo: { label: periodName },
+            periodName,
+        };
+    }
+
+    /**
+     * タイムライン用のセグメント情報を取得
+     */
+    getSegments() {
+        const sunriseMinutes = this.todaySolarTimes.sunrise.getHours() * 60 + this.todaySolarTimes.sunrise.getMinutes();
+        const sunsetMinutes = this.todaySolarTimes.sunset.getHours() * 60 + this.todaySolarTimes.sunset.getMinutes();
+
+        const segments = [];
+
+        // Night (midnight to sunrise)
+        if (sunriseMinutes > 0) {
+            segments.push({
+                type: 'night',
+                label: 'Night',
+                shortLabel: 'Night',
+                startMinutes: 0,
+                durationMinutes: sunriseMinutes,
+                style: {
+                    background: 'linear-gradient(to right, #1A237E, #283593)'
+                }
+            });
+        }
+
+        // Day (sunrise to sunset)
+        segments.push({
+            type: 'day',
+            label: 'Day',
+            shortLabel: 'Day',
+            startMinutes: sunriseMinutes,
+            durationMinutes: sunsetMinutes - sunriseMinutes,
+            style: {
+                background: 'linear-gradient(to right, #FFB300, #FFD600, #FFB300)'
+            }
+        });
+
+        // Night (sunset to midnight)
+        if (sunsetMinutes < 24 * 60) {
+            segments.push({
+                type: 'night',
+                label: 'Night',
+                shortLabel: 'Night',
+                startMinutes: sunsetMinutes,
+                durationMinutes: 24 * 60 - sunsetMinutes,
+                style: {
+                    background: 'linear-gradient(to right, #283593, #1A237E)'
+                }
+            });
+        }
+
+        return segments;
+    }
+
+    /**
+     * UI設定フォーム用のデータを取得
+     */
+    getConfigUI() {
+        const sunTimes = {
+            sunrise: this.todaySolarTimes.sunrise,
+            solarNoon: this.todaySolarTimes.solarNoon,
+            sunset: this.todaySolarTimes.sunset,
+            daylightMinutes: (this.todaySolarTimes.sunset.getTime() - this.todaySolarTimes.sunrise.getTime()) / (1000 * 60)
+        };
+
+        return {
+            location: this.location,
+            dayHoursTarget: this.dayHoursTarget,
+            seasonalAdjustment: this.seasonalAdjustment,
+            solarInfo: sunTimes
+        };
+    }
+
+    /**
+     * UI設定フォームからデータを収集
+     */
+    collectConfigFromUI() {
+        return {
+            location: this.location,
+            dayHoursTarget: this.dayHoursTarget,
+            seasonalAdjustment: this.seasonalAdjustment
+        };
+    }
+
+    /**
+     * 設定の検証
+     */
+    validateConfig() {
+        super.validateConfig();
+
+        if (!this.location) {
+            throw new Error('Location is required for Solar Mode');
+        }
+
+        if (this.location.latitude < -90 || this.location.latitude > 90) {
+            throw new Error('Latitude must be between -90 and 90 degrees');
+        }
+
+        if (this.location.longitude < -180 || this.location.longitude > 180) {
+            throw new Error('Longitude must be between -180 and 180 degrees');
+        }
+
+        if (this.dayHoursTarget < 1 || this.dayHoursTarget > 23) {
+            throw new Error('Day hours target must be between 1 and 23');
+        }
     }
 
     calculateAnotherHourTime(realTime: Date): Date {
@@ -121,6 +296,9 @@ export class SolarMode extends BaseMode {
             case 'Night (Part 2)': // Midnight -> Sunrise
                 // This wraps around midnight in AH time
                 ahTotalMinutes = 0 + progress * (AH_SUNRISE - 0);
+                break;
+            default:
+                ahTotalMinutes = 12 * 60; // Default to Solar Noon
                 break;
         }
 

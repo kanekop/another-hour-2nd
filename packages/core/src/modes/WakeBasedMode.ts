@@ -26,7 +26,239 @@ export class WakeBasedMode extends BaseMode {
         return hours * 60 + minutes;
     }
 
+    /**
+     * 現在時刻を深夜0時からの分数に変換
+     */
+    private getMinutesSinceMidnight(date: Date): number {
+        return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
+    }
+
+    /**
+     * セグメント構築
+     */
+    private buildSegments() {
+        const wakeTimeMinutes = this.wakeTime;
+        const ahDuration = this.anotherHourDuration;
+
+        // Total available time from wake-up to midnight.
+        const totalActivityMinutes = 1440 - wakeTimeMinutes;
+
+        // The real-time duration available for the "Designed" period.
+        const designedRealDuration = totalActivityMinutes - ahDuration;
+
+        if (designedRealDuration <= 0) return [];
+
+        // The scale factor compresses the totalActivityMinutes into the designedRealDuration.
+        const scaleFactor = totalActivityMinutes / designedRealDuration;
+
+        const anotherHourStart = 1440 - ahDuration;
+
+        const segments = [
+            {
+                type: 'another',
+                startTime: 0,
+                endTime: wakeTimeMinutes,
+                duration: wakeTimeMinutes,
+                scaleFactor: 1.0,
+                label: 'Night'
+            },
+            {
+                type: 'designed',
+                startTime: wakeTimeMinutes,
+                endTime: anotherHourStart,
+                duration: designedRealDuration,
+                scaleFactor: scaleFactor,
+                label: 'Designed Day'
+            },
+            {
+                type: 'another',
+                startTime: anotherHourStart,
+                endTime: 1440,
+                duration: ahDuration,
+                scaleFactor: 1.0,
+                label: 'Another Hour'
+            }
+        ];
+
+        return segments.filter(s => s.duration > 0);
+    }
+
+    /**
+     * アクティブセグメントを見つける
+     */
+    private findActiveSegment(currentMinutes: number) {
+        const segments = this.buildSegments();
+        return segments.find(segment =>
+            currentMinutes >= segment.startTime && currentMinutes < segment.endTime
+        );
+    }
+
+    /**
+     * 進行状況を計算
+     */
+    private calculateProgress(currentMinutes: number, segment: any) {
+        if (!segment) return { progress: 0, remaining: 0, duration: 0 };
+
+        const elapsed = currentMinutes - segment.startTime;
+        const progress = (elapsed / segment.duration);
+        const remaining = segment.duration - elapsed;
+
+        return {
+            progress: Math.max(0, Math.min(1, progress)),
+            remaining: Math.max(0, remaining),
+            duration: segment.duration
+        };
+    }
+
+
+    /**
+     * 現在のフェーズ（期間）を取得
+     * @param {Date} currentTime - 現在時刻
+     * @returns {Object} { name: string, progress: number }
+     */
     getCurrentPhase(currentTime: Date): { name: 'Night' | 'Designed Day' | 'Another Hour'; progress: number; } {
+        const realMinutes = this.getMinutesSinceMidnight(currentTime);
+        const activeSegment = this.findActiveSegment(realMinutes);
+        
+        if (!activeSegment) {
+            return { name: 'Night', progress: 0 };
+        }
+
+        const { progress } = this.calculateProgress(realMinutes, activeSegment);
+        
+        return {
+            name: activeSegment.label as 'Night' | 'Designed Day' | 'Another Hour',
+            progress
+        };
+    }
+
+
+
+    /**
+     * WakeBasedMode用の計算ロジック（JavaScript版互換）
+     */
+    calculate(date: Date, timezone?: string): any {
+        const realMinutes = this.getMinutesSinceMidnight(date);
+        const segments = this.buildSegments();
+        const activeSegment = this.findActiveSegment(realMinutes);
+        const wakeTimeMinutes = this.wakeTime;
+
+        if (!activeSegment) {
+            return {
+                hours: date.getHours(),
+                minutes: date.getMinutes(),
+                seconds: date.getSeconds(),
+                scaleFactor: 1,
+                isAnotherHour: true,
+                segmentInfo: { type: 'another', label: 'Error' }
+            };
+        }
+
+        let displayHours: number, displayMinutes: number, displaySeconds: number;
+        const { progress, remaining, duration } = this.calculateProgress(realMinutes, activeSegment);
+
+        if (activeSegment.type === 'another') {
+            const remainingTotalSeconds = remaining * 60;
+            displayHours = Math.floor(remainingTotalSeconds / 3600);
+            displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
+            displaySeconds = Math.floor(remainingTotalSeconds % 60);
+        } else { // 'designed'
+            // Elapsed real time since wake-up.
+            const elapsedRealMinutesInPeriod = realMinutes - wakeTimeMinutes;
+            // The scaled elapsed time since wake-up (starts from 0).
+            const scaledElapsedMinutes = elapsedRealMinutesInPeriod * activeSegment.scaleFactor;
+            const scaledElapsedSeconds = scaledElapsedMinutes * 60 + date.getSeconds() * activeSegment.scaleFactor;
+
+            // The display time is the wake time offset by the scaled elapsed time.
+            const wakeTimeSeconds = wakeTimeMinutes * 60;
+            const displayTotalSeconds = wakeTimeSeconds + scaledElapsedSeconds;
+
+            displayHours = Math.floor(displayTotalSeconds / 3600) % 24;
+            displayMinutes = Math.floor((displayTotalSeconds % 3600) / 60);
+            displaySeconds = Math.floor(displayTotalSeconds % 60);
+        }
+
+        const totalActivityMinutes = 1440 - wakeTimeMinutes;
+        const segmentDuration = activeSegment.label === 'Designed Day' ? totalActivityMinutes : activeSegment.duration;
+
+        return {
+            hours: displayHours,
+            minutes: displayMinutes,
+            seconds: displaySeconds,
+            scaleFactor: activeSegment.scaleFactor,
+            isAnotherHour: activeSegment.type === 'another',
+            segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: segmentDuration },
+            periodName: activeSegment.label,
+        };
+    }
+
+    /**
+     * タイムライン用のセグメント情報を取得
+     */
+    getSegments() {
+        const segments = this.buildSegments();
+
+        return segments.map(segment => ({
+            type: segment.type,
+            label: segment.label,
+            shortLabel: segment.type === 'designed' ? 'Day' : segment.label === 'Night' ? 'Night' : 'AH',
+            startMinutes: segment.startTime,
+            durationMinutes: segment.duration,
+            scaleFactor: segment.scaleFactor
+        }));
+    }
+
+    /**
+     * UI設定フォーム用のデータを取得
+     */
+    getConfigUI() {
+        return {
+            defaultWakeTime: this.defaultWakeTime,
+            todayWakeTime: this.todayWakeTime,
+            anotherHourDuration: this.anotherHourDuration,
+            maxScaleFactor: this.maxScaleFactor,
+            summary: {
+                wakeTime: this.wakeTime,
+                totalActivity: 1440 - this.wakeTime,
+                designedDuration: (1440 - this.wakeTime) - this.anotherHourDuration,
+                scaleFactor: (1440 - this.wakeTime) / ((1440 - this.wakeTime) - this.anotherHourDuration)
+            }
+        };
+    }
+
+    /**
+     * UI設定フォームからデータを収集
+     */
+    collectConfigFromUI() {
+        return {
+            defaultWakeTime: this.defaultWakeTime,
+            todayWakeTime: this.todayWakeTime,
+            anotherHourDuration: this.anotherHourDuration,
+            maxScaleFactor: this.maxScaleFactor
+        };
+    }
+
+    /**
+     * 設定の検証
+     */
+    validateConfig() {
+        super.validateConfig();
+
+        if (this.anotherHourDuration < 0 || this.anotherHourDuration > 720) {
+            throw new Error('Another Hour duration must be between 0 and 720 minutes');
+        }
+
+        if (this.maxScaleFactor < 1.0 || this.maxScaleFactor > 5.0) {
+            throw new Error('Max scale factor must be between 1.0 and 5.0');
+        }
+
+        const activityMinutes = 1440 - this.wakeTime;
+        if (this.anotherHourDuration >= activityMinutes) {
+            throw new Error('Another Hour duration must be less than the total activity time');
+        }
+    }
+
+    getCurrentPhaseOld(currentTime: Date): { name: 'Night' | 'Designed Day' | 'Another Hour'; progress: number; } {
         const realMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
         const anotherHourStart = 1440 - this.anotherHourDuration;
 
