@@ -118,13 +118,13 @@ npm run dev:all
 
 ## 🎨 Time Design Modes（重要概念）
 
-**実装状況**: 全4モードが完全実装済み（TypeScript + JavaScript版）
+**実装状況**: 全4モードが完全実装済み（TypeScript + JavaScript版、重複メソッド削除完了）
 
 ### 1. Classic Mode
 - 元祖Another Hour体験
 - Designed 24期間 + Another Hour期間の2段階構成
 - パラメータ: designed24Duration（分）、dayStartTime（時刻）
-- Another Hour期間はカウントダウン表示
+- Another Hour期間は0:00:00からのカウントアップ表示
 
 ### 2. Core Time Mode  
 - 朝・夜のAnother Hour + 中央のCore Time（Designed 24）
@@ -135,12 +135,13 @@ npm run dev:all
 - 起床時刻ベースの動的時間スケーリング
 - パラメータ: defaultWakeTime, todayWakeTime, anotherHourDuration, maxScaleFactor
 - 毎日の起床時刻記録に対応
+- **最新**: 重複メソッド削除、詳細実装版に統一
 
 ### 4. Solar Mode
 - 太陽の動きに基づく自然時間
 - 南中時刻を常に12:00に固定、昼の長さをカスタマイズ
 - パラメータ: location, dayHoursTarget/designedDayHours, seasonalAdjustment
-- **注意**: TS実装は固定AH時刻、JS実装は動的計算（仕様準拠）
+- **最新**: 不完全なコードブロック削除、構文エラー修正完了
 
 ## 📁 重要なファイル・ディレクトリ
 
@@ -156,9 +157,11 @@ npm run dev:all
 - `package.json` - ルートパッケージ設定
 
 ### ドキュメント
-- `docs/time-design-modes/` - Time Design仕様
+- `docs/time-design-modes/overview.md` - Time Design概念と設計哲学（概要）
+- `docs/specifications/time-design-modes-data-spec.md` - 技術仕様書（開発者向け）
+- `docs/time-design-modes/` - Time Design詳細仕様
 - `docs/applications/` - アプリケーション仕様
-- `docs/specifications/` - 技術仕様書
+- `docs/specifications/` - 個別モード技術仕様書
 - `DEVELOPMENT.md` - 開発ガイド
 
 ## 🔧 開発時の注意事項
@@ -189,6 +192,7 @@ npm run dev:all
 - デフォルト値の整合性確認  
 - 計算ロジックの一致確認
 - 仕様書との齟齬がないか確認
+- **重複メソッドの存在チェック**（削除済みだが今後の追加時に注意）
 
 #### UI機能追加・修正
 1. `packages/scheduler-web/public/` 内の対応ファイル編集
@@ -274,5 +278,9 @@ npm run build
 このガイドに関する質問や、プロジェクトに関する問題が発生した場合は、GitHubのIssueを作成してください。
 
 **最終更新**: 2025年6月20日
-**バージョン**: 1.1.0
-**更新内容**: Time Design Modes仕様書と実装の整合性確認・修正完了
+**バージョン**: 1.2.0
+**更新内容**: 
+- Core パッケージの重複メソッド削除完了
+- Time Design Modes実装の整理・最適化
+- ドキュメント構造の明確化（概要 vs 技術仕様）
+- WakeBasedMode/SolarModeの構文エラー修正

@@ -38,19 +38,23 @@ export class BaseMode {
   getMinutesSinceMidnight(date, timezone) {
     // Use moment.js if available, otherwise fallback to basic calculation
     if (typeof moment !== 'undefined' && typeof moment.tz !== 'undefined') {
-      // Use moment.tz to interpret the date directly in the target timezone
-      const localTime = moment.tz(date, timezone);
-
-      // Add a validity check for robustness
+      // 正しい方法: Dateオブジェクトをmomentオブジェクトに変換してからタイムゾーンを適用
+      const localTime = moment(date).tz(timezone);
+      
       if (!localTime.isValid()) {
-        console.error("Could not create a valid moment object.", { date, timezone });
-        return NaN;
+        console.error(`Invalid date or timezone: date=${date}, timezone=${timezone}`);
+        // Fallback to basic calculation
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        return hours * 60 + minutes;
       }
-      return localTime.hours() * 60 + localTime.minutes() + localTime.seconds() / 60 + localTime.milliseconds() / 60000;
+      
+      return localTime.hours() * 60 + localTime.minutes();
     } else {
-      // Fallback: convert to specified timezone
-      const localDate = new Date(date.toLocaleString("en-US", { timeZone: timezone }));
-      return localDate.getHours() * 60 + localDate.getMinutes() + localDate.getSeconds() / 60 + localDate.getMilliseconds() / 60000;
+      // Fallback to basic calculation
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      return hours * 60 + minutes;
     }
   }
 

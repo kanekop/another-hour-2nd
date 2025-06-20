@@ -1,5 +1,4 @@
 import {
-    AHTimeConfig,
     TimeDesignMode,
     ModeParameters,
     ClassicModeParams,
@@ -16,45 +15,36 @@ import { TIME_CONSTANTS } from './types/constants.js';
 import { InvalidTimeConfigError } from './types/errors.js';
 
 /**
- * Another Hour 時間設定のバリデーション
+ * Classic Mode パラメータのバリデーション
  */
-export function validateTimeConfig(config: AHTimeConfig): ValidationResult<AHTimeConfig> {
+export function validateClassicTimeConfig(designed24Duration: number): ValidationResult<{ designed24Duration: number }> {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
     // designed24Duration のバリデーション
-    if (config.designed24Duration <= 0) {
+    if (designed24Duration <= 0) {
         errors.push({
             field: 'designed24Duration',
             message: 'Designed 24 duration must be greater than 0',
             code: 'INVALID_DURATION_NEGATIVE'
         });
-    } else if (config.designed24Duration > TIME_CONSTANTS.MAX_DESIGNED_24_DURATION) {
+    } else if (designed24Duration > TIME_CONSTANTS.MAX_DESIGNED_24_DURATION) {
         errors.push({
             field: 'designed24Duration',
             message: `Designed 24 duration cannot exceed ${TIME_CONSTANTS.MAX_DESIGNED_24_DURATION} hours`,
             code: 'INVALID_DURATION_TOO_LONG'
         });
-    } else if (config.designed24Duration < TIME_CONSTANTS.MIN_DESIGNED_24_DURATION) {
+    } else if (designed24Duration < TIME_CONSTANTS.MIN_DESIGNED_24_DURATION) {
         warnings.push({
             field: 'designed24Duration',
-            message: `Very short Designed 24 duration (${config.designed24Duration} hours)`,
+            message: `Very short Designed 24 duration (${designed24Duration} hours)`,
             suggestion: 'Consider using a longer duration for better time scaling'
-        });
-    }
-
-    // d24StartTime のバリデーション
-    if (!(config.d24StartTime instanceof Date) || isNaN(config.d24StartTime.getTime())) {
-        errors.push({
-            field: 'd24StartTime',
-            message: 'Invalid start time',
-            code: 'INVALID_START_TIME'
         });
     }
 
     return {
         isValid: errors.length === 0,
-        value: errors.length === 0 ? config : undefined,
+        value: errors.length === 0 ? { designed24Duration } : undefined,
         errors: errors.length > 0 ? errors : undefined,
         warnings: warnings.length > 0 ? warnings : undefined
     };
@@ -88,23 +78,168 @@ export function validateModeParameters(
     }
 }
 
-// 各モードのバリデーション関数（実装例）
+// 各モードのバリデーション関数
 function validateClassicMode(params: ClassicModeParams): ValidationResult<ModeParameters> {
-    // Classic mode specific validation
-    return { isValid: true, value: params };
+    const errors: ValidationError[] = [];
+    
+    if (typeof params.designed24Duration !== 'number' || isNaN(params.designed24Duration)) {
+        errors.push({
+            field: 'designed24Duration',
+            message: 'Duration must be a number.',
+            code: 'INVALID_TYPE'
+        });
+    } else if (params.designed24Duration < 1 || params.designed24Duration > 1440) {
+        errors.push({
+            field: 'designed24Duration',
+            message: 'Duration must be between 1 and 1440 minutes.',
+            code: 'INVALID_RANGE'
+        });
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        value: errors.length === 0 ? params : undefined,
+        errors: errors.length > 0 ? errors : undefined
+    };
 }
 
 function validateCoreTimeMode(params: CoreTimeModeParams): ValidationResult<ModeParameters> {
-    // Core time mode specific validation
-    return { isValid: true, value: params };
+    const errors: ValidationError[] = [];
+    
+    // 時刻フォーマットの検証
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(params.coreTimeStart)) {
+        errors.push({
+            field: 'coreTimeStart',
+            message: 'Core time start must be in HH:MM format.',
+            code: 'INVALID_TIME_FORMAT'
+        });
+    }
+    if (!timeRegex.test(params.coreTimeEnd)) {
+        errors.push({
+            field: 'coreTimeEnd',
+            message: 'Core time end must be in HH:MM format.',
+            code: 'INVALID_TIME_FORMAT'
+        });
+    }
+    
+    // 時刻の論理検証
+    if (timeRegex.test(params.coreTimeStart) && timeRegex.test(params.coreTimeEnd)) {
+        const [startH, startM] = params.coreTimeStart.split(':').map(Number);
+        const [endH, endM] = params.coreTimeEnd.split(':').map(Number);
+        const startMinutes = startH * 60 + startM;
+        const endMinutes = endH * 60 + endM;
+        
+        if (startMinutes >= endMinutes) {
+            errors.push({
+                field: 'coreTimeEnd',
+                message: 'Core time end must be after core time start.',
+                code: 'INVALID_TIME_ORDER'
+            });
+        }
+    }
+    
+    // minCoreHours の検証
+    if (typeof params.minCoreHours !== 'number' || params.minCoreHours < 1 || params.minCoreHours > 23) {
+        errors.push({
+            field: 'minCoreHours',
+            message: 'Minimum core hours must be between 1 and 23.',
+            code: 'INVALID_RANGE'
+        });
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        value: errors.length === 0 ? params : undefined,
+        errors: errors.length > 0 ? errors : undefined
+    };
 }
 
 function validateWakeBasedMode(params: WakeBasedModeParams): ValidationResult<ModeParameters> {
-    // Wake-based mode specific validation
-    return { isValid: true, value: params };
+    const errors: ValidationError[] = [];
+    
+    // 時刻フォーマットの検証
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(params.defaultWakeTime)) {
+        errors.push({
+            field: 'defaultWakeTime',
+            message: 'Default wake time must be in HH:MM format.',
+            code: 'INVALID_TIME_FORMAT'
+        });
+    }
+    
+    if (params.todayWakeTime && !timeRegex.test(params.todayWakeTime)) {
+        errors.push({
+            field: 'todayWakeTime',
+            message: 'Today wake time must be in HH:MM format.',
+            code: 'INVALID_TIME_FORMAT'
+        });
+    }
+    
+    // anotherHourDuration の検証
+    if (typeof params.anotherHourDuration !== 'number' || 
+        params.anotherHourDuration < 0 || params.anotherHourDuration > 720) {
+        errors.push({
+            field: 'anotherHourDuration',
+            message: 'Another Hour duration must be between 0 and 720 minutes.',
+            code: 'INVALID_RANGE'
+        });
+    }
+    
+    // maxScaleFactor の検証
+    if (typeof params.maxScaleFactor !== 'number' || 
+        params.maxScaleFactor < 1.0 || params.maxScaleFactor > 5.0) {
+        errors.push({
+            field: 'maxScaleFactor',
+            message: 'Maximum scale factor must be between 1.0 and 5.0.',
+            code: 'INVALID_RANGE'
+        });
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        value: errors.length === 0 ? params : undefined,
+        errors: errors.length > 0 ? errors : undefined
+    };
 }
 
 function validateSolarMode(params: SolarModeParams): ValidationResult<ModeParameters> {
-    // Solar mode specific validation
-    return { isValid: true, value: params };
+    const errors: ValidationError[] = [];
+    
+    // dayHoursTarget の検証
+    if (typeof params.dayHoursTarget !== 'number' || 
+        params.dayHoursTarget < 1 || params.dayHoursTarget > 23) {
+        errors.push({
+            field: 'dayHoursTarget',
+            message: 'Day hours target must be between 1 and 23.',
+            code: 'INVALID_RANGE'
+        });
+    }
+    
+    // location の検証（オプショナル）
+    if (params.location) {
+        if (typeof params.location.latitude !== 'number' || 
+            params.location.latitude < -90 || params.location.latitude > 90) {
+            errors.push({
+                field: 'location.latitude',
+                message: 'Latitude must be between -90 and 90 degrees.',
+                code: 'INVALID_RANGE'
+            });
+        }
+        
+        if (typeof params.location.longitude !== 'number' || 
+            params.location.longitude < -180 || params.location.longitude > 180) {
+            errors.push({
+                field: 'location.longitude',
+                message: 'Longitude must be between -180 and 180 degrees.',
+                code: 'INVALID_RANGE'
+            });
+        }
+    }
+    
+    return {
+        isValid: errors.length === 0,
+        value: errors.length === 0 ? params : undefined,
+        errors: errors.length > 0 ? errors : undefined
+    };
 } 

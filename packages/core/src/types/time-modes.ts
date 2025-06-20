@@ -36,6 +36,7 @@ export interface TimeDesignModeConfig<T = ModeParameters> {
     parameters: T;
     name?: string;        // ユーザー定義の名前
     description?: string; // モードの説明
+    userSettings?: UserSettings; // ユーザー設定
 }
 
 /**
@@ -107,8 +108,8 @@ export const DEFAULT_VALUES = {
     },
 
     coreTime: {
-        coreTimeStart: '07:00',
-        coreTimeEnd: '22:00',
+        coreTimeStart: '09:00',
+        coreTimeEnd: '17:00',
         minCoreHours: 6,
         anotherHourAllocation: null
     },

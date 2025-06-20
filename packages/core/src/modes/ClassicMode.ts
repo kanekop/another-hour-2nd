@@ -30,6 +30,65 @@ export class ClassicMode extends BaseMode {
     }
 
     /**
+     * タイムライン用のセグメント情報を取得
+     */
+    getSegments() {
+        const designedDuration = this.designed24Duration;
+        const anotherHourStart = designedDuration;
+        const scaleFactor = designedDuration > 0 ? 1440 / designedDuration : 1;
+
+        return [
+            {
+                type: 'designed',
+                label: 'Designed 24',
+                shortLabel: 'D24',
+                startMinutes: 0,
+                durationMinutes: anotherHourStart,
+                scaleFactor: scaleFactor
+            },
+            {
+                type: 'another',
+                label: 'Another Hour',
+                shortLabel: 'AH',
+                startMinutes: anotherHourStart,
+                durationMinutes: 1440 - anotherHourStart,
+                scaleFactor: 1.0
+            }
+        ];
+    }
+
+    /**
+     * UI設定フォーム用のデータを取得
+     */
+    getConfigUI() {
+        return {
+            designed24Duration: this.designed24Duration,
+            summary: {
+                designed24: {
+                    hours: Math.floor(this.designed24Duration / 60),
+                    minutes: this.designed24Duration % 60,
+                    total: this.designed24Duration
+                },
+                anotherHour: {
+                    hours: Math.floor((1440 - this.designed24Duration) / 60),
+                    minutes: (1440 - this.designed24Duration) % 60,
+                    total: 1440 - this.designed24Duration
+                },
+                scaleFactor: this.designed24Duration > 0 ? (1440 / this.designed24Duration).toFixed(2) : '1.00'
+            }
+        };
+    }
+
+    /**
+     * UI設定フォームからデータを収集
+     */
+    collectConfigFromUI() {
+        return {
+            designed24Duration: this.designed24Duration
+        };
+    }
+
+    /**
      * 一日の開始時刻をパース
      * @param {string} timeStr - HH:mm形式
      * @returns {number} 0時からの分数
@@ -40,148 +99,158 @@ export class ClassicMode extends BaseMode {
     }
 
     /**
+     * 現在時刻を深夜0時からの分数に変換
+     */
+    private getMinutesSinceMidnight(date: Date): number {
+        return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
+    }
+
+    /**
      * スケールファクターを計算
      * @param {Date} currentTime
      * @returns {number}
      */
     calculateScaleFactor(currentTime: Date): number {
-        const phase = this.getCurrentPhase(currentTime);
-
-        if (phase.name === 'Designed 24') {
-            // Designed 24期間中のスケールファクター
-            const designed24Hours = this.designed24Duration / 60;
-            return 24 / designed24Hours;
+        const minutes = this.getMinutesSinceMidnight(currentTime);
+        
+        if (minutes < this.designed24Duration) {
+            // Designed 24 phase
+            return this.designed24Duration > 0 ? 1440 / this.designed24Duration : 1;
         } else {
-            // Another Hour期間は通常速度
+            // Another Hour phase
             return 1.0;
         }
     }
 
     /**
-     * 現在のフェーズを取得
-     * @param {Date} currentTime
+     * 現在のフェーズ（期間）を取得
+     * @param {Date} currentTime - 現在時刻
      * @returns {Object} { name: string, progress: number }
      */
-    getCurrentPhase(currentTime: Date): any {
-        const minutesSinceDayStart = this.getMinutesSinceDayStart(currentTime);
+    getCurrentPhase(currentTime: Date): { name: string, progress: number } {
+        const minutes = this.getMinutesSinceMidnight(currentTime);
+        const anotherDuration = 1440 - this.designed24Duration;
 
-        if (minutesSinceDayStart < this.designed24Duration) {
-            // Designed 24期間
-            const progress = minutesSinceDayStart / this.designed24Duration;
+        if (minutes < this.designed24Duration) {
+            // Designed 24 phase
             return {
                 name: 'Designed 24',
-                progress: progress,
-                remainingMinutes: this.designed24Duration - minutesSinceDayStart
+                progress: minutes / this.designed24Duration
             };
         } else {
-            // Another Hour期間
-            const ahStartMinutes = this.designed24Duration;
-            const ahMinutes = minutesSinceDayStart - ahStartMinutes;
-            const ahDuration = 1440 - this.designed24Duration;
-            const progress = ahMinutes / ahDuration;
-
+            // Another Hour phase
+            const ahMinutes = minutes - this.designed24Duration;
             return {
                 name: 'Another Hour',
-                progress: progress,
-                remainingMinutes: ahDuration - ahMinutes
+                progress: ahMinutes / anotherDuration
             };
         }
     }
 
     /**
-     * 一日の開始からの経過分数を取得
-     * @param {Date} currentTime
-     * @returns {number}
-     */
-    getMinutesSinceDayStart(currentTime: Date): number {
-        const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-
-        // dayStartTimeを考慮
-        let minutesSinceDayStart = currentMinutes - this.dayStartTime;
-        if (minutesSinceDayStart < 0) {
-            minutesSinceDayStart += 1440; // 次の日にまたがる場合
-        }
-
-        return minutesSinceDayStart;
-    }
-
-    /**
-     * Another Hour時間を計算
-     * @param {Date} realTime
-     * @returns {Date}
+     * Another Hour 時間を計算
+     * @param {Date} realTime - 実時間
+     * @returns {Date} Another Hour 時間
      */
     calculateAnotherHourTime(realTime: Date): Date {
-        const minutesSinceDayStart = this.getMinutesSinceDayStart(realTime);
-        let ahMinutes;
+        const minutes = this.getMinutesSinceMidnight(realTime);
+        const scaleFactor = this.calculateScaleFactor(realTime);
+        
+        let ahTotalMinutes: number;
 
-        if (minutesSinceDayStart < this.designed24Duration) {
-            // Designed 24期間：スケーリング適用
-            const scaleFactor = this.calculateScaleFactor(realTime);
-            ahMinutes = minutesSinceDayStart * scaleFactor;
+        if (minutes < this.designed24Duration) {
+            // Designed 24 phase
+            const scaled = minutes * scaleFactor;
+            ahTotalMinutes = scaled;
         } else {
-            // Another Hour期間：通常速度
-            const designed24InAH = this.designed24Duration * (24 / (this.designed24Duration / 60));
-            const ahPeriodMinutes = minutesSinceDayStart - this.designed24Duration;
-            ahMinutes = designed24InAH + ahPeriodMinutes;
+            // Another Hour phase
+            const ahMinutes = minutes - this.designed24Duration;
+            ahTotalMinutes = 1440 + ahMinutes; // 24:00以降として表現
         }
 
-        // Another Hour時間を計算
+        const ahHours = Math.floor(ahTotalMinutes / 60) % 24;
+        const ahMinutes = Math.floor(ahTotalMinutes % 60);
+        const ahSeconds = Math.floor((ahTotalMinutes * 60) % 60);
+
         const ahTime = new Date(realTime);
-        const totalAHMinutes = this.dayStartTime + ahMinutes;
-
-        ahTime.setHours(Math.floor(totalAHMinutes / 60) % 24);
-        ahTime.setMinutes(Math.floor(totalAHMinutes % 60));
-        ahTime.setSeconds(Math.floor((totalAHMinutes % 1) * 60));
-
+        ahTime.setHours(ahHours, ahMinutes, ahSeconds, 0);
         return ahTime;
     }
 
     /**
-     * 実時間への変換（逆変換）
-     * @param {Date} anotherHourTime
-     * @returns {Date}
+     * Another Hour 時間から実時間への変換
+     * @param {Date} anotherHourTime - Another Hour 時間
+     * @returns {Date} 実時間
      */
     convertToRealTime(anotherHourTime: Date): Date {
-        const ahMinutes = anotherHourTime.getHours() * 60 + anotherHourTime.getMinutes();
-        const minutesSinceDayStart = ahMinutes - this.dayStartTime;
+        const ahMinutes = this.getMinutesSinceMidnight(anotherHourTime);
+        let realMinutes: number;
 
-        let realMinutes;
-        const designed24InAH = 24 * 60; // Another Hour での24時間
-
-        if (minutesSinceDayStart < designed24InAH) {
-            // Designed 24期間
-            const scaleFactor = 24 / (this.designed24Duration / 60);
-            realMinutes = minutesSinceDayStart / scaleFactor;
+        if (ahMinutes <= 1440) {
+            // Designed 24 phase内の時間
+            const scaleFactor = this.designed24Duration > 0 ? this.designed24Duration / 1440 : 1;
+            realMinutes = ahMinutes * scaleFactor;
         } else {
-            // Another Hour期間
-            const ahPeriodMinutes = minutesSinceDayStart - designed24InAH;
-            realMinutes = this.designed24Duration + ahPeriodMinutes;
+            // Another Hour phase内の時間
+            realMinutes = this.designed24Duration + (ahMinutes - 1440);
         }
 
+        const realHours = Math.floor(realMinutes / 60) % 24;
+        const realMins = Math.floor(realMinutes % 60);
+        const realSecs = Math.floor((realMinutes * 60) % 60);
+
         const realTime = new Date(anotherHourTime);
-        const totalRealMinutes = this.dayStartTime + realMinutes;
-
-        realTime.setHours(Math.floor(totalRealMinutes / 60) % 24);
-        realTime.setMinutes(Math.floor(totalRealMinutes % 60));
-
+        realTime.setHours(realHours, realMins, realSecs, 0);
         return realTime;
     }
 
     /**
-     * デバッグ情報を取得
-     * @param {Date} currentTime
-     * @returns {Object}
+     * ClassicMode用の計算ロジック（JavaScript版互換）
      */
-    getDebugInfo(currentTime: Date): Record<string, any> {
-        const base = super.getDebugInfo(currentTime);
+    calculate(date: Date, timezone?: string): any {
+        const minutes = this.getMinutesSinceMidnight(date);
+        const designedDuration = this.designed24Duration;
+        const anotherDuration = 1440 - designedDuration;
+        const scaleFactor = designedDuration > 0 ? 1440 / designedDuration : 1;
+
+        let hours: number, minutesOut: number, seconds: number, periodName: string, isAnotherHour: boolean, progress: number, remaining: number;
+
+        if (minutes < designedDuration) {
+            // Designed 24 phase
+            const scaled = minutes * scaleFactor;
+            hours = Math.floor(scaled / 60) % 24;
+            minutesOut = Math.floor(scaled % 60);
+            seconds = Math.floor((scaled * 60) % 60);
+            periodName = 'Designed 24';
+            isAnotherHour = false;
+            progress = minutes / designedDuration;
+            remaining = designedDuration - minutes;
+        } else {
+            // Another Hour phase
+            const ahMinutes = minutes - designedDuration;
+            hours = Math.floor(ahMinutes / 60);
+            minutesOut = Math.floor(ahMinutes % 60);
+            seconds = Math.floor((ahMinutes * 60) % 60);
+            periodName = 'Another Hour';
+            isAnotherHour = true;
+            progress = ahMinutes / anotherDuration;
+            remaining = anotherDuration - ahMinutes;
+        }
 
         return {
-            ...base,
-            designed24Duration: this.designed24Duration,
-            dayStartTime: `${Math.floor(this.dayStartTime / 60)}:${String(this.dayStartTime % 60).padStart(2, '0')}`,
-            designed24Hours: this.designed24Duration / 60,
-            anotherHourDuration: 1440 - this.designed24Duration,
-            currentPhase: this.getCurrentPhase(currentTime)
+            hours,
+            minutes: minutesOut,
+            seconds,
+            scaleFactor: minutes < designedDuration ? scaleFactor : 1.0,
+            isAnotherHour,
+            segmentInfo: {
+                type: isAnotherHour ? 'another' : 'designed',
+                label: periodName,
+                progress,
+                remaining,
+                duration: minutes < designedDuration ? designedDuration : anotherDuration,
+            },
+            periodName,
         };
     }
 }

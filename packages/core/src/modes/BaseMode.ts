@@ -117,6 +117,38 @@ export class BaseMode {
     }
 
     /**
+     * タイムライン用のセグメント情報を取得
+     * @returns {Array} セグメント配列
+     */
+    getSegments(): Array<{
+        type: string;
+        label: string;
+        shortLabel: string;
+        startMinutes: number;
+        durationMinutes: number;
+        scaleFactor?: number;
+        style?: Record<string, string>;
+    }> {
+        throw new Error('getSegments must be implemented by subclass');
+    }
+
+    /**
+     * UI設定フォーム用のデータを取得
+     * @returns {Object} UI設定データ
+     */
+    getConfigUI(): Record<string, unknown> {
+        throw new Error('getConfigUI must be implemented by subclass');
+    }
+
+    /**
+     * UI設定フォームからデータを収集
+     * @returns {Object} 設定データ
+     */
+    collectConfigFromUI(): Record<string, unknown> {
+        throw new Error('collectConfigFromUI must be implemented by subclass');
+    }
+
+    /**
      * デバッグ情報を取得
      * @param {Date} currentTime
      * @returns {Object}
