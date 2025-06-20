@@ -277,6 +277,28 @@ npm run build
 
 このガイドに関する質問や、プロジェクトに関する問題が発生した場合は、GitHubのIssueを作成してください。
 
+## 📝 次回作業の優先事項
+
+### 🚨 最重要タスク: FixRequest.md の実装
+
+**ファイル**: `FixRequest.md`（プロジェクトルートにあります）
+
+**概要**: Another Hour期間の表示ロジックを「残り時間のカウントダウン」から「0:00:00からのカウントアップ」に修正する必要があります。
+
+**主な修正対象**:
+1. **BaseMode.js** (`packages/scheduler-web/public/js/time-design/modes/` および `dev-tools/time-design-test/js/time-design/modes/`)
+2. **各モード実装** (ClassicMode.js, CoreTimeMode.js, WakeBasedMode.js, SolarMode.js)
+3. **UI表示** (TimeDisplay.js, scheduler-ui.js)
+
+**修正内容**:
+- Another Hour期間で「経過時間」を0から計算するように変更
+- 表示形式を `HH:MM:SS/HH:MM:SS` （経過時間/総時間）に統一
+- segmentInfoに elapsed, total, displayFormat プロパティを追加
+
+**重要**: この作業は仕様の重要な修正であり、優先的に実装する必要があります。
+
+---
+
 **最終更新**: 2025年6月20日
 **バージョン**: 1.2.0
 **更新内容**: 
@@ -284,3 +306,4 @@ npm run build
 - Time Design Modes実装の整理・最適化
 - ドキュメント構造の明確化（概要 vs 技術仕様）
 - WakeBasedMode/SolarModeの構文エラー修正
+- 次回作業の優先事項として FixRequest.md 実装を追加
