@@ -39,13 +39,34 @@ Core Time Mode:
 ### Wake-Based Mode（起床ベースモード）
 ```yaml
 Wake-Based Mode:
-  - Default Wake Time       # デフォルト起床時刻
-  - Today's Wake Time       # 今日の実際の起床時刻
-  - Another Hour Duration   # Another Hour期間の長さ（分単位）
-  - Max Scale Factor        # 最大圧縮率（例：2.0）
+  - defaultWakeTime: string     # デフォルト起床時刻（HH:mm形式、例："07:00"）
+  - todayWakeTime?: string      # 今日の実際の起床時刻（HH:mm形式、省略可能）
+  - anotherHourDuration: number # Another Hour期間の長さ（分単位、例：60）
+  - maxScaleFactor: number      # 最大圧縮率（例：2.0）
 ```
 
-**⚠️ UX設計の注意**: `Default Wake Time` と `Today's Wake Time` の両方を保持しますが、ユーザーへの表示方法は慎重に検討する必要があります。両方を同時に見せると混乱を招く可能性があるため、適切なUXデザインが必要です。
+#### パラメータの詳細説明
+
+**defaultWakeTime**: 
+- 通常の起床時刻として設定される基準値
+- ユーザーが日常的に起床する時刻
+- この値は比較的固定的で、設定変更時にのみ更新される
+
+**todayWakeTime**: 
+- 今日の実際の起床時刻（オプション）
+- 設定されている場合は`defaultWakeTime`より優先される
+- 不規則な起床時刻の日に動的に調整するために使用
+- 未設定（null/undefined）の場合は`defaultWakeTime`が使用される
+
+**実装における優先順位**:
+```javascript
+const effectiveWakeTime = todayWakeTime || defaultWakeTime;
+```
+
+**⚠️ UX設計の注意**: 両方のパラメータを同時に表示すると混乱を招く可能性があります。推奨UI設計：
+- 基本設定画面では`defaultWakeTime`のみを表示
+- 当日の調整機能として`todayWakeTime`を別途提供
+- 現在有効な起床時刻を明確に表示する
 
 ### Solar Mode（太陽時モード）
 ```yaml
@@ -116,6 +137,16 @@ function validateCoreTimeMode(config) {
 ```javascript
 // Wake-Based の検証
 function validateWakeBasedMode(config) {
+  // defaultWakeTime は必須かつ有効な時刻形式
+  if (!config.defaultWakeTime || !/^([01]\d|2[0-3]):([0-5]\d)$/.test(config.defaultWakeTime)) {
+    throw new Error('defaultWakeTime must be a valid time in HH:mm format');
+  }
+
+  // todayWakeTime は省略可能だが、設定される場合は有効な時刻形式
+  if (config.todayWakeTime && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(config.todayWakeTime)) {
+    throw new Error('todayWakeTime must be a valid time in HH:mm format');
+  }
+
   // Another Hour Duration は0〜12時間
   if (config.anotherHourDuration < 0 || config.anotherHourDuration > 720) {
     throw new Error('Another Hour Duration must be between 0-12 hours');
@@ -125,6 +156,23 @@ function validateWakeBasedMode(config) {
   if (config.maxScaleFactor < 1.0 || config.maxScaleFactor > 5.0) {
     throw new Error('Max Scale Factor must be between 1.0-5.0');
   }
+
+  // 論理的整合性の確認
+  const defaultWakeMinutes = parseTimeToMinutes(config.defaultWakeTime);
+  const todayWakeMinutes = config.todayWakeTime ? parseTimeToMinutes(config.todayWakeTime) : null;
+  
+  // 有効な起床時刻が Another Hour 期間と重複しないかチェック
+  const anotherHourStart = 1440 - config.anotherHourDuration;
+  const effectiveWakeMinutes = todayWakeMinutes || defaultWakeMinutes;
+  
+  if (effectiveWakeMinutes >= anotherHourStart) {
+    throw new Error('Effective wake time cannot be during Another Hour period');
+  }
+}
+
+function parseTimeToMinutes(timeStr) {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
 }
 ```
 

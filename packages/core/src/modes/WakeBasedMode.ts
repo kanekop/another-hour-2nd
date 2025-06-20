@@ -9,11 +9,16 @@ export class WakeBasedMode extends BaseMode {
 
     constructor(config: any) {
         super(config);
-        this.wakeTime = this.convertTimeStrToMinutes(config.parameters?.wakeTime || '07:00');
+        // 仕様書に従い、defaultWakeTime と todayWakeTime を適切に処理
+        this.defaultWakeTime = config.parameters?.defaultWakeTime || '07:00';
+        this.todayWakeTime = config.parameters?.todayWakeTime || null;
+        
+        // 実際の起床時刻を使用（todayWakeTime が設定されていればそれを優先）
+        const effectiveWakeTime = this.todayWakeTime || this.defaultWakeTime;
+        this.wakeTime = this.convertTimeStrToMinutes(effectiveWakeTime);
+        
         this.anotherHourDuration = config.parameters?.anotherHourDuration || 60;
         this.maxScaleFactor = config.parameters?.maxScaleFactor || 3.0;
-        this.todayWakeTime = null;
-        this.defaultWakeTime = config.parameters?.defaultWakeTime || '07:00';
     }
 
     private convertTimeStrToMinutes(timeStr: string): number {
@@ -140,7 +145,11 @@ export class WakeBasedMode extends BaseMode {
             config: this.exportConfig(),
             name: this.config.name,
 
-            wakeTimeString: this.todayWakeTime || this.defaultWakeTime,
+            // 仕様書に従った詳細な起床時刻情報
+            defaultWakeTime: this.defaultWakeTime,
+            todayWakeTime: this.todayWakeTime,
+            effectiveWakeTime: this.todayWakeTime || this.defaultWakeTime,
+            
             anotherHourDuration: this.anotherHourDuration,
             maxScaleFactor: this.maxScaleFactor,
 
