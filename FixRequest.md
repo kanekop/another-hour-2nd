@@ -1,201 +1,195 @@
-# Another Hour 実装指示書
+# dev-tools/time-design-test UX問題の調査結果レポート
 
-## 1. 実装対象ファイル
+## 調査概要
 
-以下のファイルでAnother Hour期間の表示ロジックを修正する必要があります：
+**調査者**: Another Hour技術アドバイザー  
+**調査対象**: dev-tools/time-design-test/のUXが頻繁に動作しなくなる問題
 
-### 1.1 コアロジック
-- `packages/scheduler-web/public/js/time-design/modes/BaseMode.js`
-- `dev-tools/time-design-test/js/time-design/modes/BaseMode.js`
+## エグゼクティブサマリー
 
-### 1.2 各モード実装
-- `ClassicMode.js`
-- `CoreTimeMode.js`
-- `WakeBasedMode.js`
-- `SolarMode.js`
+調査の結果、問題の主要な原因は**アーキテクチャの分離**と**コードの重複実装**にあることが判明しました。`dev-tools/time-design-test/`は独立した実験的実装として存在し、メインのパッケージ構造と統合されていないため、変更が相互に影響せず、一貫性が保てない状況です。
 
-### 1.3 UI表示
-- `dev-tools/time-design-test/js/ui/TimeDisplay.js`
-- `packages/scheduler-web/public/js/scheduler-ui.js`
+## 詳細な調査結果
 
-## 2. 修正内容
+### 1. ドキュメントの統合性の問題 ✅
 
-### 2.1 BaseMode.js の calculate メソッド修正
+**調査結果**: 部分的に該当
 
-#### 現在の問題
-Another Hour期間で「残り時間」を表示している箇所を、「0から始まる時間」に修正する。
+**証拠**:
+- `docs/`配下に仕様書は存在するが、実装との紐付けが弱い
+- `dev-tools/time-design-test/README.md`と`docs/ui-specifications/time-design-test-ui-spec.md`に重複・矛盾する記述
+- 例: READMEではポート8080、仕様書では`/dev-tools/time-design-test/`パスでのアクセス
 
-#### 修正前（誤った実装）
+**影響度**: 中
+
+### 2. UX仕様の不明確さ ⚠️
+
+**調査結果**: 部分的に該当
+
+**証拠**:
+- Solar Modeの動作仕様に曖昧な部分が存在
+  - 「日の出から日の入りまでの時間が表示される」→ 具体的なUI位置が不明
+  - 「Day Hoursスライダーのデフォルト値に変わる」→ 変更タイミングが不明確
+- Core Time Modeの表示仕様
+  - 「朝のAH期間は通常速度（1.0x）だが、表示はCore Timeが始まるまでのカウントダウン表示とする」→ 暫定仕様として記載
+
+**影響度**: 中
+
+### 3. エージェントの限界 ❌
+
+**調査結果**: 主因ではない
+
+**分析**:
+- 技術的な実装能力の問題ではない
+- 構造的な問題（後述）により、正しい実装をしても統合性が保てない
+
+**影響度**: 低
+
+### 4. Coreの基本機能と統合の問題 ✅✅
+
+**調査結果**: **これが最も重要な原因**
+
+**証拠**:
 ```javascript
-if (activeSegment.type === 'another') {
-    const remainingTotalSeconds = remaining * 60;
-    displayHours = Math.floor(remainingTotalSeconds / 3600);
-    displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
-    displaySeconds = Math.floor(remainingTotalSeconds % 60);
+// packages/core/src/time-calculation.js
+export function convertToAHTime(realTime, designed24Start, designed24Duration) {
+  // 基本的な時間計算のみ
+}
+
+// dev-tools/time-design-test/js/time-design/modes/BaseMode.js
+export class BaseMode {
+  // Time Design Modesの独自実装
 }
 ```
 
-#### 修正後（正しい実装）
-```javascript
-if (activeSegment.type === 'another') {
-    // Another Hour期間の経過時間を計算（0から開始）
-    const segmentElapsed = minutes - activeSegment.startTime;
-    
-    // 0時起点の時間として計算
-    displayHours = Math.floor(segmentElapsed / 60);
-    displayMinutes = Math.floor(segmentElapsed % 60);
-    displaySeconds = Math.floor((segmentElapsed * 60) % 60);
-}
+**問題点**:
+1. Time Design Modesの実装が2箇所に分散
+   - `dev-tools/time-design-test/js/time-design/` （独自実装）
+   - `packages/core/` （未実装）
+2. dev-toolsは`@another-hour/core`を使用していない
+3. 同じ機能が異なる実装で存在する可能性
+
+**影響度**: 高
+
+### 5. 開発環境の分離 ✅
+
+**調査結果**: 重要な構造的問題
+
+**証拠**:
+- メインアプリ: `http://localhost:3000`
+- dev-tools: `http://localhost:8080` または `/dev-tools/time-design-test/`
+- 異なるサーバーで動作し、コードベースが独立
+
+**問題点**:
+1. 変更が相互に反映されない
+2. テスト環境と本番環境で異なる実装
+3. バージョン管理が困難
+
+**影響度**: 高
+
+### 6. その他の発見事項
+
+**リファクタリングの必要性**:
+- `dev-tools/time-design-test/css/style.css` - 1000行以上の巨大CSS
+- インラインスタイルとCSSの混在
+- モジュール間の責任範囲が不明確
+
+## 根本原因の分析
+
+### 主要因
+1. **アーキテクチャの分離** - dev-toolsが独立した実装として存在
+2. **コードの重複** - 同じ機能が複数箇所に実装されている
+3. **統合テストの欠如** - 変更の影響範囲を検証できない
+
+### 副次的要因
+1. ドキュメントの分散と不整合
+2. 仕様の一部が曖昧
+3. 開発プロセスの問題（エージェントへの指示が不明確）
+
+## 推奨される解決策
+
+### フェーズ1: 短期的対策（1-2週間）
+
+#### 1.1 dev-toolsの仕様固定
+- 現在の実装を「実験的プロトタイプ」として位置づけ
+- 機能追加を一時停止し、バグ修正のみに限定
+- 明確な仕様書を作成（現在の動作を正とする）
+
+#### 1.2 エージェント向けガイドライン作成
+```markdown
+# dev-tools/time-design-test 修正ガイドライン
+
+## 重要な注意事項
+1. このツールは独立した実験的実装です
+2. packages/core を使用していません
+3. 以下のファイルのみを修正してください：
+   - js/ui/ConfigPanel.js （UI更新）
+   - css/style.css （スタイル調整）
+4. モード実装（js/time-design/modes/）は変更しないでください
 ```
 
-### 2.2 segmentInfo の拡張
+### フェーズ2: 中期的対策（1-2ヶ月）
 
-calculate メソッドの戻り値に、Another Hour表示用の情報を追加：
-
-```javascript
-return {
-    hours: displayHours,
-    minutes: displayMinutes,
-    seconds: displaySeconds,
-    scaleFactor: activeSegment.scaleFactor,
-    isAnotherHour: activeSegment.type === 'another',
-    segmentInfo: {
-        type: activeSegment.type,
-        label: activeSegment.label,
-        progress,
-        remaining,
-        duration: activeSegment.duration,
-        // Another Hour用の追加情報
-        elapsed: activeSegment.type === 'another' ? segmentElapsed : undefined,
-        total: activeSegment.type === 'another' ? activeSegment.duration : undefined,
-        displayFormat: activeSegment.type === 'another' ? 'fraction' : 'normal'
-    }
-};
-```
-
-### 2.3 各モードの実装確認
-
-各モードファイルで、Another Hour期間の計算が正しく実装されているか確認：
-
-#### ClassicMode.js
-```javascript
-// _buildSegmentsメソッドで、Another Hourセグメントが正しく定義されているか確認
-const anotherSegment = this.createSegment('another', anotherHourStart, 1440, 1.0, 'Another Hour');
-```
-
-#### CoreTimeMode.js
-```javascript
-// Morning AHとEvening AHの両方が 'another' タイプで作成されているか確認
-segments.push(this.createSegment('another', 0, coreStart, 1.0, 'Morning AH'));
-segments.push(this.createSegment('another', coreEnd, 1440, 1.0, 'Evening AH'));
-```
-
-## 3. UI表示の実装
-
-### 3.1 TimeDisplay.js の修正
-
-```javascript
-// Another Hour期間の表示フォーマット
-if (segmentInfo.displayFormat === 'fraction') {
-    // HH:MM:SS/HH:MM:SS 形式で表示
-    const elapsed = this.formatTime(
-        Math.floor(segmentInfo.elapsed / 60),
-        Math.floor(segmentInfo.elapsed % 60),
-        Math.floor((segmentInfo.elapsed * 60) % 60)
-    );
-    const total = this.formatTime(
-        Math.floor(segmentInfo.total / 60),
-        Math.floor(segmentInfo.total % 60),
-        0
-    );
-    
-    timeString = `${elapsed}/${total}`;
-    periodLabel = segmentInfo.label || 'Another Hour';
-} else {
-    // 通常の時刻表示
-    timeString = this.formatTime(hours, minutes, seconds);
-    periodLabel = segmentInfo.label || 'Time';
-}
-```
-
-### 3.2 視覚的な区別
-
-```css
-/* Another Hour期間のスタイリング */
-.time-display--another-hour {
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-    color: #333;
+#### 2.1 Time Design Modesのcore実装
+```typescript
+// packages/core/src/time-design-modes/index.ts
+export interface TimeDesignMode {
+  id: string;
+  name: string;
+  calculate(date: Date, config: ModeConfig): TimeResult;
+  validate(config: ModeConfig): ValidationResult;
 }
 
-.time-display--another-hour .time-display__value {
-    font-weight: 600;
-}
-
-.time-display--another-hour .time-display__label {
-    color: #555;
-}
+// 各モードを正式に実装
+export { ClassicMode } from './classic';
+export { CoreTimeMode } from './core-time';
+export { WakeBasedMode } from './wake-based';
+export { SolarMode } from './solar';
 ```
 
-## 4. テストケース
-
-### 4.1 Classic Mode
-```javascript
-// 設定: Designed 24 = 22時間（1320分）
-// Another Hour = 2時間（120分）
-
-// テスト1: Another Hour開始時（22:00）
-// 期待値: "00:00:00/02:00:00"
-
-// テスト2: Another Hour中間（23:00）
-// 期待値: "01:00:00/02:00:00"
-
-// テスト3: Another Hour終了直前（23:59:59）
-// 期待値: "01:59:59/02:00:00"
+#### 2.2 dev-toolsのパッケージ化
+```bash
+packages/
+├── core/
+│   └── src/
+│       └── time-design-modes/
+├── time-design-test-ui/  # 新規パッケージ
+│   ├── src/
+│   │   ├── ui/          # UIコンポーネント
+│   │   └── app.js       # エントリーポイント
+│   └── package.json
 ```
 
-### 4.2 Core Time Mode
-```javascript
-// 設定: Morning AH = 2時間、Core = 20時間、Evening AH = 2時間
+### フェーズ3: 長期的対策（3-6ヶ月）
 
-// テスト1: Morning AH（01:00）
-// 期待値: "01:00:00/02:00:00"
-
-// テスト2: Evening AH開始（22:00）
-// 期待値: "00:00:00/02:00:00"
+#### 3.1 統一されたドキュメント構造
+```
+docs/
+├── architecture/
+│   └── time-design-modes.md
+├── api/
+│   └── core-api.md
+└── guides/
+    ├── agent-instructions.md
+    └── development-workflow.md
 ```
 
-## 5. 実装チェックリスト
+#### 3.2 自動テストの充実
+- 統合テストスイートの作成
+- UIテスト（Playwright等）の導入
+- CI/CDパイプラインでの自動検証
 
-- [ ] BaseMode.js の calculate メソッドで Another Hour 時間を0から開始
-- [ ] segmentInfo に elapsed と total を追加
-- [ ] 各モードで Another Hour セグメントが正しく定義されている
-- [ ] UI で HH:MM:SS/HH:MM:SS 形式の表示が実装されている
-- [ ] Another Hour 期間の視覚的な区別（色、ラベル）
-- [ ] すべてのモードでテストケースが通過
-- [ ] 日付をまたぐ場合の処理が正しい
-- [ ] パフォーマンス要件を満たしている（< 10ms）
+## 結論
 
-## 6. 注意事項
+問題の根本原因は技術的な実装の問題ではなく、**アーキテクチャの分離**と**統合の欠如**にあります。短期的にはdev-toolsを安定化させ、中長期的には適切な統合を行うことで、「動いていた部分が動かなくなる」問題を根本的に解決できます。
 
-1. **後方互換性**: 既存のAPIを壊さないよう、新しいプロパティは追加のみ
-2. **エラーハンドリング**: 無効な値の場合はフォールバック処理を実装
-3. **一貫性**: すべてのモードで同じ表示ロジックを使用
-4. **ドキュメント**: 変更箇所にはコメントで説明を追加
+## 次のアクション
 
-## 7. デバッグ用コード
+1. **即座に実施**: エージェント向けガイドラインの作成と共有
+2. **1週間以内**: dev-toolsの仕様固定と文書化
+3. **1ヶ月以内**: Time Design Modesのcore実装開始
+4. **3ヶ月以内**: 統合されたアーキテクチャへの移行完了
 
-開発中は以下のデバッグコードを使用して動作確認：
+---
 
-```javascript
-// デバッグログ出力
-if (window.DEBUG_TIME_DESIGN) {
-    console.log('Another Hour Calculation:', {
-        segmentType: activeSegment.type,
-        elapsedMinutes: segmentElapsed,
-        displayTime: `${displayHours}:${displayMinutes}:${displaySeconds}`,
-        totalMinutes: activeSegment.duration
-    });
-}
-```
-
-この実装により、Another Hourが仕様通り「0から始まる独立した時間」として表示されるようになります。
+*このレポートは、Another Hourプロジェクトの技術的課題を解決するための指針として作成されました。定期的な見直しと更新を推奨します。*
