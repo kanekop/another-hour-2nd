@@ -1,6 +1,7 @@
 // public/js/time-design-test-main.js
 
-import { timeDesignManager } from './time-design/TimeDesignManager.js';
+// Import from unified core package instead of local implementation
+import { timeDesignManager } from '../../../packages/@another-hour/time-design-core/src/index.js';
 import { $, $$ } from './utils/dom.js';
 import { formatTime, formatDuration } from './utils/formatters.js';
 import { Logger } from './core/logger.js';
