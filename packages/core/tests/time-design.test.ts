@@ -1,6 +1,6 @@
-import { TimeDesignManager } from '../../src/TimeDesignManager';
-import { ClassicMode } from '../../src/modes/ClassicMode';
-import { TimeDesignMode } from '../../src/types/time-modes';
+import { TimeDesignManager } from '../src/TimeDesignManager.js';
+import { ClassicMode } from '../src/modes/ClassicMode.js';
+import { TimeDesignMode } from '../src/types/time-modes.js';
 
 // LocalStorage モック
 const localStorageMock = (() => {

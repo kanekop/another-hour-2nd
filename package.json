@@ -21,7 +21,7 @@
         "dev:website": "npm run dev --workspace=@another-hour/website",
         "build:website": "npm run build --workspace=@another-hour/website",
         "dev:watch": "npm run dev --workspace=@another-hour/watch-app",
-        "build:watch": "npm run build --workspace=@another-hour/watch-app",
+        "build:watch-app": "npm run build --workspace=@another-hour/watch-app",
         "start:watch": "npm run start --workspace=@another-hour/watch-app"
     },
     "devDependencies": {

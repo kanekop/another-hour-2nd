@@ -21,6 +21,12 @@ export class WakeBasedMode extends BaseMode {
         this.maxScaleFactor = config.parameters?.maxScaleFactor || 3.0;
     }
 
+    // テスト用のgetterメソッド
+    public getDefaultWakeTime(): string { return this.defaultWakeTime; }
+    public getAnotherHourDuration(): number { return this.anotherHourDuration; }
+    public getMaxScaleFactor(): number { return this.maxScaleFactor; }
+    public getWakeTime(): number { return this.wakeTime; }
+
     private convertTimeStrToMinutes(timeStr: string): number {
         const [hours, minutes] = timeStr.split(':').map(Number);
         return hours * 60 + minutes;
