@@ -1,92 +1,201 @@
-# Another Hour 仕様書
+# Another Hour 実装指示書
 
-## 概要
-Another Hour（アナザーアワー）は、Designed 24期間が終了した後の残り時間を表す、Another Hourプロジェクト独自の時間概念です。
+## 1. 実装対象ファイル
 
-## 基本仕様
+以下のファイルでAnother Hour期間の表示ロジックを修正する必要があります：
 
-### 時間の定義
-- **開始**: Designed 24期間が終了した時点で、Another Hourは **0:00:00** から開始される
-- **独立した時間軸**: 現実の時刻とは切り離された、概念的な時間として扱う
-- **進行速度**: 常に1.0倍速（実時間と同じ速度）で進行する
+### 1.1 コアロジック
+- `packages/scheduler-web/public/js/time-design/modes/BaseMode.js`
+- `dev-tools/time-design-test/js/time-design/modes/BaseMode.js`
 
-### 表示形式
+### 1.2 各モード実装
+- `ClassicMode.js`
+- `CoreTimeMode.js`
+- `WakeBasedMode.js`
+- `SolarMode.js`
 
-#### デジタル表示
-```
-HH:MM:SS/HH:MM:SS
-```
-- **左側**: 現在のAnother Hour時間（0:00:00から開始）
-- **右側**: 本日のAnother Hour総時間（固定値）
-- **例**: `01:30:00/02:00:00` （2時間のAnother Hourのうち1時間30分が経過）
+### 1.3 UI表示
+- `dev-tools/time-design-test/js/ui/TimeDisplay.js`
+- `packages/scheduler-web/public/js/scheduler-ui.js`
 
-#### 特徴
-- 分数表記により進捗が直感的に理解できる
-- カウントダウンではなくカウントアップ表示
-- 残り時間は視覚的に把握可能（総時間 - 経過時間）
+## 2. 修正内容
 
-### モード別の扱い
+### 2.1 BaseMode.js の calculate メソッド修正
 
-すべてのTime Design Modesにおいて、Another Hour期間は同じ仕様で動作します：
+#### 現在の問題
+Another Hour期間で「残り時間」を表示している箇所を、「0から始まる時間」に修正する。
 
-1. **Classic Mode**: Designed 24の後に1つのAnother Hour期間
-2. **Core Time Mode**: Morning AHとEvening AHの2つの期間（それぞれ0:00から開始）
-3. **Wake-Based Mode**: 活動時間の最後にAnother Hour期間
-4. **Solar Mode**: 夜間のAnother Hour期間
-
-### 計算ロジック
-
+#### 修正前（誤った実装）
 ```javascript
-// Another Hour期間の時間計算
-if (segment.type === 'another') {
-    // セグメント開始からの経過時間（分）
-    const elapsedMinutes = currentMinutes - segment.startTime;
-    
-    // Another Hour時間として表示（0時起点）
-    const hours = Math.floor(elapsedMinutes / 60);
-    const minutes = Math.floor(elapsedMinutes % 60);
-    const seconds = Math.floor((elapsedMinutes * 60) % 60);
-    
-    return {
-        hours: hours,          // 0から始まる
-        minutes: minutes,
-        seconds: seconds,
-        // 表示用の追加情報
-        totalMinutes: segment.duration,
-        elapsedMinutes: elapsedMinutes
-    };
+if (activeSegment.type === 'another') {
+    const remainingTotalSeconds = remaining * 60;
+    displayHours = Math.floor(remainingTotalSeconds / 3600);
+    displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
+    displaySeconds = Math.floor(remainingTotalSeconds % 60);
 }
 ```
 
-### UI/UX ガイドライン
+#### 修正後（正しい実装）
+```javascript
+if (activeSegment.type === 'another') {
+    // Another Hour期間の経過時間を計算（0から開始）
+    const segmentElapsed = minutes - activeSegment.startTime;
+    
+    // 0時起点の時間として計算
+    displayHours = Math.floor(segmentElapsed / 60);
+    displayMinutes = Math.floor(segmentElapsed % 60);
+    displaySeconds = Math.floor((segmentElapsed * 60) % 60);
+}
+```
 
-1. **視覚的な区別**
-   - Another Hour期間は温かい色調（黄色、オレンジ系）で表示
-   - Designed期間とは明確に区別される配色
+### 2.2 segmentInfo の拡張
 
-2. **ラベル表示**
-   - "Another Hour" または "AH" のラベルを付与
-   - モードによって "Morning AH", "Evening AH" などの修飾も可能
+calculate メソッドの戻り値に、Another Hour表示用の情報を追加：
 
-3. **プログレス表示**
-   - プログレスバーやビジュアルインジケーターで進捗を表現
-   - パーセンテージ表示は補助的に使用
+```javascript
+return {
+    hours: displayHours,
+    minutes: displayMinutes,
+    seconds: displaySeconds,
+    scaleFactor: activeSegment.scaleFactor,
+    isAnotherHour: activeSegment.type === 'another',
+    segmentInfo: {
+        type: activeSegment.type,
+        label: activeSegment.label,
+        progress,
+        remaining,
+        duration: activeSegment.duration,
+        // Another Hour用の追加情報
+        elapsed: activeSegment.type === 'another' ? segmentElapsed : undefined,
+        total: activeSegment.type === 'another' ? activeSegment.duration : undefined,
+        displayFormat: activeSegment.type === 'another' ? 'fraction' : 'normal'
+    }
+};
+```
 
-## 実装における注意点
+### 2.3 各モードの実装確認
 
-1. **境界処理**
-   - Designed期間からAnother Hour期間への遷移は瞬時に行う
-   - 遷移時にAnother Hourは必ず0:00:00から開始
+各モードファイルで、Another Hour期間の計算が正しく実装されているか確認：
 
-2. **日付をまたぐ場合**
-   - Another Hour期間が深夜0時をまたぐ場合も、表示は継続
-   - 内部的には適切に処理するが、ユーザーには連続した時間として見せる
+#### ClassicMode.js
+```javascript
+// _buildSegmentsメソッドで、Another Hourセグメントが正しく定義されているか確認
+const anotherSegment = this.createSegment('another', anotherHourStart, 1440, 1.0, 'Another Hour');
+```
 
-3. **精度**
-   - 秒単位まで正確に計算・表示
-   - リアルタイム更新（100ms〜1000ms間隔）
+#### CoreTimeMode.js
+```javascript
+// Morning AHとEvening AHの両方が 'another' タイプで作成されているか確認
+segments.push(this.createSegment('another', 0, coreStart, 1.0, 'Morning AH'));
+segments.push(this.createSegment('another', coreEnd, 1440, 1.0, 'Evening AH'));
+```
 
-## 変更履歴
-- 2025-01-15: 初版作成
-- デジタル表示形式を `HH:MM:SS/HH:MM:SS` に統一
-- すべてのモードで同一仕様とすることを明確化
+## 3. UI表示の実装
+
+### 3.1 TimeDisplay.js の修正
+
+```javascript
+// Another Hour期間の表示フォーマット
+if (segmentInfo.displayFormat === 'fraction') {
+    // HH:MM:SS/HH:MM:SS 形式で表示
+    const elapsed = this.formatTime(
+        Math.floor(segmentInfo.elapsed / 60),
+        Math.floor(segmentInfo.elapsed % 60),
+        Math.floor((segmentInfo.elapsed * 60) % 60)
+    );
+    const total = this.formatTime(
+        Math.floor(segmentInfo.total / 60),
+        Math.floor(segmentInfo.total % 60),
+        0
+    );
+    
+    timeString = `${elapsed}/${total}`;
+    periodLabel = segmentInfo.label || 'Another Hour';
+} else {
+    // 通常の時刻表示
+    timeString = this.formatTime(hours, minutes, seconds);
+    periodLabel = segmentInfo.label || 'Time';
+}
+```
+
+### 3.2 視覚的な区別
+
+```css
+/* Another Hour期間のスタイリング */
+.time-display--another-hour {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #333;
+}
+
+.time-display--another-hour .time-display__value {
+    font-weight: 600;
+}
+
+.time-display--another-hour .time-display__label {
+    color: #555;
+}
+```
+
+## 4. テストケース
+
+### 4.1 Classic Mode
+```javascript
+// 設定: Designed 24 = 22時間（1320分）
+// Another Hour = 2時間（120分）
+
+// テスト1: Another Hour開始時（22:00）
+// 期待値: "00:00:00/02:00:00"
+
+// テスト2: Another Hour中間（23:00）
+// 期待値: "01:00:00/02:00:00"
+
+// テスト3: Another Hour終了直前（23:59:59）
+// 期待値: "01:59:59/02:00:00"
+```
+
+### 4.2 Core Time Mode
+```javascript
+// 設定: Morning AH = 2時間、Core = 20時間、Evening AH = 2時間
+
+// テスト1: Morning AH（01:00）
+// 期待値: "01:00:00/02:00:00"
+
+// テスト2: Evening AH開始（22:00）
+// 期待値: "00:00:00/02:00:00"
+```
+
+## 5. 実装チェックリスト
+
+- [ ] BaseMode.js の calculate メソッドで Another Hour 時間を0から開始
+- [ ] segmentInfo に elapsed と total を追加
+- [ ] 各モードで Another Hour セグメントが正しく定義されている
+- [ ] UI で HH:MM:SS/HH:MM:SS 形式の表示が実装されている
+- [ ] Another Hour 期間の視覚的な区別（色、ラベル）
+- [ ] すべてのモードでテストケースが通過
+- [ ] 日付をまたぐ場合の処理が正しい
+- [ ] パフォーマンス要件を満たしている（< 10ms）
+
+## 6. 注意事項
+
+1. **後方互換性**: 既存のAPIを壊さないよう、新しいプロパティは追加のみ
+2. **エラーハンドリング**: 無効な値の場合はフォールバック処理を実装
+3. **一貫性**: すべてのモードで同じ表示ロジックを使用
+4. **ドキュメント**: 変更箇所にはコメントで説明を追加
+
+## 7. デバッグ用コード
+
+開発中は以下のデバッグコードを使用して動作確認：
+
+```javascript
+// デバッグログ出力
+if (window.DEBUG_TIME_DESIGN) {
+    console.log('Another Hour Calculation:', {
+        segmentType: activeSegment.type,
+        elapsedMinutes: segmentElapsed,
+        displayTime: `${displayHours}:${displayMinutes}:${displaySeconds}`,
+        totalMinutes: activeSegment.duration
+    });
+}
+```
+
+この実装により、Another Hourが仕様通り「0から始まる独立した時間」として表示されるようになります。

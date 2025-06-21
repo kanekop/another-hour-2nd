@@ -96,30 +96,43 @@ export class ClassicMode extends BaseMode {
     }
 
     const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
+    
+    // segmentElapsedを最初に定義
+    const segmentElapsed = minutes - activeSegment.startTime;
 
     let displayHours, displayMinutes, displaySeconds;
 
     if (activeSegment.type === 'another') {
-      const remainingTotalSeconds = remaining * 60;
-      displayHours = Math.floor(remainingTotalSeconds / 3600);
-      displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
-      displaySeconds = Math.floor(remainingTotalSeconds % 60);
+      // Another Hour期間の経過時間を計算（0から開始）
+      // 0時起点の時間として計算
+      displayHours = Math.floor(segmentElapsed / 60);
+      displayMinutes = Math.floor(segmentElapsed % 60);
+      displaySeconds = Math.floor((segmentElapsed * 60) % 60);
     } else { // 'designed'
-      const segmentElapsed = minutes - activeSegment.startTime;
       const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
       const scaledTotalMinutes = scaledElapsed;
       displayHours = Math.floor(scaledTotalMinutes / 60) % 24;
       displayMinutes = Math.floor(scaledTotalMinutes % 60);
       displaySeconds = Math.floor((scaledTotalMinutes * 60) % 60);
     }
-
+    
     return {
       hours: displayHours,
       minutes: displayMinutes,
       seconds: displaySeconds,
       scaleFactor: activeSegment.scaleFactor,
       isAnotherHour: activeSegment.type === 'another',
-      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: activeSegment.duration },
+      segmentInfo: {
+        type: activeSegment.type,
+        label: activeSegment.label,
+        progress,
+        remaining,
+        duration: activeSegment.duration,
+        // Another Hour用の追加情報
+        elapsed: activeSegment.type === 'another' ? segmentElapsed : undefined,
+        total: activeSegment.type === 'another' ? activeSegment.duration : undefined,
+        displayFormat: activeSegment.type === 'another' ? 'fraction' : 'normal'
+      },
       periodName: activeSegment.label,
     };
   }
