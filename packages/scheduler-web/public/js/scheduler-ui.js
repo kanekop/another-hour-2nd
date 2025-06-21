@@ -1,6 +1,6 @@
 // public/js/scheduler-ui.js
 
-import { timeDesignManager } from './time-design/TimeDesignManager.js';
+import { timeDesignManager } from './core.browser.js';
 import { getCurrentScalingInfo } from './scaling-utils.js';
 
 // Constants

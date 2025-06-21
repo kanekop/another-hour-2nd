@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Design Modes Test Interface - Core Integration</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <a href="/" class="back-link">Home</a>
+    <header class="app-header" role="banner">
+        <h1 class="app-header__title">⏰ Time Design Modes Test Interface (Core Integration)</h1>
+        <div class="app-header__status">
+            <span class="status-indicator" id="statusIndicator" aria-live="polite"></span>
+            <span class="status-text" id="statusText">Testing Core Package Integration...</span>
+        </div>
+        <div class="integration-info">
+            <p><strong>🔬 Experimental:</strong> Testing unified core implementation</p>
+            <p><a href="index.html">← Back to original implementation</a></p>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <aside class="mode-selector" role="navigation" aria-label="Mode selection">
+            <h2 class="mode-selector__title">Mode Selection (Core Package)</h2>
+            <ul class="mode-selector__list" id="modeList" role="list">
+                <li class="mode-selector__item mode-selector__item--loading" role="button">
+                    <h3 class="mode-selector__name">Loading Core Package...</h3>
+                </li>
+            </ul>
+        </aside>
+
+        <section class="time-display-section" role="main" aria-label="Time display">
+            <div class="time-display" id="timeDisplay">
+                <div class="time-display__main">
+                    <div class="time-display__time" id="currentTime">
+                        <span class="time-display__hours">--</span>
+                        <span class="time-display__separator">:</span>
+                        <span class="time-display__minutes">--</span>
+                        <span class="time-display__separator">:</span>
+                        <span class="time-display__seconds">--</span>
+                    </div>
+                    <div class="time-display__period" id="periodLabel">Initializing...</div>
+                    <div class="time-display__scale">Scale: <span id="scaleFactor">--</span>x</div>
+                    <div class="time-display__real-time">Real Time: <span id="realTime">--:--:--</span></div>
+                </div>
+            </div>
+
+            <div class="timeline-container">
+                <div class="timeline" id="timeline">
+                    <div class="timeline__track"></div>
+                    <div class="timeline__current" id="timelineMarker"></div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="config-panel" id="configPanel" role="complementary" aria-label="Configuration">
+            <h2 class="config-panel__title">Configuration (Core)</h2>
+            <div class="config-panel__content" id="configContent">
+                <p>Select a mode to configure</p>
+            </div>
+        </aside>
+    </main>
+
+    <script type="module">
+        // Core package integration test
+        import { timeDesignManager, TimeDesignManager } from './js/core.browser.js';
+        
+        console.log('Core package loaded:', { timeDesignManager, TimeDesignManager });
+        
+        // Initialize with core package
+        async function initializeCoreIntegration() {
+            try {
+                if (typeof timeDesignManager.initialize === 'function') {
+                    await timeDesignManager.initialize();
+                    document.getElementById('statusText').textContent = 'Core Package Initialized';
+                    document.getElementById('statusIndicator').className = 'status-indicator status-indicator--success';
+                } else {
+                    console.log('Available methods:', Object.keys(timeDesignManager));
+                    document.getElementById('statusText').textContent = 'Core Package Loaded (Custom API)';
+                    document.getElementById('statusIndicator').className = 'status-indicator status-indicator--warning';
+                }
+            } catch (error) {
+                console.error('Core integration error:', error);
+                document.getElementById('statusText').textContent = 'Core Integration Error';
+                document.getElementById('statusIndicator').className = 'status-indicator status-indicator--error';
+            }
+        }
+        
+        initializeCoreIntegration();
+    </script>
+</body>
+</html>
