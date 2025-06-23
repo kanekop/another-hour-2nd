@@ -47,7 +47,6 @@ export class TimeDesignManager {
         }
 
         this.modes.set(modeName, ModeClass);
-        console.log(`Registered mode: ${modeName}`);
     }
 
     /**
@@ -100,7 +99,6 @@ export class TimeDesignManager {
             config: this.currentMode.exportConfig()
         });
 
-        console.log(`Mode changed to: ${modeName}`);
     }
 
     /**
