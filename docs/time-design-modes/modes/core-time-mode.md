@@ -39,16 +39,27 @@ Core Time Mode（コアタイムモード）は、一日の中心となる活動
 
 ### 基本設定項目
 
-1. **Morning AH Start Time**: 朝のAnother Hour開始時刻（0:00-12:00）
-2. **Morning AH Duration**: 朝のAnother Hour期間（0-6時間）
-3. **Evening AH Duration**: 夜のAnother Hour期間（0-6時間）
-4. **Evening AH End Time**: 夜のAnother Hour終了時刻（12:00-24:00）
+1. **Core Time Start**: コアタイム開始時刻（HH:mm形式）
+   - デフォルト: 07:00（TypeScript実装）/ 09:00（JavaScript実装）
+   - コアタイムが始まる時刻を指定
+
+2. **Core Time End**: コアタイム終了時刻（HH:mm形式）
+   - デフォルト: 22:00（TypeScript実装）/ 17:00（JavaScript実装）
+   - コアタイムが終わる時刻を指定
+
+3. **Min Core Hours** (TypeScript実装のみ): 最小コアタイム時間
+   - デフォルト: 12時間
+   - コアタイムの最小時間を保証
+
+4. **Another Hour Allocation** (TypeScript実装のオプション): Another Hour時間の配分
+   - デフォルト: null（自動配分）
+   - 指定した場合、Another Hour全体の時間を固定（0-720分）
 
 ### 制約条件
 
-- Morning AH + Evening AH の合計は最大12時間まで
-- Core Time（Designed 24）は最低12時間必要
-- 各期間は連続している必要がある
+- コアタイムは最低12時間必要（minCoreHours設定による）
+- Another Hour Allocationを指定しない場合、朝と夜のAnother Hourは自動的に配分される
+- Another Hour Allocationを指定する場合、最大12時間（720分）まで
 
 ## 🎨 Visual Representation
 
@@ -71,11 +82,12 @@ Core Time Mode（コアタイムモード）は、一日の中心となる活動
 ### デジタル表示
 
 ```
-Morning AH: 5:00 - 7:00 (2h)
+Morning AH: 0:00 - 7:00 (7h)
 Core Time: 7:00 - 22:00 (15h → Designed 24h)
 Evening AH: 22:00 - 24:00 (2h)
 
 Current: Core Time 18:34 (Real: 17:15)
+Scale Factor: 1.6x
 ```
 
 ## 🔧 Technical Details
@@ -104,15 +116,17 @@ Current: Core Time 18:34 (Real: 17:15)
 ┌─────────────────────────────────────┐
 │        Core Time Settings           │
 ├─────────────────────────────────────┤
+│ Core Time Start: [07:00] ▼         │
+│ Core Time End:   [22:00] ▼         │
+│                                     │
+│ Core Time Duration                  │
+│ 15 hours → 24h (Speed: 1.6x)       │
+│                                     │
 │ Morning Another Hour                │
-│ Start: [05:00] ▼  Duration: [2h] ▼ │
+│ 00:00 - 07:00 (7 hours)            │
 │                                     │
 │ Evening Another Hour                │
-│ Duration: [2h] ▼  End: [24:00] ▼   │
-│                                     │
-│ Core Time (Designed 24)             │
-│ 07:00 - 22:00 (15 hours → 24h)     │
-│ Speed: 1.6x                         │
+│ 22:00 - 24:00 (2 hours)            │
 └─────────────────────────────────────┘
 ```
 

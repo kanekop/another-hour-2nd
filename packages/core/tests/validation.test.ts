@@ -1,6 +1,12 @@
 // tests/validation.test.ts
-import { validateTimeConfig, validateModeParameters } from '../src/validation';
-import { AHTimeConfig, TimeDesignMode, ClassicModeParams, CoreTimeModeParams, WakeBasedModeParams, SolarModeParams } from '../src/types';
+import { validateTimeConfig, validateModeParameters } from '../src/validation.js';
+import { TimeDesignMode, ClassicModeParams, CoreTimeModeParams, WakeBasedModeParams, SolarModeParams } from '../src/types/time-modes.js';
+
+// テスト用の型定義
+interface AHTimeConfig {
+    designed24Duration: number;
+    d24StartTime?: Date;
+}
 
 describe('validateTimeConfig', () => {
     it('should validate valid config', () => {
@@ -26,8 +32,7 @@ describe('validateTimeConfig', () => {
 describe('validateModeParameters', () => {
     it('should validate classic mode parameters successfully', () => {
         const params: ClassicModeParams = {
-            designed24Duration: 8,
-            d24StartTime: new Date(),
+            designed24Duration: 8
         };
         const result = validateModeParameters(TimeDesignMode.Classic, params);
         expect(result.isValid).toBe(true);
@@ -35,9 +40,9 @@ describe('validateModeParameters', () => {
 
     it('should validate core-time mode parameters successfully', () => {
         const params: CoreTimeModeParams = {
-            coreStartTime: new Date(),
-            coreEndTime: new Date(),
-            designed24Duration: 8,
+            coreTimeStart: '07:00',
+            coreTimeEnd: '22:00',
+            minCoreHours: 6
         };
         const result = validateModeParameters(TimeDesignMode.CoreTime, params);
         expect(result.isValid).toBe(true);
@@ -45,8 +50,9 @@ describe('validateModeParameters', () => {
 
     it('should validate wake-based mode parameters successfully', () => {
         const params: WakeBasedModeParams = {
-            wakeUpTime: new Date(),
-            designed24Duration: 8,
+            defaultWakeTime: '07:00',
+            anotherHourDuration: 60,
+            maxScaleFactor: 2.0
         };
         const result = validateModeParameters(TimeDesignMode.WakeBased, params);
         expect(result.isValid).toBe(true);
@@ -54,9 +60,8 @@ describe('validateModeParameters', () => {
 
     it('should validate solar mode parameters successfully', () => {
         const params: SolarModeParams = {
-            latitude: 0,
-            longitude: 0,
-            designed24Duration: 8,
+            dayHoursTarget: 12,
+            seasonalAdjustment: true
         };
         const result = validateModeParameters(TimeDesignMode.Solar, params);
         expect(result.isValid).toBe(true);
@@ -64,8 +69,7 @@ describe('validateModeParameters', () => {
 
     it('should return error for unknown mode', () => {
         const params: ClassicModeParams = {
-            designed24Duration: 8,
-            d24StartTime: new Date(),
+            designed24Duration: 8
         };
         const result = validateModeParameters('unknown-mode' as any, params);
         expect(result.isValid).toBe(false);

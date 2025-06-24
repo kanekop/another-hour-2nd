@@ -159,16 +159,31 @@ Another Hour: 2時間
 
 ### 基本設定項目
 
-1. **Wake Time**: 起床時刻（毎日記録/更新）
-2. **Another Hour Duration**: Another Hour期間（0-6時間）
-3. **Auto-detect Wake Time**: スマートフォン/ウェアラブル連携での自動検出
-4. **Default Wake Time**: 起床時刻が不明な場合のデフォルト値
+1. **Today's Wake Time**: 今日の起床時刻（毎日記録/更新）
+   - 形式：HH:mm
+   - 毎朝入力する、または自動検出
+   - JavaScript実装：`wakeTime`
 
-### 高度な設定
+2. **Default Wake Time**: デフォルト起床時刻
+   - デフォルト：07:00
+   - 今日の起床時刻が未設定の場合に使用
+   - TypeScript実装のみ
 
-- **Minimum Designed Period**: 最低限確保するDesigned時間（例：12時間）
-- **Maximum Scale Factor**: 最大スケールファクター（例：2.0倍まで）
-- **Wake Time Buffer**: 起床判定の余裕時間（例：±30分）
+3. **Another Hour Duration**: Another Hour期間（分単位）
+   - デフォルト：60分（1時間）
+   - 範囲：0-720分（0-12時間）
+   - 一日の終わりに確保する時間
+
+4. **Max Scale Factor**: 最大スケールファクター
+   - デフォルト：3.0
+   - TypeScript実装のみ
+   - 時間の圧縮率の上限を設定
+
+### 高度な設定（将来の実装予定）
+
+- **Auto-detect Wake Time**: スマートフォン/ウェアラブル連携での自動検出
+- **Minimum Designed Period**: 最低限確保するDesigned時間
+- **Wake Time Buffer**: 起床判定の余裕時間
 
 ## 🎨 Visual Representation
 
@@ -230,25 +245,10 @@ function calculateWakeBasedScale(wakeTime, ahDuration) {
 }
 ```
 
-### 日付変更の処理
+### 日付の扱い
 
-Wake-Based Modeでは、日付の変更は起床時刻に基づきます：
-
-```javascript
-function getWakeBasedDate(realDate, wakeTime) {
-  const wakeHour = wakeTime.getHours();
-  const currentHour = realDate.getHours();
-  
-  // 起床時刻より前の場合は「前日」として扱う
-  if (currentHour < wakeHour) {
-    const adjustedDate = new Date(realDate);
-    adjustedDate.setDate(adjustedDate.getDate() - 1);
-    return adjustedDate;
-  }
-  
-  return realDate;
-}
-```
+Wake-Based Mode でも1日の区切りは通常どおり`00:00`です。起床時刻は「Designed Day」
+の開始を示すだけで、日付そのものは深夜に切り替わります。
 
 ## 📱 UI/UX Guidelines
 

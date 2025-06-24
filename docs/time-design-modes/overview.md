@@ -36,7 +36,7 @@ Another Hourは、単なる時計アプリケーションから「時間設計�
   - Evening AH（夜のAnother Hour）
 
 ### 3. Wake-Based Mode（起床ベースモード）
-起床時刻から24時間をカウントし、すでに経過した時間を除いて残り時間を動的にスケーリングします。
+起床時刻から深夜までの時間を再設計し、Another Hour開始までを動的にスケーリングします。
 
 - **特徴**: 毎日の起床時刻に応じて時間の速度が変化
 - **用途**: 不規則な睡眠パターンの人向け
@@ -84,6 +84,19 @@ Time Design Modesは継続的に進化します：
 
 Time Design Modesは、Another Hourを「時計」から「時間のOS」へと変革します。これは単なる機能追加ではなく、人々が時間と向き合う方法を根本から変える可能性を秘めています。
 
+## 📋 関連ドキュメント
+
+### 技術仕様書
+- **[Time Design Modes データ仕様書](../specifications/time-design-modes-data-spec.md)** - 開発者向けの詳細な技術仕様
+- **[Technical Specification](./technical-specification.md)** - 実装詳細と技術アーキテクチャ
+- **[Implementation Guide](./implementation-guide.md)** - 開発・実装ガイド
+
+### 個別モード仕様
+- **[Classic Mode Specification](../specifications/classic-mode-spec.md)** - Classic Mode技術仕様
+- **[Core Time Mode](./modes/core-time-mode.md)** - Core Time Mode詳細
+- **[Solar Mode Specification](../specifications/solar-mode-spec.md)** - Solar Mode技術仕様
+- **[Wake-Based Mode Specification](../specifications/wake-based-mode-spec.md)** - Wake-Based Mode技術仕様
+
 ---
 
-*このドキュメントは、Another Hour Time Design Modes の概要を説明するものです。各モードの詳細については、個別のドキュメントを参照してください。*
+*このドキュメントは、Another Hour Time Design Modes の**概念と設計哲学**を説明するものです。技術的な実装詳細や開発仕様については、上記の技術仕様書を参照してください。*

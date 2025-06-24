@@ -1,6 +1,6 @@
 // public/js/scheduler-ui.js
 
-import { timeDesignManager } from './time-design/TimeDesignManager.js';
+import { timeDesignManager } from './core.browser.js';
 import { getCurrentScalingInfo } from './scaling-utils.js';
 
 // Constants
@@ -143,7 +143,20 @@ function getTimeSlots() {
     if (state.timeMode === 'real') {
       label = realTimeLabel;
     } else {
-      const ahTimeLabel = `${String(ahResult.hours).padStart(2, '0')}:${String(ahResult.minutes).padStart(2, '0')}`;
+      let ahTimeLabel;
+      
+      // Handle Another Hour fraction display format
+      if (ahResult.segmentInfo && ahResult.segmentInfo.displayFormat === 'fraction') {
+        const elapsedHours = Math.floor(ahResult.segmentInfo.elapsed / 60);
+        const elapsedMinutes = Math.floor(ahResult.segmentInfo.elapsed % 60);
+        const totalHours = Math.floor(ahResult.segmentInfo.total / 60);
+        const totalMinutes = Math.floor(ahResult.segmentInfo.total % 60);
+        
+        ahTimeLabel = `${String(elapsedHours).padStart(2, '0')}:${String(elapsedMinutes).padStart(2, '0')}/${String(totalHours).padStart(2, '0')}:${String(totalMinutes).padStart(2, '0')}`;
+      } else {
+        ahTimeLabel = `${String(ahResult.hours).padStart(2, '0')}:${String(ahResult.minutes).padStart(2, '0')}`;
+      }
+      
       if (state.timeMode === 'both') {
         label = `${ahTimeLabel}<br><small>(${realTimeLabel})</small>`;
       } else { // 'ah'
@@ -155,8 +168,9 @@ function getTimeSlots() {
       label: label,
       realHour: hour,
       ahHour: ahResult.hours + ahResult.minutes / 60,
-      isAH: ahResult.periodName?.includes('Another Hour'),
-      isScaled: ahResult.scaleFactor !== 1
+      isAH: ahResult.isAnotherHour || ahResult.periodName?.includes('Another Hour'),
+      isScaled: ahResult.scaleFactor !== 1,
+      segmentInfo: ahResult.segmentInfo
     });
   }
 
@@ -320,13 +334,19 @@ function renderCalendar() {
     if (slot.isAHStart) {
       timeSlot.classList.add('ah-start');
     }
+    // Add another-hour class for visual distinction
+    if (slot.segmentInfo && slot.segmentInfo.displayFormat === 'fraction') {
+      timeSlot.classList.add('another-hour');
+    }
 
     // Handle multi-line labels for "both" mode
-    if (slot.label.includes('\n')) {
+    if (slot.label.includes('<br>')) {
+      timeSlot.innerHTML = slot.label;
+    } else if (slot.label.includes('\n')) {
       const lines = slot.label.split('\n');
       timeSlot.innerHTML = `${lines[0]}<br><small>${lines[1]}</small>`;
     } else {
-      timeSlot.textContent = slot.label;
+      timeSlot.innerHTML = slot.label;
     }
 
     contentArea.appendChild(timeSlot);
@@ -337,6 +357,10 @@ function renderCalendar() {
       eventCell.className = 'event-cell';
       if (slot.isAH) {
         eventCell.classList.add('ah-period');
+      }
+      // Add another-hour class for visual distinction
+      if (slot.segmentInfo && slot.segmentInfo.displayFormat === 'fraction') {
+        eventCell.classList.add('another-hour');
       }
       eventCell.dataset.realHour = slot.realHour;
       eventCell.dataset.day = day;
@@ -546,26 +570,35 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
 
     if (event.isMultiDay) {
       if (event.isFirstDay) {
-        // Designed期間内かAH期間内かを判定
-        const prefix = ahStartTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
-        timeDisplay = `${prefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} →`;
+        timeDisplay = formatAHTimeForDisplay(ahStartTime, 'start-multiday');
       } else if (event.isLastDay) {
-        const prefix = ahEndTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
-        timeDisplay = `→ ${prefix} ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}`;
+        timeDisplay = formatAHTimeForDisplay(ahEndTime, 'end-multiday');
       } else {
         timeDisplay = '→ All Day →';
       }
     } else {
-      // 開始時間と終了時間で期間を判定
-      const startPrefix = ahStartTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
-      const endPrefix = ahEndTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
-
-      if (startPrefix === endPrefix) {
-        // 同じ期間内の場合
-        timeDisplay = `${startPrefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} - ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}`;
+      // Handle same period vs cross-period events
+      const startIsAH = ahStartTime.isAnotherHour;
+      const endIsAH = ahEndTime.isAnotherHour;
+      
+      if (startIsAH === endIsAH) {
+        // Same period
+        if (startIsAH) {
+          // Both in Another Hour - use fraction format if available
+          const startResult = timeDesignManager.calculate(eventStart.toDate(), state.selectedTimezone);
+          if (startResult.segmentInfo && startResult.segmentInfo.displayFormat === 'fraction') {
+            eventEl.classList.add('another-hour-event');
+            timeDisplay = `AH ${formatAHFractionTime(ahStartTime)} - ${formatAHFractionTime(ahEndTime)}`;
+          } else {
+            timeDisplay = `AH ${formatAHTime(ahStartTime)} - ${formatAHTime(ahEndTime)}`;
+          }
+        } else {
+          // Both in Designed period
+          timeDisplay = `Designed ${formatAHTime(ahStartTime)} - ${formatAHTime(ahEndTime)}`;
+        }
       } else {
-        // 期間をまたがる場合
-        timeDisplay = `${startPrefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} - ${endPrefix} ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}`;
+        // Cross-period event
+        timeDisplay = `${startIsAH ? 'AH' : 'Designed'} ${formatAHTime(ahStartTime)} - ${endIsAH ? 'AH' : 'Designed'} ${formatAHTime(ahEndTime)}`;
       }
     }
   } else {
@@ -633,13 +666,51 @@ function renderMultiHourEvent(event, dayIndex, timeSlots) {
 function convertRealDateToAH(date) {
   if (!timeDesignManager.currentMode) return { hours: 0, minutes: 0 };
   const result = timeDesignManager.calculate(date, state.selectedTimezone);
-  return { hours: result.hours, minutes: result.minutes, isAnotherHour: result.isAnotherHour, periodName: result.periodName };
+  return { 
+    hours: result.hours, 
+    minutes: result.minutes, 
+    seconds: result.seconds || 0,
+    isAnotherHour: result.isAnotherHour, 
+    periodName: result.periodName,
+    segmentInfo: result.segmentInfo
+  };
 }
 
 // Format time display - use the new conversion logic
 function formatAhTime(hours, minutes, periodName) {
   const prefix = periodName.includes('Another Hour') ? 'AH' : 'Designed';
   return `${prefix} ${String(Math.floor(hours)).padStart(2, '0')}:${String(Math.floor(minutes)).padStart(2, '0')}`;
+}
+
+// Format AH time without prefix
+function formatAHTime(ahTime) {
+  return `${String(Math.floor(ahTime.hours)).padStart(2, '0')}:${String(Math.floor(ahTime.minutes)).padStart(2, '0')}`;
+}
+
+// Format AH time with fraction display for Another Hour periods
+function formatAHFractionTime(ahTime) {
+  if (ahTime.segmentInfo && ahTime.segmentInfo.displayFormat === 'fraction') {
+    const elapsedHours = Math.floor(ahTime.segmentInfo.elapsed / 60);
+    const elapsedMinutes = Math.floor(ahTime.segmentInfo.elapsed % 60);
+    const totalHours = Math.floor(ahTime.segmentInfo.total / 60);
+    const totalMinutes = Math.floor(ahTime.segmentInfo.total % 60);
+    
+    return `${String(elapsedHours).padStart(2, '0')}:${String(elapsedMinutes).padStart(2, '0')}/${String(totalHours).padStart(2, '0')}:${String(totalMinutes).padStart(2, '0')}`;
+  }
+  return formatAHTime(ahTime);
+}
+
+// Format AH time for display with proper prefixes
+function formatAHTimeForDisplay(ahTime, type = 'normal') {
+  const prefix = ahTime.isAnotherHour ? 'AH' : 'Designed';
+  
+  if (type === 'start-multiday') {
+    return `${prefix} ${formatAHTime(ahTime)} →`;
+  } else if (type === 'end-multiday') {
+    return `→ ${prefix} ${formatAHTime(ahTime)}`;
+  }
+  
+  return `${prefix} ${formatAHTime(ahTime)}`;
 }
 
 // Show event details - ここも修正
@@ -653,9 +724,16 @@ function showEventDetails(event) {
   const ahStartTime = convertRealDateToAH(startTime.toDate());
   const ahEndTime = convertRealDateToAH(endTime.toDate());
 
-  // 期間の判定
-  const startPrefix = ahStartTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
-  const endPrefix = ahEndTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
+  // Format AH time display with fraction support
+  const startAHDisplay = ahStartTime.isAnotherHour && ahStartTime.segmentInfo && ahStartTime.segmentInfo.displayFormat === 'fraction' 
+    ? formatAHFractionTime(ahStartTime)
+    : formatAHTime(ahStartTime);
+  const endAHDisplay = ahEndTime.isAnotherHour && ahEndTime.segmentInfo && ahEndTime.segmentInfo.displayFormat === 'fraction'
+    ? formatAHFractionTime(ahEndTime)
+    : formatAHTime(ahEndTime);
+  
+  const startPrefix = ahStartTime.isAnotherHour ? 'AH' : 'Designed';
+  const endPrefix = ahEndTime.isAnotherHour ? 'AH' : 'Designed';
 
   elements.eventInfo.innerHTML = `
     <div class="event-info-row">
@@ -668,7 +746,7 @@ function showEventDetails(event) {
     </div>
     <div class="event-info-row">
       <span class="event-info-label">AH Time:</span>
-      <span>${startPrefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} - ${endPrefix} ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}</span>
+      <span>${startPrefix} ${startAHDisplay} - ${endPrefix} ${endAHDisplay}</span>
     </div>
     ${event.description ? `
     <div class="event-info-row">
@@ -699,9 +777,16 @@ function showEventDetailsModal(event) {
   const ahStartTime = convertRealDateToAH(startTime.toDate());
   const ahEndTime = convertRealDateToAH(endTime.toDate());
 
-  // 期間の判定
-  const startPrefix = ahStartTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
-  const endPrefix = ahEndTime.periodName.includes('Another Hour') ? 'AH' : 'Designed';
+  // Format AH time display with fraction support
+  const startAHDisplay = ahStartTime.isAnotherHour && ahStartTime.segmentInfo && ahStartTime.segmentInfo.displayFormat === 'fraction' 
+    ? formatAHFractionTime(ahStartTime)
+    : formatAHTime(ahStartTime);
+  const endAHDisplay = ahEndTime.isAnotherHour && ahEndTime.segmentInfo && ahEndTime.segmentInfo.displayFormat === 'fraction'
+    ? formatAHFractionTime(ahEndTime)
+    : formatAHTime(ahEndTime);
+  
+  const startPrefix = ahStartTime.isAnotherHour ? 'AH' : 'Designed';
+  const endPrefix = ahEndTime.isAnotherHour ? 'AH' : 'Designed';
 
   elements.eventModalContent.innerHTML = `
     <div class="event-info-row">
@@ -714,7 +799,7 @@ function showEventDetailsModal(event) {
     </div>
     <div class="event-info-row">
       <span class="event-info-label">AH Time:</span>
-      <span>${startPrefix} ${String(Math.floor(ahStartTime.hours)).padStart(2, '0')}:${String(Math.floor(ahStartTime.minutes)).padStart(2, '0')} - ${endPrefix} ${String(Math.floor(ahEndTime.hours)).padStart(2, '0')}:${String(Math.floor(ahEndTime.minutes)).padStart(2, '0')}</span>
+      <span>${startPrefix} ${startAHDisplay} - ${endPrefix} ${endAHDisplay}</span>
     </div>
     ${event.description ? `
     <div class="event-info-row">

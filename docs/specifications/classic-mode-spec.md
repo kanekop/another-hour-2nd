@@ -52,13 +52,22 @@ The scaling factor is only applied during the "Designed 24" segment.
 
 ## 🎚️ Customization Parameters
 
-The mode is controlled by a single parameter.
+The mode is controlled by the following parameters:
 
+### Primary Parameter
 -   **Name**: `designed24Duration`
 -   **UI Control**: A slider.
 -   **Label**: "Designed 24 Duration (minutes)"
 -   **Range**: `1` to `1439` minutes.
 -   **Default**: `1380` minutes.
+
+### User Settings (Optional)
+-   **Name**: `dayStartTime`
+-   **UI Control**: Time picker.
+-   **Label**: "Day Start Time"
+-   **Format**: "HH:mm" (24-hour format)
+-   **Default**: `"4:00"` (4:00 AM)
+-   **Description**: Defines when the user's day begins. This affects the calculation of "minutes since day start" rather than "minutes since midnight".
 
 ## 🔄 Time Calculation Logic (`calculate` method)
 
@@ -72,8 +81,8 @@ The mode is controlled by a single parameter.
         -   `scaledElapsedMinutes = elapsedRealMinutes \times \text{scaleFactor}`
         -   The display time is derived from `scaledElapsedMinutes`.
     -   **If in "Another Hour" segment**:
-        -   `elapsedRealMinutesInAH = realMinutes - designed24Duration`
-        -   The display time is derived from `elapsedRealMinutesInAH`. The Another Hour clock effectively "counts up" from 0.
+        -   `remainingMinutesInAH = (1440 - designed24Duration) - (realMinutes - designed24Duration)`
+        -   The display time shows the remaining time in Another Hour as a countdown.
 
 ## 🖼️ UI/UX Specifications
 
