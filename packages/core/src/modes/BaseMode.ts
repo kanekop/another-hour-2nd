@@ -1,13 +1,11 @@
-import { TimeDesignModeConfig, ModeParameters } from '../types/time-modes.js';
-
 /**
  * Time Design Mode の基底クラス
  * すべてのモードはこのクラスを継承する
  */
 export class BaseMode {
-    config: TimeDesignModeConfig;
+    config: any;
 
-    constructor(config: TimeDesignModeConfig) {
+    constructor(config: any) {
         if (this.constructor === BaseMode) {
             throw new Error('BaseMode is an abstract class and cannot be instantiated directly');
         }
@@ -117,49 +115,32 @@ export class BaseMode {
     }
 
     /**
-     * タイムライン用のセグメント情報を取得
-     * @returns {Array} セグメント配列
-     */
-    getSegments(): Array<{
-        type: string;
-        label: string;
-        shortLabel: string;
-        startMinutes: number;
-        durationMinutes: number;
-        scaleFactor?: number;
-        style?: Record<string, string>;
-    }> {
-        throw new Error('getSegments must be implemented by subclass');
-    }
-
-    /**
-     * UI設定フォーム用のデータを取得
-     * @returns {Object} UI設定データ
-     */
-    getConfigUI(): Record<string, unknown> {
-        throw new Error('getConfigUI must be implemented by subclass');
-    }
-
-    /**
-     * UI設定フォームからデータを収集
-     * @returns {Object} 設定データ
-     */
-    collectConfigFromUI(): Record<string, unknown> {
-        throw new Error('collectConfigFromUI must be implemented by subclass');
-    }
-
-    /**
      * デバッグ情報を取得
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getDebugInfo(currentTime: Date): Record<string, unknown> {
+    getDebugInfo(currentTime: Date): object {
         return {
-            mode: this.config.mode,
+            mode: this.constructor.name,
+            config: this.config,
             scaleFactor: this.calculateScaleFactor(currentTime),
-            phase: this.getCurrentPhase(currentTime),
-            ahTime: this.calculateAnotherHourTime(currentTime),
-            config: this.exportConfig()
+            // currentPhase: this.getCurrentPhase(currentTime),
         };
+    }
+
+    /**
+     * Returns the segments for the timeline UI.
+     * @returns {Array} An array of segment objects.
+     */
+    getTimelineSegments(): any {
+        return [];
+    }
+
+    /**
+     * Returns the schema for the configuration panel UI.
+     * @returns {object | null}
+     */
+    getConfigSchema(): any {
+        return null;
     }
 }

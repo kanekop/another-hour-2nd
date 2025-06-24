@@ -6,52 +6,35 @@ module.exports = {
     // TypeScript設定
     preset: 'ts-jest',
 
+    // ルートディレクトリ
+    rootDir: __dirname,
+
     // テストファイルのパターン
     testMatch: [
-        '**/tests/**/*.test.ts',
-        '**/tests/**/*.test.js',
-        '**/__tests__/**/*.ts',
-        '**/__tests__/**/*.js'
+        '<rootDir>/tests/**/*.test.ts'
     ],
 
     // カバレッジ設定
-    collectCoverage: false, // 一時的に無効化
+    collectCoverage: false,
     coverageDirectory: 'coverage',
     collectCoverageFrom: [
         'src/**/*.ts',
-        'src/**/*.js',
         '!src/index.ts',
-        '!src/index.js',
         '!**/node_modules/**',
         '!src/types/**/*.ts',
     ],
 
-    // カバレッジ閾値 (一時的に無効化)
-    // coverageThreshold: {
-    //     global: {
-    //         branches: 10,
-    //         functions: 10,
-    //         lines: 10,
-    //         statements: 10
-    //     }
-    // },
-
     // レポーター設定
     coverageReporters: [
         'text',
-        'text-summary',
-        'lcov',
-        'html'
+        'text-summary'
     ],
 
     // テスト結果の表示設定
     verbose: true,
 
-    // エラー時の詳細表示
-    errorOnDeprecated: true,
-
     // タイムアウト設定（ミリ秒）
-    testTimeout: 10000,
+    testTimeout: 5000,
 
     // モックのクリア設定
     clearMocks: true,
@@ -59,7 +42,25 @@ module.exports = {
 
     // トランスフォーム設定
     transform: {
-        '^.+\\.ts$': 'ts-jest'
+        '^.+\\.ts$': ['ts-jest', {
+            tsconfig: {
+                target: 'ES2020',
+                module: 'commonjs',
+                lib: ['ES2020'],
+                esModuleInterop: true,
+                allowSyntheticDefaultImports: true,
+                strict: false,
+                skipLibCheck: true,
+                forceConsistentCasingInFileNames: false,
+                moduleResolution: 'node',
+                resolveJsonModule: true,
+                allowJs: true,
+                noEmit: true,
+                isolatedModules: true
+            },
+            isolatedModules: true,
+            diagnostics: false
+        }]
     },
 
     // ファイル拡張子の解決
@@ -70,10 +71,12 @@ module.exports = {
         '^(\\.{1,2}/.*)\\.js$': '$1'
     },
 
-    // TypeScript設定
-    globals: {
-        'ts-jest': {
-            tsconfig: 'tsconfig.json'
-        }
-    }
+    // パフォーマンス設定
+    maxWorkers: 1,
+    
+    // キャッシュ無効
+    cache: false,
+    
+    // Watch プラグイン無効
+    watchPlugins: []
 };

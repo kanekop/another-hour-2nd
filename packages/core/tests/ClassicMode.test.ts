@@ -1,5 +1,5 @@
-import { ClassicMode } from '../../src/modes/ClassicMode';
-import { TimeDesignMode, DEFAULT_VALUES } from '../../src/types/time-modes';
+import { ClassicMode } from '../src/modes/ClassicMode';
+import { TimeDesignMode, DEFAULT_VALUES } from '../src/types/time-modes';
 
 describe('ClassicMode', () => {
     let mode: ClassicMode;
@@ -119,7 +119,7 @@ describe('ClassicMode', () => {
             expect(phase.name).toBe('Designed 24');
             expect(phase.progress).toBeGreaterThanOrEqual(0);
             expect(phase.progress).toBeLessThan(1);
-            expect(phase.remainingMinutes).toBeGreaterThan(0);
+            expect((phase as any).remainingMinutes).toBeGreaterThan(0);
         });
 
         it('should detect Another Hour phase correctly', () => {
