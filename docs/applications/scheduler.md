@@ -2,15 +2,14 @@
 
 Another Hour Scheduler is an advanced web-based scheduling application that extends the unique time concepts of Another Hour Clock. This application allows you to manage your calendar and events using the **"Designed 24"** and **"Another Hour" (AH)** time system, while seamlessly integrating with your existing Google Calendar and Outlook Calendar.
 
-## 📅 About This Application
+## 📅 About This Project
 
-Another Hour Scheduler is a core component of the **Another Hour Monorepo** project, designed to add comprehensive scheduling and calendar management capabilities while preserving all the innovative time concepts that make Another Hour unique.
+This is a **Fork & Extend** version of the original Another Hour Clock project, specifically designed to add comprehensive scheduling and calendar management capabilities while preserving all the innovative time concepts that make Another Hour unique.
 
-### 🔗 **Project Structure**
-- **Monorepo**: [Another Hour](https://github.com/kanekop/another-hour) - Unified time design platform
-- **This Application**: `packages/scheduler-web/` - Calendar management with time design integration
-- **Core Library**: `packages/core/` - Shared Time Design Modes logic
-- **Architecture**: Integrated monorepo with shared dependencies and consistent API
+### 🔗 **Project Relationship**
+- **Original Project**: [Another Hour Clock](https://github.com/kanekop/another-hour-gen2-Claude) - Pure time experience
+- **This Project**: Another Hour Scheduler - Time experience + Calendar management
+- **Strategy**: Fork & Extend (see [../fork_strategy.md](../fork_strategy.md) for details)
 
 ## ✨ Key Concepts
 
@@ -53,32 +52,28 @@ Another Hour Scheduler is a core component of the **Another Hour Monorepo** proj
 ## 🏗️ Architecture
 
 ```
-another-hour/ (Monorepo)
-├── 📦 packages/
-│   ├── 📅 scheduler-web/ (This Application)
-│   │   ├── public/
-│   │   │   ├── 📄 HTML Pages (Scheduler, Calendar Sync, etc.)
-│   │   │   ├── 🎨 CSS (Calendar-specific styling)
-│   │   │   └── ⚡ JavaScript (Calendar UI & Event management)
-│   │   ├── src/
-│   │   │   ├── 🛣️ routes/ (Calendar sync, Event management APIs)
-│   │   │   ├── 🔐 services/ (Google/Microsoft OAuth Integration)
-│   │   │   └── 📁 shared/ (Utility functions)
-│   │   └── server.js (Express.js backend)
-│   ├── 🧠 core/ (Shared Library)
-│   │   ├── src/
-│   │   │   ├── modes/ (Time Design Modes implementation)
-│   │   │   ├── types/ (TypeScript type definitions)
-│   │   │   └── time-calculation.ts (Core time logic)
-│   │   └── tests/ (Comprehensive test suite)
-│   ├── 🌐 website/ (Marketing site)
-│   ├── ⏰ clock-web/ (Standalone clock)
-│   └── ⌚ watch-app/ (Watch application)
-├── 📚 docs/ (Shared documentation)
-└── ⚙️ Configuration (Workspace-level)
-    ├── package.json (Workspace management)
-    ├── lerna.json (Monorepo orchestration)
-    └── tsconfig.json (Shared TypeScript config)
+another-hour/
+├── 📅 Calendar & Scheduling (NEW)
+│   ├── Google Calendar API Integration
+│   ├── Microsoft Graph API Integration  
+│   ├── Event Management System
+│   └── Time Conversion Engine
+├── 🌐 Frontend (Extended from Original)
+│   ├── public/
+│   │   ├── 📄 HTML Pages (Scheduler, Calendar Sync, etc.)
+│   │   ├── 🎨 CSS (Calendar-specific styling)
+│   │   └── ⚡ JavaScript (Calendar UI & Event management)
+│   └── 🔧 Enhanced Core Logic
+│       ├── clock-core.js (Extended for events)
+│       ├── timezone-manager.js (Inherited)
+│       └── calendar-sync.js (NEW)
+├── 🔙 Backend (Extended)
+│   ├── 🛣️ API Routes (Calendar sync, Event management)
+│   ├── 🔐 OAuth Integration (Google & Microsoft)
+│   └── 📁 Static File Serving
+└── ⚙️ Configuration
+    ├── 🔒 Replit Secrets (OAuth credentials)
+    └── 🔧 Environment setup
 ```
 
 ## 🚀 Quick Start
@@ -90,24 +85,14 @@ another-hour/ (Monorepo)
 - **Google Account** (for Google Calendar integration)
 - **Microsoft Account** (optional, for Outlook integration)
 
-### Installation (Monorepo Development)
+### Installation (Replit)
 
-1. **Clone the Monorepo**
-   ```bash
-   git clone https://github.com/kanekop/another-hour.git
-   cd another-hour
+1. **Fork on Replit**
+   - This project is optimized for Replit development
+   - Fork this repository directly in Replit
+
+2. **Configure Secrets**
    ```
-
-2. **Install Dependencies (Workspace)**
-   ```bash
-   npm install
-   # This installs dependencies for all packages in the monorepo
-   ```
-
-3. **Environment Setup**
-   ```bash
-   # Configure OAuth credentials for scheduler-web package
-   # Add to your environment or .env file:
    GOOGLE_CLIENT_ID=your_google_client_id
    GOOGLE_CLIENT_SECRET=your_google_client_secret
    MICROSOFT_CLIENT_ID=your_microsoft_client_id (optional)
@@ -115,38 +100,39 @@ another-hour/ (Monorepo)
    SESSION_SECRET=your_long_random_string
    ```
 
-4. **Start the Scheduler Application**
+3. **Run the Application**
    ```bash
-   # Option 1: Run scheduler specifically
-   npm run scheduler
-   
-   # Option 2: Run all development servers
-   npm run dev:all
-   
-   # Option 3: Navigate to package and run
-   cd packages/scheduler-web
-   npm run dev
+   npm start
    ```
 
-5. **Setup Calendar Integration**
-   - Navigate to http://localhost:3000/pages/calendar-sync.html
+4. **Setup Calendar Integration**
+   - Navigate to Calendar Sync settings
    - Authenticate with Google/Microsoft
    - Configure your sync preferences
 
-### Development with Core Library
+### Installation (Local Development)
 
-The scheduler automatically uses the shared `@another-hour/core` library:
+1. **Clone & Navigate**
+   ```bash
+   git clone https://github.com/your-username/another-hour.git
+   cd another-hour
+   ```
 
-```bash
-# Build core library (if making changes)
-npm run build:core
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-# Run tests across all packages
-npm run test
+3. **Environment Setup**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your OAuth credentials
+   ```
 
-# Lint all packages
-npm run lint
-```
+4. **Start the Server**
+   ```bash
+   npm start
+   ```
 
 ## 🎮 Usage Guide
 
@@ -251,46 +237,28 @@ realEventTime ↔ ahEventTime = timeConverter.convertEvent(event, scaleFactor)
 
 ## 🛠️ Development
 
-### Project Structure (Monorepo Context)
+### Project Structure (Extended)
 ```
-packages/scheduler-web/
-├── public/                    # Frontend assets
-│   ├── css/
-│   │   ├── scheduler.css     # Calendar-specific styles
-│   │   ├── calendar-sync.css # OAuth & sync UI styles
-│   │   └── components.css    # Shared UI components
-│   ├── js/
-│   │   ├── scheduler-ui.js   # Main scheduler interface
-│   │   ├── calendar-sync-ui.js # Calendar sync management
-│   │   ├── event-manager.js  # Event CRUD operations
-│   │   └── time-design/      # Client-side time design integration
-│   ├── pages/
-│   │   ├── scheduler.html    # Main scheduler page
-│   │   ├── calendar-sync.html # Calendar sync settings
-│   │   └── *.html           # Other application pages
-│   └── index.html           # Application entry point
-├── src/
-│   ├── routes/              # Express.js API routes
-│   │   ├── calendar-sync.js # Calendar synchronization APIs
-│   │   ├── stopwatch.js     # Stopwatch functionality
-│   │   └── timer.js         # Timer functionality
-│   ├── services/            # External service integrations
-│   │   ├── GoogleCalendarService.js
-│   │   └── OutlookCalendarService.js (planned)
-│   └── shared/              # Utilities
-│       └── ah-time.js       # Time conversion utilities
-├── server.js                # Express.js server entry point
-├── package.json             # Package-specific dependencies
-└── README.md                # Package documentation
+public/
+├── css/                    # Stylesheets (inherited + new)
+│   └── scheduler.css      # NEW: Calendar-specific styles
+├── js/                    # Client-side modules (inherited + new)
+│   ├── scheduler-ui.js    # NEW: Main scheduler interface
+│   ├── calendar-sync-ui.js # NEW: Calendar sync management
+│   └── event-manager.js   # NEW: Event CRUD operations
+├── pages/                 # HTML pages (inherited + new)
+│   ├── scheduler.html     # NEW: Main scheduler page
+│   └── calendar-sync.html # NEW: Calendar sync settings
+└── clock-core.js          # EXTENDED: Event-aware time calculations
 
-# Integration with Core Library:
-packages/core/               # Shared across all applications
-├── src/
-│   ├── modes/              # Time Design Modes implementation
-│   ├── types/              # TypeScript type definitions
-│   ├── time-calculation.ts # Core time calculation logic
-│   └── index.ts            # Public API exports
-└── tests/                  # Comprehensive test suite
+src/
+├── routes/                # API routes (inherited + new)
+│   └── calendar-sync.js   # NEW: Calendar synchronization APIs
+├── services/              # NEW: External service integrations
+│   ├── GoogleCalendarService.js
+│   └── OutlookCalendarService.js
+└── shared/                # Utilities (inherited)
+    └── ah-time.js         # Time conversion utilities
 ```
 
 ### Key Files (New & Modified)
@@ -312,28 +280,12 @@ We welcome contributions to make AH Scheduler even better!
 - **Performance**: Improve sync speed and responsiveness
 
 ### Getting Started
-1. **Fork** the [Another Hour monorepo](https://github.com/kanekop/another-hour)
-2. **Set up** your development environment (see Installation guide above)
+1. **Fork** this repository
+2. **Set up** your development environment (see Installation guide)
 3. **Configure** OAuth credentials for testing
-4. **Work in the scheduler package**: `cd packages/scheduler-web`
-5. **Create** a feature branch (`git checkout -b feature/amazing-scheduler-feature`)
-6. **Test** your changes:
-   ```bash
-   # Test scheduler specifically
-   npm run test
-   
-   # Test with core library integration
-   cd ../.. && npm run test
-   ```
-7. **Build and validate**:
-   ```bash
-   # Build core library if you made changes
-   npm run build:core
-   
-   # Lint your changes
-   npm run lint
-   ```
-8. **Submit** a Pull Request to the main monorepo
+4. **Create** a feature branch (`git checkout -b feature/amazing-scheduler-feature`)
+5. **Test** your changes across different time configurations
+6. **Submit** a Pull Request
 
 ## 🚦 Roadmap
 
@@ -394,19 +346,18 @@ We welcome contributions to make AH Scheduler even better!
 - **Testing Environment**: Replit development instance
 - **Recent Achievement**: Fixed all major UI/UX issues with event display
 
-## 🆚 Application Comparison
+## 🆚 Comparison with Original
 
-| Feature | Clock-Web Package | Scheduler-Web Package | Core Library |
-|---------|------------------|----------------------|--------------|
-| **Time Design Modes** | ✅ Basic integration | ✅ Full integration | ✅ Complete implementation |
-| **Calendar Integration** | ❌ None | ✅ Google Calendar sync | ❌ N/A |
-| **Event Management** | ❌ Time-only focus | 🔄 In development | ❌ N/A |
-| **Multi-Calendar Support** | ❌ N/A | ✅ Multiple calendar sources | ❌ N/A |
-| **Event Time Conversion** | ❌ N/A | ✅ Real ↔ AH time events | ✅ Core algorithms |
-| **UI Components** | ✅ Basic clock UI | ✅ Calendar + Clock UI | ❌ N/A |
-| **TypeScript Support** | 🔄 Partial | 🔄 Partial | ✅ Full TypeScript |
-| **Project Focus** | 🎯 Pure time experience | 📅 Practical time management | 🧠 Shared logic |
-| **Target Users** | Time philosophy enthusiasts | Busy professionals | Developers |
+| Feature | Another Hour Clock | Another Hour Scheduler |
+|---------|-------------------|------------------------|
+| **Core Time System** | ✅ Full AH time experience | ✅ Inherited + Enhanced |
+| **Calendar Integration** | ❌ None | ✅ Google Calendar sync |
+| **Event Management** | ❌ Time-only focus | 🔄 In development |
+| **Multi-Calendar Support** | ❌ N/A | ✅ Multiple calendar sources |
+| **Event Time Conversion** | ❌ N/A | ✅ Real ↔ AH time events |
+| **UI Polish** | ✅ Clean interface | ✅ Enhanced with sticky headers |
+| **Project Focus** | 🎯 Pure time experience | 📅 Practical time management |
+| **Target Users** | Time philosophy enthusiasts | Busy professionals using AH time |
 
 ## 🐛 Known Issues
 
@@ -467,9 +418,9 @@ We welcome contributions to make AH Scheduler even better!
 
 ## 📬 Contact
 
-- **Monorepo Repository**: [Another Hour](https://github.com/kanekop/another-hour)
-- **Issues & Feature Requests**: [GitHub Issues](https://github.com/kanekop/another-hour/issues)
-- **Scheduler Documentation**: [docs/applications/scheduler.md](https://github.com/kanekop/another-hour/blob/main/docs/applications/scheduler.md)
+- **Project Repository**: [GitHub](https://github.com/your-username/another-hour)
+- **Issues & Feature Requests**: [GitHub Issues](https://github.com/your-username/another-hour/issues)
+- **Original Project**: [Another Hour Clock](https://github.com/kanekop/another-hour-gen2-Claude)
 
 ---
 

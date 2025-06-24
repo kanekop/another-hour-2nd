@@ -1,308 +1,194 @@
-# Time Design Modes 統合仕様書
+# Time Design Modes データ仕様書
 
-## 1. 概要
+## 📋 概要
 
-Time Design Modesは、Another Hourプロジェクトの中核機能であり、ユーザーが自分のライフスタイルに合わせて時間の流れ方をカスタマイズできる革新的なシステムです。
+Another Hour プロジェクトの Time Design Modes システムで必要となるデータ構造の仕様書です。各モードがユーザーに時間を表示するために必要な情報を定義しています。
 
-## 2. 基本概念
+## 👤 User（ユーザー）データ
 
-### 2.1 Time Segment（時間セグメント）
-
-時間セグメントは、1日（1440分）を複数の期間に分割する基本単位です。
-
-```typescript
-interface TimeSegment {
-  id: string;                    // 一意識別子
-  type: 'designed' | 'another';  // セグメントタイプ
-  startTime: number;             // 開始時刻（分）0-1440
-  endTime: number;               // 終了時刻（分）0-1440
-  scaleFactor: number;           // 時間スケーリング係数
-  label?: string;                // 表示ラベル（オプション）
-}
+```yaml
+User:
+  - User ID                 # ユーザー識別子
+  - Default Timezone        # デフォルトタイムゾーン
+  - Default Location        # デフォルト位置情報（Solar Mode用：都市/緯度経度）
+  - Day Start Time          # 一日の開始時刻（デフォルト: 00:00）
+  - Preferred Mode          # 優先使用モード
 ```
 
-### 2.2 Segment Types（セグメントタイプ）
+### 備考
+- **Day Start Time**: 一日がいつ始まるかの設定。デフォルトは00:00を推奨。変更は上級者向けオプションとして提供。
 
-#### 2.2.1 Designed Segment（デザインセグメント）
-- **定義**: ユーザーが定義した概念的な時間が流れる期間
-- **特徴**: scaleFactor ≠ 1.0（時間が速くまたは遅く流れる）
-- **表示**: 設定されたスケールで進む時計
+## 🎨 各モードの必要データ
 
-#### 2.2.2 Another Hour Segment（アナザーアワーセグメント）
-- **定義**: Designed期間の外側にある、自然な速度で流れる時間
-- **特徴**: scaleFactor = 1.0（実時間と同じ速度）
-- **表示**: 0:00:00から始まる独立した時計（詳細は後述）
-
-## 3. Another Hour 詳細仕様
-
-### 3.1 基本定義
-
-Another Hour（アナザーアワー）は、Designed 24期間が終了した後の残り時間を表す、Another Hourプロジェクト独自の時間概念です。
-
-### 3.2 時間の定義
-- **開始**: Designed期間が終了した時点で、Another Hourは **0:00:00** から開始
-- **独立した時間軸**: 現実の時刻とは切り離された、概念的な時間として扱う
-- **進行速度**: 常に1.0倍速（実時間と同じ速度）で進行
-
-### 3.3 表示形式
-
-#### デジタル表示
+### Classic Mode（クラシックモード）
+```yaml
+Classic Mode:
+  - Designed 24 Duration    # Designed 24の長さ（分単位、例：1380 = 23時間）
 ```
-HH:MM:SS/HH:MM:SS
+
+### Core Time Mode（コアタイムモード）
+```yaml
+Core Time Mode:
+  - Core Time Start         # コアタイム開始時刻（例：07:00）
+  - Core Time End           # コアタイム終了時刻（例：22:00）
+  - Min Core Hours          # 最低コアタイム時間（時間単位、デフォルト: 6）
+  - AnotherHourAllocation   # Morning/Evening AHに割り当てる合計時間（分）。省略時はCore Time以外の実時間。
+  # Morning AH と Evening AH の配分は、Day Start Time に基づいて自動計算
 ```
-- **左側**: 現在のAnother Hour時間（0:00:00から開始）
-- **右側**: 本日のAnother Hour総時間（固定値）
-- **例**: `01:30:00/02:00:00` （2時間のAnother Hourのうち1時間30分が経過）
 
-### 3.4 計算ロジック
+### Wake-Based Mode（起床ベースモード）
+```yaml
+Wake-Based Mode:
+  - Default Wake Time       # デフォルト起床時刻
+  - Today's Wake Time       # 今日の実際の起床時刻
+  - Another Hour Duration   # Another Hour期間の長さ（分単位）
+  - Max Scale Factor        # 最大圧縮率（例：2.0）
+```
 
+**⚠️ UX設計の注意**: `Default Wake Time` と `Today's Wake Time` の両方を保持しますが、ユーザーへの表示方法は慎重に検討する必要があります。両方を同時に見せると混乱を招く可能性があるため、適切なUXデザインが必要です。
+
+### Solar Mode（太陽時モード）
+```yaml
+Solar Mode:
+  - Location                # 位置情報（ユーザーのデフォルトを上書き可能）
+  - Day Hours Target        # 昼を何時間にしたいか（デフォルト：12）
+  - Seasonal Adjustment     # 季節による微調整（true/false）
+  # Night Hours は自動計算（24 - Day Hours）
+```
+
+## 🔄 データ同期アーキテクチャ
+
+```
+┌─────────────────┐
+│   Web/Mobile    │ ← 設定の入力・変更
+│      App        │
+└────────┬────────┘
+         │ 
+         ▼ API/Sync
+┌─────────────────┐
+│   Cloud/Local   │ ← 設定の永続化
+│    Storage      │
+└────────┬────────┘
+         │
+         ▼ One-way sync (初期実装)
+┌─────────────────┐
+│   Watch App     │ ← 表示専用（読み取り専用）
+│  (Read Only)    │
+└─────────────────┘
+```
+
+### 同期の方針
+- **初期実装**: Web/Mobileアプリからウォッチアプリへの一方向同期
+- **将来拡張**: よりスマートなウォッチアプリが実装された場合、双方向同期を検討
+
+## 🛡️ バリデーションルール
+
+### Core Time Mode
 ```javascript
-// Another Hour期間の時間計算
-if (segment.type === 'another') {
-    // セグメント開始からの経過時間（分）
-    const elapsedMinutes = currentMinutes - segment.startTime;
-    
-    // Another Hour時間として表示（0時起点）
-    const hours = Math.floor(elapsedMinutes / 60);
-    const minutes = Math.floor(elapsedMinutes % 60);
-    const seconds = Math.floor((elapsedMinutes * 60) % 60);
-    
-    return {
-        hours: hours,          // 0から始まる
-        minutes: minutes,
-        seconds: seconds,
-        scaleFactor: 1.0,
-        isAnotherHour: true,
-        // 表示用の追加情報
-        totalMinutes: segment.duration,
-        elapsedMinutes: elapsedMinutes
-    };
-}
-```
+// Core Time の検証
+function validateCoreTimeMode(config) {
+  const start = parseTime(config.coreTimeStart);
+  const end = parseTime(config.coreTimeEnd);
+  const minCoreHours = config.minCoreHours || 6; // デフォルトは6時間
+  const coreHours = (end - start) / 60;
 
-### 3.5 UI/UX ガイドライン
-
-1. **視覚的な区別**
-   - Another Hour期間は温かい色調（黄色、オレンジ系）で表示
-   - Designed期間とは明確に区別される配色
-
-2. **ラベル表示**
-   - "Another Hour" または "AH" のラベルを付与
-   - モードによって "Morning AH", "Evening AH" などの修飾も可能
-
-3. **プログレス表示**
-   - プログレスバーやビジュアルインジケーターで進捗を表現
-   - パーセンテージ表示は補助的に使用
-
-## 4. Time Design Modes
-
-### 4.1 利用可能なモード
-
-#### 4.1.1 Classic Mode（クラシックモード）
-- **概要**: 従来のAnother Hour体験（1日の終わりにAnother Hour期間）
-- **セグメント構成**:
-  - Designed 24: 0:00 → 設定時刻
-  - Another Hour: 設定時刻 → 24:00
-
-#### 4.1.2 Core Time Mode（コアタイムモード）
-- **概要**: 中心となる活動時間の前後にAnother Hour期間を配置
-- **セグメント構成**:
-  - Morning AH: 0:00 → コア開始時刻
-  - Core Time: コア開始 → コア終了時刻
-  - Evening AH: コア終了 → 24:00
-
-#### 4.1.3 Wake-Based Mode（起床ベースモード）
-- **概要**: 起床時刻から始まる動的な24時間
-- **セグメント構成**:
-  - Sleep Time: 0:00 → 起床時刻
-  - Activity Period: 起床時刻 → AH開始時刻
-  - Another Hour: AH開始時刻 → 24:00
-
-#### 4.1.4 Solar Mode（太陽時モード）
-- **概要**: 日の出と日の入りに基づく自然のリズム
-- **セグメント構成**:
-  - Night (前半): 0:00 → 日の出
-  - Day: 日の出 → 日の入り
-  - Night (後半): 日の入り → 24:00
-
-### 4.2 モード設定データ構造
-
-```typescript
-interface ModeConfiguration {
-  mode: TimeDesignMode;          // モード識別子
-  version: number;               // スキーマバージョン
-  segments: TimeSegment[];       // 順序付きセグメント配列
-  metadata: {
-    created: Date;
-    modified: Date;
-    timezone?: string;
-  };
-}
-```
-
-## 5. 実装要件
-
-### 5.1 境界処理
-- Designed期間からAnother Hour期間への遷移は瞬時に行う
-- 遷移時にAnother Hourは必ず0:00:00から開始
-- セグメント間の遷移でジャンプや不連続性がないことを保証
-
-### 5.2 日付をまたぐ場合の処理
-- Another Hour期間が深夜0時をまたぐ場合も、表示は継続
-- 内部的には適切に処理するが、ユーザーには連続した時間として見せる
-- 1440分を超える計算は、モジュロ演算で適切に処理
-
-### 5.3 精度要件
-- 時間計算: ミリ秒単位の精度
-- 表示更新: 100ms〜1000ms間隔（設定可能）
-- スケールファクター: 小数点第6位まで
-
-### 5.4 パフォーマンス要件
-- 時間計算: < 10ms
-- UI更新: 60fps維持
-- メモリ使用: < 50MB増加
-
-## 6. バリデーション規則
-
-### 6.1 セグメント検証
-```javascript
-function validateSegments(segments) {
-  // 1. 24時間をカバーしているか
-  const totalDuration = segments.reduce((sum, seg) => 
-    sum + (seg.endTime - seg.startTime), 0);
-  if (totalDuration !== 1440) {
-    return { valid: false, error: 'Segments must cover exactly 24 hours' };
+  // Core Timeは最低でも設定された時間を確保する
+  if (coreHours < minCoreHours) {
+    throw new Error(`Core Time must be at least ${minCoreHours} hours`);
   }
-  
-  // 2. オーバーラップがないか
-  for (let i = 0; i < segments.length - 1; i++) {
-    if (segments[i].endTime > segments[i + 1].startTime) {
-      return { valid: false, error: 'Segments cannot overlap' };
+
+  // anotherHourAllocation が指定されている場合、その値が妥当か検証
+  if (config.anotherHourAllocation !== undefined) {
+    if (config.anotherHourAllocation < 0 || config.anotherHourAllocation > 720) {
+        throw new Error('AnotherHourAllocation must be between 0 and 12 hours');
+    }
+  } else {
+    // 指定されていない場合、Core Time以外の時間が12時間を超えていないか検証
+    const totalAH = 24 - coreHours;
+    if (totalAH > 12) {
+      throw new Error('Total Another Hour cannot exceed 12 hours');
     }
   }
-  
-  // 3. 連続性があるか
-  for (let i = 0; i < segments.length - 1; i++) {
-    if (segments[i].endTime !== segments[i + 1].startTime) {
-      return { valid: false, error: 'Segments must be continuous' };
-    }
-  }
-  
-  return { valid: true };
 }
 ```
 
-### 6.2 モード固有の検証
-各モードは独自の検証ルールを実装：
-- Classic Mode: exactly 2 segments
-- Core Time Mode: exactly 3 segments, core time ≥ 12 hours
-- Wake-Based Mode: wake time validation
-- Solar Mode: location validation
-
-## 7. ストレージ仕様
-
-### 7.1 LocalStorage キー
+### Wake-Based Mode
 ```javascript
-const STORAGE_KEYS = {
-  CURRENT_MODE: 'time-design-current-mode',
-  MODE_CONFIGS: 'time-design-mode-configs',
-  MIGRATION_VERSION: 'time-design-migration-version'
+// Wake-Based の検証
+function validateWakeBasedMode(config) {
+  // Another Hour Duration は0〜12時間
+  if (config.anotherHourDuration < 0 || config.anotherHourDuration > 720) {
+    throw new Error('Another Hour Duration must be between 0-12 hours');
+  }
+
+  // Max Scale Factor は1.0〜5.0
+  if (config.maxScaleFactor < 1.0 || config.maxScaleFactor > 5.0) {
+    throw new Error('Max Scale Factor must be between 1.0-5.0');
+  }
+}
+```
+
+## 💾 デフォルト値
+
+```javascript
+const MODE_DEFAULTS = {
+  user: {
+    dayStartTime: '00:00',
+    defaultTimezone: 'Asia/Tokyo',
+    preferredMode: 'classic'
+  },
+
+  classic: {
+    designed24Duration: 1380  // 23時間
+  },
+
+  coreTime: {
+    coreTimeStart: '07:00',
+    coreTimeEnd: '22:00',
+    minCoreHours: 6,
+    anotherHourAllocation: null // デフォルトは未指定（null）
+  },
+
+  wakeBased: {
+    defaultWakeTime: '07:00',
+    anotherHourDuration: 60,  // 1時間
+    maxScaleFactor: 2.0
+  },
+
+  solar: {
+    dayHoursTarget: 12,
+    seasonalAdjustment: false
+  }
 };
 ```
 
-### 7.2 データ構造
-```typescript
-interface StorageSchema {
-  version: 2;
-  currentMode: string;
-  configurations: {
-    [modeId: string]: ModeConfiguration;
-  };
-  preferences: {
-    defaultMode: string;
-    autoSwitch: boolean;
-    displayFormat: 'digital' | 'analog';
-  };
-}
+## 🔮 将来の拡張性
+
+### カスタムモード（将来実装）
+```yaml
+Custom Mode:
+  - Time Blocks: 
+    - {start: "00:00", end: "06:00", scaleFactor: 1.0}
+    - {start: "06:00", end: "22:00", scaleFactor: 1.2}
+    - {start: "22:00", end: "24:00", scaleFactor: 0.8}
+  - Repeat Pattern: daily/weekly/custom
 ```
 
-## 8. 移行戦略
-
-### 8.1 後方互換性
-- 既存のClassic Mode設定を自動的に新形式に変換
-- レガシーAPIのシム実装
-- 段階的な機能追加
-
-### 8.2 データ移行
-```javascript
-// レガシー設定から新形式への変換
-function migrateFromV1(legacyConfig) {
-  return {
-    mode: 'classic',
-    version: 2,
-    segments: [
-      {
-        id: 'designed-main',
-        type: 'designed',
-        startTime: 0,
-        endTime: legacyConfig.designed24Duration,
-        scaleFactor: 1440 / legacyConfig.designed24Duration
-      },
-      {
-        id: 'another-hour',
-        type: 'another',
-        startTime: legacyConfig.designed24Duration,
-        endTime: 1440,
-        scaleFactor: 1.0
-      }
-    ],
-    metadata: {
-      created: new Date(),
-      modified: new Date(),
-      timezone: legacyConfig.timezone
-    }
-  };
-}
+### チーム同期（将来実装）
+```yaml
+Team Sync:
+  - Shared Mode ID          # 共有モードの識別子
+  - Team Timezone Override  # チーム共通のタイムゾーン
+  - Sync Permissions        # 同期権限の設定
 ```
 
-## 9. テスト要件
+## 📝 実装上の注意事項
 
-### 9.1 単体テスト
-- 各モードの計算ロジック
-- セグメント検証
-- 境界値テスト
-
-### 9.2 統合テスト
-- モード間の切り替え
-- データ永続性
-- UI同期
-
-### 9.3 E2Eテスト
-- ユーザーフロー全体
-- パフォーマンス測定
-- 異常系処理
-
-## 10. 今後の拡張
-
-### 10.1 計画中の機能
-- カスタムモード作成
-- モードの共有機能
-- AIによるモード推奨
-- チーム同期機能
-
-### 10.2 プラグインアーキテクチャ
-```typescript
-interface TimeDesignPlugin {
-  id: string;
-  name: string;
-  modes?: ModeDefinition[];
-  calculators?: CalculatorExtension[];
-  validators?: ValidatorExtension[];
-}
-```
+1. **プライバシー**: 位置情報や起床時刻などの個人情報は適切に保護する
+2. **パフォーマンス**: 時間計算は頻繁に行われるため、効率的な実装が必要
+3. **エラーハンドリング**: 不正な設定値に対する適切なフォールバック
+4. **国際化**: タイムゾーンと日付フォーマットの適切な処理
 
 ---
 
-## 変更履歴
-- 2025-01-15: Another Hour仕様を統合
-- 2025-01-14: 初版作成
+*このドキュメントは Another Hour Time Design Modes システムの実装ガイドとして使用されます。実装の進行に応じて更新される可能性があります。*

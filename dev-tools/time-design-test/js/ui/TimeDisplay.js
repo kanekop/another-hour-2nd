@@ -30,26 +30,7 @@ export class TimeDisplay {
         if (!timeData || !this.elements.time) return;
 
         // Update Another Hour time
-        let timeString;
-        if (timeData.segmentInfo?.displayFormat === 'fraction' && timeData.segmentInfo?.elapsed !== undefined) {
-            // HH:MM:SS/HH:MM:SS 形式で表示
-            const elapsed = formatTime(
-                Math.floor(timeData.segmentInfo.elapsed / 60),
-                Math.floor(timeData.segmentInfo.elapsed % 60),
-                Math.floor((timeData.segmentInfo.elapsed * 60) % 60)
-            );
-            const total = formatTime(
-                Math.floor(timeData.segmentInfo.total / 60),
-                Math.floor(timeData.segmentInfo.total % 60),
-                0
-            );
-            timeString = `${elapsed}/${total}`;
-        } else {
-            // 通常の時刻表示
-            timeString = formatTime(timeData.hours, timeData.minutes, timeData.seconds);
-        }
-        
-        this.elements.time.textContent = timeString;
+        this.elements.time.textContent = formatTime(timeData.hours, timeData.minutes, timeData.seconds);
         this.elements.time.setAttribute('datetime', realDate.toISOString());
 
         // Update period label and scale factor

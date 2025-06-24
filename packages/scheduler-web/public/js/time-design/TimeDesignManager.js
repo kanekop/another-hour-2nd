@@ -1,12 +1,4 @@
-/**
- * TimeDesignManager.js - Main coordinator for Time Design Modes
- * 
- * This is the unified implementation combining the best practices from both
- * dev-tools and scheduler-web implementations.
- * 
- * @author Another Hour Team
- * @version 1.0.0
- */
+// TimeDesignManager.js - Main coordinator for Time Design Modes
 
 import { ModeRegistry } from './ModeRegistry.js';
 
@@ -15,12 +7,6 @@ const STORAGE_KEYS = {
   MODE_CONFIGS: 'time-design-mode-configs'
 };
 
-/**
- * Main coordinator for Time Design Modes
- * 
- * Manages mode registration, configuration persistence,
- * and provides a unified interface for time calculations.
- */
 class TimeDesignManager {
   constructor() {
     this.registry = new ModeRegistry();
@@ -30,11 +16,6 @@ class TimeDesignManager {
     this.initialized = false;
   }
 
-  /**
-   * Initialize the TimeDesignManager
-   * Loads saved mode and configuration from localStorage
-   * @returns {Promise<void>}
-   */
   async initialize() {
     try {
       const savedModeId = localStorage.getItem(STORAGE_KEYS.CURRENT_MODE) || 'classic';
@@ -52,12 +33,6 @@ class TimeDesignManager {
     }
   }
 
-  /**
-   * Set the active mode with configuration
-   * @param {string} modeId - Mode identifier
-   * @param {Object|null} config - Mode configuration
-   * @returns {Promise<void>}
-   */
   async setMode(modeId, config = null) {
     const mode = this.registry.get(modeId);
     if (!mode) {
@@ -96,10 +71,6 @@ class TimeDesignManager {
     this.notifyListeners({ type: 'MODE_CHANGED', modeId, config: modeConfig });
   }
 
-  /**
-   * Save current state to localStorage
-   * @private
-   */
   _saveState() {
     if (!this.currentMode) return;
 
@@ -110,10 +81,6 @@ class TimeDesignManager {
     localStorage.setItem(STORAGE_KEYS.MODE_CONFIGS, JSON.stringify(savedConfigs));
   }
 
-  /**
-   * Get current active mode information
-   * @returns {Object|null} Current mode information
-   */
   getCurrentMode() {
     if (!this.currentMode) return null;
     return {
@@ -124,20 +91,10 @@ class TimeDesignManager {
     };
   }
 
-  /**
-   * Get all available modes
-   * @returns {Array} Array of available modes
-   */
   getAvailableModes() {
     return this.registry.getAll();
   }
 
-  /**
-   * Calculate Another Hour time using current mode
-   * @param {Date} date - Current real date/time
-   * @param {string} timezone - Timezone identifier
-   * @returns {Object} Time calculation result
-   */
   calculate(date, timezone) {
     if (!this.currentMode || !this.currentConfig) {
       throw new Error('No active mode set');
@@ -145,11 +102,6 @@ class TimeDesignManager {
     return this.currentMode.calculate(date, timezone, this.currentConfig);
   }
 
-  /**
-   * Subscribe to mode change events
-   * @param {Function} callback - Event callback function
-   * @returns {Function} Unsubscribe function
-   */
   subscribe(callback) {
     this.listeners.add(callback);
     return () => {
@@ -157,10 +109,6 @@ class TimeDesignManager {
     };
   }
 
-  /**
-   * Notify all listeners of an event
-   * @param {Object} event - Event object
-   */
   notifyListeners(event) {
     this.listeners.forEach(callback => {
       try {
@@ -171,13 +119,7 @@ class TimeDesignManager {
     });
   }
 
-  /**
-   * Utility method for backward compatibility with legacy clock interfaces
-   * @param {Date} date - Current date
-   * @param {string} timezone - Timezone identifier
-   * @param {number} designed24Duration - Duration for classic mode (optional)
-   * @returns {Object} Clock angles and time information
-   */
+  // Utility method for backward compatibility
   getCustomAhAngles(date, timezone, designed24Duration = 1380) {
     try {
       // Set classic mode temporarily if needed
@@ -208,6 +150,4 @@ class TimeDesignManager {
   }
 }
 
-// Export singleton instance
 export const timeDesignManager = new TimeDesignManager();
-export { TimeDesignManager };

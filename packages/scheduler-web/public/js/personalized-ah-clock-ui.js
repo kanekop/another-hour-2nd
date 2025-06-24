@@ -1,6 +1,6 @@
 // public/js/personalized-ah-clock-ui.js
 
-import { timeDesignManager } from "./core.browser.js";
+import { timeDesignManager } from "./time-design/TimeDesignManager.js";
 import {
   getDisplayTimezones,
   getUserLocalTimezone,

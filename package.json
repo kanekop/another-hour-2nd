@@ -5,8 +5,7 @@
     "description": "時間との関係を再定義する - A platform to redefine your relationship with time",
     "main": "index.js",
     "workspaces": [
-        "packages/*",
-        "packages/@another-hour/*"
+        "packages/*"
     ],
     "scripts": {
         "dev": "npm run dev --workspace=@another-hour/scheduler-web",

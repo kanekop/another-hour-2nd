@@ -127,10 +127,6 @@ export class ClassicMode extends BaseMode {
         progress,
         remaining,
         duration: minutes < designedDuration ? designedDuration : anotherDuration,
-        // Another Hour用の追加情報
-        elapsed: isAnotherHour ? (minutes - designedDuration) : undefined,
-        total: isAnotherHour ? anotherDuration : undefined,
-        displayFormat: isAnotherHour ? 'fraction' : 'normal'
       },
       periodName,
     };

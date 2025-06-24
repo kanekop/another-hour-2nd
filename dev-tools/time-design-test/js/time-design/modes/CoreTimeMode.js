@@ -113,23 +113,9 @@ export class CoreTimeMode extends BaseMode {
       }
     }
 
-    let hours, minutesOut, seconds;
-    
-    if (isAnotherHour) {
-      // Another Hour期間は0から始まる独立した時間として表示
-      const elapsed = periodName === 'Morning AH' 
-        ? (minutes - 0 + 1440) % 1440 
-        : (minutes - end + 1440) % 1440;
-      
-      hours = Math.floor(elapsed / 60);
-      minutesOut = Math.floor(elapsed % 60);
-      seconds = Math.floor((elapsed * 60) % 60);
-    } else {
-      // Core Timeは累積時間を使用
-      hours = Math.floor(ahMinutes / 60) % 24;
-      minutesOut = Math.floor(ahMinutes % 60);
-      seconds = Math.floor((ahMinutes * 60) % 60);
-    }
+    const hours = Math.floor(ahMinutes / 60) % 24;
+    const minutesOut = Math.floor(ahMinutes % 60);
+    const seconds = Math.floor((ahMinutes * 60) % 60);
 
     const duration = isAnotherHour ? (periodName === 'Morning AH' ? morningAHRealDuration : eveningAHRealDuration) : coreDuration;
 
@@ -145,12 +131,6 @@ export class CoreTimeMode extends BaseMode {
         progress,
         remaining,
         duration,
-        // Another Hour用の追加情報
-        elapsed: isAnotherHour ? (periodName === 'Morning AH' 
-          ? (minutes - 0 + 1440) % 1440 
-          : (minutes - end + 1440) % 1440) : undefined,
-        total: isAnotherHour ? duration : undefined,
-        displayFormat: isAnotherHour ? 'fraction' : 'normal'
       },
       periodName,
     };

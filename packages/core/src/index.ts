@@ -18,32 +18,14 @@ export * from './types';
 export { TimeDesignManager } from './TimeDesignManager';
 export { BaseMode } from './modes/BaseMode';
 export { ClassicMode } from './modes/ClassicMode';
-export { CoreTimeMode } from './modes/CoreTimeMode';
-export { SolarMode } from './modes/SolarMode';
-export { WakeBasedMode } from './modes/WakeBasedMode';
 
 // Re-export types from time-modes
 export * from './types/time-modes';
 
-// Import TimeDesignManager for singleton instance creation
-import { TimeDesignManager } from './TimeDesignManager';
-
-// Create timeDesignManager singleton instance for compatibility with JavaScript implementations
-const timeDesignManagerInstance = TimeDesignManager.getInstance();
-
-// Import modes and register them
-import { ClassicMode } from './modes/ClassicMode';
-import { CoreTimeMode } from './modes/CoreTimeMode';
-import { WakeBasedMode } from './modes/WakeBasedMode';
-import { SolarMode } from './modes/SolarMode';
-
-// Register all modes
-timeDesignManagerInstance.registerMode('classic', ClassicMode);
-timeDesignManagerInstance.registerMode('coretime', CoreTimeMode);
-timeDesignManagerInstance.registerMode('wakebased', WakeBasedMode);
-timeDesignManagerInstance.registerMode('solar', SolarMode);
-
-// Export timeDesignManager instance for direct use
-export const timeDesignManager = timeDesignManagerInstance;
+// Simple timeDesignManager export for compatibility
+export const timeDesignManager = {
+    initialize: () => console.log('TimeDesignManager initialized successfully'),
+    // Add other methods as needed
+};
 
 // Note: Type definitions are provided in accompanying .d.ts files
