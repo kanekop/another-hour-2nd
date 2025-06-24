@@ -1,6 +1,6 @@
-import { TimeDesignManager } from '../src/TimeDesignManager.js';
-import { ClassicMode } from '../src/modes/ClassicMode.js';
-import { TimeDesignMode, DEFAULT_VALUES } from '../src/types/time-modes.js';
+import { TimeDesignManager } from '../src/TimeDesignManager';
+import { ClassicMode } from '../src/modes/ClassicMode';
+import { TimeDesignMode, DEFAULT_VALUES } from '../src/types/time-modes';
 
 // LocalStorage のモック
 const localStorageMock = (() => {
@@ -58,7 +58,6 @@ describe('TimeDesignManager', () => {
 
         it('should set mode with valid configuration', () => {
             const config = {
-                mode: TimeDesignMode.Classic,
                 parameters: {
                     designed24Duration: 1380 // 23時間
                 }
@@ -73,16 +72,12 @@ describe('TimeDesignManager', () => {
 
         it('should throw error for unregistered mode', () => {
             expect(() => {
-                manager.setMode('unknown-mode', {
-                    mode: 'unknown-mode' as any,
-                    parameters: {} as any
-                });
+                manager.setMode('unknown-mode', {});
             }).toThrow("Mode 'unknown-mode' is not registered");
         });
 
         it('should update user preferred mode when setting mode', () => {
             manager.setMode(TimeDesignMode.Classic, {
-                mode: TimeDesignMode.Classic,
                 parameters: { designed24Duration: 1380 }
             });
 
@@ -95,7 +90,6 @@ describe('TimeDesignManager', () => {
         beforeEach(() => {
             manager.registerMode(TimeDesignMode.Classic, ClassicMode);
             manager.setMode(TimeDesignMode.Classic, {
-                mode: TimeDesignMode.Classic,
                 parameters: { designed24Duration: 1380 }
             });
         });
@@ -176,7 +170,6 @@ describe('TimeDesignManager', () => {
 
             manager.registerMode(TimeDesignMode.Classic, ClassicMode);
             manager.setMode(TimeDesignMode.Classic, {
-                mode: TimeDesignMode.Classic,
                 parameters: { designed24Duration: 1380 }
             });
 
@@ -195,7 +188,6 @@ describe('TimeDesignManager', () => {
 
             manager.registerMode(TimeDesignMode.Classic, ClassicMode);
             manager.setMode(TimeDesignMode.Classic, {
-                mode: TimeDesignMode.Classic,
                 parameters: { designed24Duration: 1380 }
             });
 
@@ -213,7 +205,6 @@ describe('TimeDesignManager', () => {
 
             expect(() => {
                 manager.setMode(TimeDesignMode.Classic, {
-                    mode: TimeDesignMode.Classic,
                     parameters: { designed24Duration: 1380 }
                 });
             }).not.toThrow();
@@ -230,7 +221,6 @@ describe('TimeDesignManager', () => {
 
         it('should save mode configuration', () => {
             const config = {
-                mode: TimeDesignMode.Classic,
                 parameters: { designed24Duration: 1200 }
             };
 
@@ -246,7 +236,6 @@ describe('TimeDesignManager', () => {
         it('should restore saved configuration on initialization', async () => {
             // 設定を保存
             manager.setMode(TimeDesignMode.Classic, {
-                mode: TimeDesignMode.Classic,
                 parameters: { designed24Duration: 1200 }
             });
 
@@ -258,9 +247,7 @@ describe('TimeDesignManager', () => {
             await newManager.initialize();
 
             const currentMode = newManager.getCurrentMode();
-            if (currentMode?.config.mode === TimeDesignMode.Classic) {
-                expect((currentMode.config.parameters as any).designed24Duration).toBe(1200);
-            }
+            expect(currentMode?.config.parameters.designed24Duration).toBe(1200);
         });
     });
 
@@ -268,7 +255,6 @@ describe('TimeDesignManager', () => {
         it('should provide comprehensive debug info', () => {
             manager.registerMode(TimeDesignMode.Classic, ClassicMode);
             manager.setMode(TimeDesignMode.Classic, {
-                mode: TimeDesignMode.Classic,
                 parameters: { designed24Duration: 1380 }
             });
 

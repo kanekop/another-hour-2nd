@@ -1,5 +1,5 @@
-import { WakeBasedMode } from '../src/modes/WakeBasedMode.js';
-import { TimeDesignMode, DEFAULT_VALUES } from '../src/types/time-modes.js';
+import { WakeBasedMode } from '../src/modes/WakeBasedMode';
+import { TimeDesignMode, DEFAULT_VALUES } from '../src/types/time-modes';
 
 describe('WakeBasedMode', () => {
     let mode: WakeBasedMode;
@@ -26,10 +26,10 @@ describe('WakeBasedMode', () => {
     describe('Constructor and Validation', () => {
         it('should create an instance with valid config', () => {
             expect(mode).toBeInstanceOf(WakeBasedMode);
-            expect(mode.getDefaultWakeTime()).toBe('07:00');
-            expect(mode.getAnotherHourDuration()).toBe(60);
-            expect(mode.getMaxScaleFactor()).toBe(2.0);
-            expect(mode.getWakeTime()).toBe(420); // 07:00 in minutes
+            expect(mode.defaultWakeTime).toBe('07:00');
+            expect(mode.anotherHourDuration).toBe(60);
+            expect(mode.maxScaleFactor).toBe(2.0);
+            expect(mode.wakeTime).toBe(420); // 07:00 in minutes
         });
 
         it('should use todayWakeTime if provided', () => {
@@ -41,7 +41,7 @@ describe('WakeBasedMode', () => {
                 }
             };
             const customMode = new WakeBasedMode(configWithTodayWake);
-            expect(customMode.getWakeTime()).toBe(510); // 08:30 in minutes
+            expect(customMode.wakeTime).toBe(510); // 08:30 in minutes
         });
 
         it('should throw error for invalid anotherHourDuration', () => {

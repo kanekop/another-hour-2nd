@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@another-hour/core": "file:../core",
+    "@another-hour/time-design-core": "file:../@another-hour/time-design-core",
     "concurrently": "^9.1.2",
     "express": "^4.21.2",
     "express-session": "^1.18.1",

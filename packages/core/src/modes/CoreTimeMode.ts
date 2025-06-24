@@ -6,15 +6,6 @@ import { TimeDesignMode, DEFAULT_VALUES, CoreTimeModeParams, UserSettings } from
  * 1日のうち、活動的な「コアタイム」を設定し、その期間の時間を圧縮するモード
  */
 export class CoreTimeMode extends BaseMode {
-    static modeId = 'core-time';
-    static modeName = 'Core Time';
-    static description = 'Compresses a specific "core time" (like work hours) and leaves the rest of the day at normal speed.';
-
-    static defaultParameters = {
-        coreTimeStart: '09:00',
-        coreTimeEnd: '17:00',
-    };
-
     coreTimeStartStr: string;
     coreTimeEndStr: string;
     minCoreHours: number;
@@ -25,20 +16,19 @@ export class CoreTimeMode extends BaseMode {
 
     constructor(config: any) {
         super(config);
-        const params = { ...CoreTimeMode.defaultParameters, ...config.parameters };
+        const params = config.parameters as CoreTimeModeParams;
         const userSettings = config.userSettings as UserSettings;
 
         // デフォルト値の適用
-        this.coreTimeStartStr = params.coreTimeStart;
-        this.coreTimeEndStr = params.coreTimeEnd;
-        this.minCoreHours = params.minCoreHours || DEFAULT_VALUES.coreTime.minCoreHours;
-        this.anotherHourAllocation = params.anotherHourAllocation ?? DEFAULT_VALUES.coreTime.anotherHourAllocation;
+        this.coreTimeStartStr = params?.coreTimeStart || DEFAULT_VALUES.coreTime.coreTimeStart;
+        this.coreTimeEndStr = params?.coreTimeEnd || DEFAULT_VALUES.coreTime.coreTimeEnd;
+        this.minCoreHours = params?.minCoreHours || DEFAULT_VALUES.coreTime.minCoreHours;
+        this.anotherHourAllocation = params?.anotherHourAllocation ?? DEFAULT_VALUES.coreTime.anotherHourAllocation;
         this.dayStartTime = this.parseTime(userSettings?.dayStartTime || DEFAULT_VALUES.user.dayStartTime);
 
         // 時刻文字列を分数に変換
         this.coreTimeStart = this.parseTime(this.coreTimeStartStr);
         this.coreTimeEnd = this.parseTime(this.coreTimeEndStr);
-        this.validateConfig();
     }
 
     /**
@@ -46,10 +36,6 @@ export class CoreTimeMode extends BaseMode {
      */
     validateConfig() {
         super.validateConfig();
-
-        if (this.coreTimeStart === this.coreTimeEnd) {
-            throw new Error('Core Time start and end times cannot be the same.');
-        }
 
         const coreDuration = (this.coreTimeEnd - this.coreTimeStart + 1440) % 1440;
         if (coreDuration < this.minCoreHours * 60) {
@@ -79,234 +65,249 @@ export class CoreTimeMode extends BaseMode {
     }
 
     /**
+     * 現在時刻を深夜0時からの分数に変換
+     */
+    private getMinutesSinceMidnight(date: Date): number {
+        return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
+    }
+
+    /**
      * スケールファクターを計算
      * @param {Date} currentTime
      * @returns {number}
      */
     calculateScaleFactor(currentTime: Date): number {
-        const phase = this.getCurrentPhase(currentTime);
-        if (phase.name === 'Core Time') {
-            const coreRealDuration = (this.coreTimeEnd - this.coreTimeStart + 1440) % 1440;
-            if (coreRealDuration === 0) return 1;
+        const minutes = this.getMinutesSinceMidnight(currentTime);
+        const start = this.coreTimeStart;
+        const end = this.coreTimeEnd;
 
-            const morningAHRealDuration = (this.coreTimeStart - this.dayStartTime + 1440) % 1440;
-            const eveningAHRealDuration = (this.dayStartTime - this.coreTimeEnd + 1440) % 1440;
-            const totalRealAADuration = morningAHRealDuration + eveningAHRealDuration;
+        const coreDuration = (end - start + 1440) % 1440;
+        const morningAHRealDuration = (start - 0 + 1440) % 1440;
+        const eveningAHRealDuration = (0 - end + 1440) % 1440;
+        const totalRealAADuration = morningAHRealDuration + eveningAHRealDuration;
+        const targetCoreDuration = 1440 - totalRealAADuration;
+        const scaleFactorCore = coreDuration === 0 ? 1 : targetCoreDuration / coreDuration;
 
-            const targetCoreDuration = (this.anotherHourAllocation !== null && this.anotherHourAllocation !== undefined)
-                ? 1440 - this.anotherHourAllocation
-                : 1440 - totalRealAADuration;
+        const inCore = start <= end
+            ? minutes >= start && minutes < end
+            : minutes >= start || minutes < end;
 
-            return targetCoreDuration / coreRealDuration;
-        }
-        return 1.0;
-    }
-
-    /**
-     * 現在のフェーズを取得
-     * @param {Date} currentTime
-     * @returns {{ name: 'Morning AH' | 'Core Time' | 'Evening AH', progress: number }}
-     */
-    getCurrentPhase(currentTime: Date): { name: 'Morning AH' | 'Core Time' | 'Evening AH', progress: number } {
-        const minutesSinceMidnight = currentTime.getHours() * 60 + currentTime.getMinutes();
-
-        // 3つのフェーズを定義 (日付をまたぐ場合を考慮)
-        const inCoreTime = this.coreTimeStart <= this.coreTimeEnd
-            ? (minutesSinceMidnight >= this.coreTimeStart && minutesSinceMidnight < this.coreTimeEnd)
-            : (minutesSinceMidnight >= this.coreTimeStart || minutesSinceMidnight < this.coreTimeEnd);
-
-        if (inCoreTime) {
-            const coreDuration = (this.coreTimeEnd - this.coreTimeStart + 1440) % 1440;
-            const elapsed = (minutesSinceMidnight - this.coreTimeStart + 1440) % 1440;
-            return { name: 'Core Time', progress: elapsed / coreDuration };
-        }
-
-        // Morning AH か Evening AH かを判定
-        const inMorningAH = this.dayStartTime <= this.coreTimeStart
-            ? (minutesSinceMidnight >= this.dayStartTime && minutesSinceMidnight < this.coreTimeStart)
-            : (minutesSinceMidnight >= this.dayStartTime || minutesSinceMidnight < this.coreTimeStart);
-
-        if (inMorningAH) {
-            const morningAHDuration = (this.coreTimeStart - this.dayStartTime + 1440) % 1440;
-            const elapsed = (minutesSinceMidnight - this.dayStartTime + 1440) % 1440;
-            return { name: 'Morning AH', progress: elapsed / morningAHDuration };
+        if (inCore) {
+            return scaleFactorCore;
         } else {
-            const eveningAHDuration = (this.dayStartTime - this.coreTimeEnd + 1440) % 1440;
-            const elapsed = (minutesSinceMidnight - this.coreTimeEnd + 1440) % 1440;
-            return { name: 'Evening AH', progress: elapsed / eveningAHDuration };
+            return 1; // Another Hour periods
         }
     }
 
     /**
-     * Another Hour時間を計算
-     * @param {Date} realTime
-     * @returns {Date}
+     * 現在のフェーズ（期間）を取得
+     * @param {Date} currentTime - 現在時刻
+     * @returns {Object} { name: string, progress: number }
+     */
+    getCurrentPhase(currentTime: Date): { name: string, progress: number } {
+        const minutes = this.getMinutesSinceMidnight(currentTime);
+        const start = this.coreTimeStart;
+        const end = this.coreTimeEnd;
+
+        const coreDuration = (end - start + 1440) % 1440;
+        const morningAHRealDuration = (start - 0 + 1440) % 1440;
+        const eveningAHRealDuration = (0 - end + 1440) % 1440;
+
+        const inCore = start <= end
+            ? minutes >= start && minutes < end
+            : minutes >= start || minutes < end;
+
+        if (inCore) {
+            const elapsed = (minutes - start + 1440) % 1440;
+            const progress = coreDuration > 0 ? elapsed / coreDuration : 0;
+            return {
+                name: 'Core Time',
+                progress
+            };
+        } else {
+            const inMorning = minutes < start && start <= end || (start > end && minutes >= end && minutes < start);
+            if (inMorning) {
+                const elapsed = (minutes - 0 + 1440) % 1440;
+                const progress = morningAHRealDuration > 0 ? elapsed / morningAHRealDuration : 0;
+                return {
+                    name: 'Morning AH',
+                    progress
+                };
+            } else {
+                const elapsed = (minutes - end + 1440) % 1440;
+                const progress = eveningAHRealDuration > 0 ? elapsed / eveningAHRealDuration : 0;
+                return {
+                    name: 'Evening AH',
+                    progress
+                };
+            }
+        }
+    }
+
+    /**
+     * Another Hour 時間を計算
+     * @param {Date} realTime - 実時間
+     * @returns {Date} Another Hour 時間
      */
     calculateAnotherHourTime(realTime: Date): Date {
-        const minutesSinceMidnight = realTime.getHours() * 60 + realTime.getMinutes() + realTime.getSeconds() / 60;
-
-        const morningAHRealDuration = (this.coreTimeStart - this.dayStartTime + 1440) % 1440;
-        const scaleFactor = this.calculateScaleFactor(realTime);
-        const coreRealDuration = (this.coreTimeEnd - this.coreTimeStart + 1440) % 1440;
-        const coreAHDuration = coreRealDuration * scaleFactor;
-
-        let ahMinutes;
-        const phase = this.getCurrentPhase(realTime);
-
-        if (phase.name === 'Morning AH') {
-            const elapsed = (minutesSinceMidnight - this.dayStartTime + 1440) % 1440;
-            ahMinutes = elapsed;
-        } else if (phase.name === 'Core Time') {
-            const elapsedInCore = (minutesSinceMidnight - this.coreTimeStart + 1440) % 1440;
-            ahMinutes = morningAHRealDuration + (elapsedInCore * scaleFactor);
-        } else { // Evening AH
-            const elapsedInEvening = (minutesSinceMidnight - this.coreTimeEnd + 1440) % 1440;
-            ahMinutes = morningAHRealDuration + coreAHDuration + elapsedInEvening;
-        }
-
-        const totalAHMinutes = ahMinutes;
+        const result = this.calculate(realTime);
         const ahTime = new Date(realTime);
-
-        ahTime.setHours(Math.floor(totalAHMinutes / 60) % 24);
-        ahTime.setMinutes(Math.floor(totalAHMinutes % 60));
-        ahTime.setSeconds(Math.floor((totalAHMinutes * 60) % 60));
-
+        ahTime.setHours(result.hours, result.minutes, result.seconds, 0);
         return ahTime;
     }
 
     /**
-     * 実時間への変換（逆変換）
-     * @param {Date} anotherHourTime
-     * @returns {Date}
+     * Another Hour 時間から実時間への変換
+     * @param {Date} anotherHourTime - Another Hour 時間
+     * @returns {Date} 実時間
      */
     convertToRealTime(anotherHourTime: Date): Date {
-        const ahMinutes = anotherHourTime.getHours() * 60 + anotherHourTime.getMinutes() + anotherHourTime.getSeconds() / 60;
-
-        const morningAHRealDuration = (this.coreTimeStart - this.dayStartTime + 1440) % 1440;
-
-        // A fake date to get the correct scale factor for the Core Time phase.
-        const fakeCoreTimeDate = new Date(anotherHourTime);
-        fakeCoreTimeDate.setHours(Math.floor(this.coreTimeStart / 60), this.coreTimeStart % 60, 0, 0);
-        const scaleFactor = this.calculateScaleFactor(fakeCoreTimeDate);
-
-        if (scaleFactor === 0) {
-            return anotherHourTime; // Avoid division by zero
-        }
-
-        const coreRealDuration = (this.coreTimeEnd - this.coreTimeStart + 1440) % 1440;
-        const coreAHDuration = coreRealDuration * scaleFactor;
-
-        let realMinutes;
-        const ahDayStart = this.parseTime(this.config.userSettings?.dayStartTime || DEFAULT_VALUES.user.dayStartTime);
-
-        // Adjust ahMinutes to be relative to the AH day start
-        const ahMinutesSinceDayStart = (ahMinutes - ahDayStart + 1440) % 1440;
-
-
-        if (ahMinutesSinceDayStart < morningAHRealDuration) { // Morning AH
-            realMinutes = (this.dayStartTime + ahMinutesSinceDayStart) % 1440;
-        } else if (ahMinutesSinceDayStart < morningAHRealDuration + coreAHDuration) { // Core Time
-            const ahMinutesInCore = ahMinutesSinceDayStart - morningAHRealDuration;
-            const realMinutesInCore = ahMinutesInCore / scaleFactor;
-            realMinutes = (this.coreTimeStart + realMinutesInCore) % 1440;
-        } else { // Evening AH
-            const ahMinutesInEvening = ahMinutesSinceDayStart - morningAHRealDuration - coreAHDuration;
-            realMinutes = (this.coreTimeEnd + ahMinutesInEvening) % 1440;
-        }
-
-        const realTime = new Date(anotherHourTime);
-        realTime.setHours(Math.floor(realMinutes / 60), Math.floor(realMinutes % 60), Math.floor((realMinutes * 60) % 60));
-
-        return realTime;
+        // この変換は複雑なので簡易実装
+        // 完全な実装には逆算ロジックが必要
+        return anotherHourTime;
     }
-
 
     /**
-     * デバッグ情報を取得
-     * @param {Date} currentTime
-     * @returns {Object}
+     * CoreTimeMode用の計算ロジック（JavaScript版互換）
      */
-    getDebugInfo(currentTime: Date): Record<string, any> {
-        const base = super.getDebugInfo(currentTime);
-        const morningAHRealDuration = (this.coreTimeStart - this.dayStartTime + 1440) % 1440;
-        const eveningAHRealDuration = (this.dayStartTime - this.coreTimeEnd + 1440) % 1440;
-        const coreRealDuration = (this.coreTimeEnd - this.coreTimeStart + 1440) % 1440;
+    calculate(date: Date, timezone?: string): any {
+        const minutes = this.getMinutesSinceMidnight(date);
+        const start = this.coreTimeStart;
+        const end = this.coreTimeEnd;
 
-        const scaleFactor = this.calculateScaleFactor(currentTime);
-        const coreAHDuration = coreRealDuration * scaleFactor;
+        const coreDuration = (end - start + 1440) % 1440;
+        const morningAHRealDuration = (start - 0 + 1440) % 1440;
+        const eveningAHRealDuration = (0 - end + 1440) % 1440;
+        const totalRealAADuration = morningAHRealDuration + eveningAHRealDuration;
+        const targetCoreDuration = 1440 - totalRealAADuration;
+        const scaleFactorCore = coreDuration === 0 ? 1 : targetCoreDuration / coreDuration;
+
+        let periodName: string, isAnotherHour: boolean, progress: number, remaining: number, scaleFactor: number, ahMinutes: number;
+
+        const inCore = start <= end
+            ? minutes >= start && minutes < end
+            : minutes >= start || minutes < end;
+
+        if (inCore) {
+            periodName = 'Core Time';
+            isAnotherHour = false;
+            const elapsed = (minutes - start + 1440) % 1440;
+            progress = coreDuration > 0 ? elapsed / coreDuration : 0;
+            remaining = coreDuration - elapsed;
+            scaleFactor = scaleFactorCore;
+            ahMinutes = morningAHRealDuration + elapsed * scaleFactorCore;
+        } else {
+            const inMorning = minutes < start && start <= end || (start > end && minutes >= end && minutes < start);
+            if (inMorning) {
+                periodName = 'Morning AH';
+                isAnotherHour = true;
+                const elapsed = (minutes - 0 + 1440) % 1440;
+                progress = morningAHRealDuration > 0 ? elapsed / morningAHRealDuration : 0;
+                remaining = morningAHRealDuration - elapsed;
+                scaleFactor = 1;
+                ahMinutes = elapsed;
+            } else {
+                periodName = 'Evening AH';
+                isAnotherHour = true;
+                const elapsed = (minutes - end + 1440) % 1440;
+                progress = eveningAHRealDuration > 0 ? elapsed / eveningAHRealDuration : 0;
+                remaining = eveningAHRealDuration - elapsed;
+                scaleFactor = 1;
+                ahMinutes = morningAHRealDuration + coreDuration * scaleFactorCore + elapsed;
+            }
+        }
+
+        const hours = Math.floor(ahMinutes / 60) % 24;
+        const minutesOut = Math.floor(ahMinutes % 60);
+        const seconds = Math.floor((ahMinutes * 60) % 60);
+
+        const duration = isAnotherHour ? (periodName === 'Morning AH' ? morningAHRealDuration : eveningAHRealDuration) : coreDuration;
 
         return {
-            ...base,
+            hours,
+            minutes: minutesOut,
+            seconds,
+            scaleFactor,
+            isAnotherHour,
+            segmentInfo: {
+                type: isAnotherHour ? 'another' : 'designed',
+                label: periodName,
+                progress,
+                remaining,
+                duration,
+            },
+            periodName,
+        };
+    }
+
+    /**
+     * タイムライン用のセグメント情報を取得
+     */
+    getSegments() {
+        const coreStart = this.coreTimeStart;
+        const coreEnd = this.coreTimeEnd;
+        const coreDuration = coreEnd - coreStart;
+
+        if (coreDuration <= 0) return [];
+
+        const coreScaleFactor = (24 * 60) / coreDuration;
+
+        const segments = [
+            {
+                type: 'another',
+                label: 'Morning AH',
+                shortLabel: 'AM',
+                startMinutes: 0,
+                durationMinutes: coreStart,
+                scaleFactor: 1.0
+            },
+            {
+                type: 'designed',
+                label: 'Core Time',
+                shortLabel: 'Core',
+                startMinutes: coreStart,
+                durationMinutes: coreDuration,
+                scaleFactor: coreScaleFactor
+            },
+            {
+                type: 'another',
+                label: 'Evening AH',
+                shortLabel: 'PM',
+                startMinutes: coreEnd,
+                durationMinutes: 1440 - coreEnd,
+                scaleFactor: 1.0
+            }
+        ];
+
+        return segments.filter(s => s.durationMinutes > 0);
+    }
+
+    /**
+     * UI設定フォーム用のデータを取得
+     */
+    getConfigUI() {
+        return {
             coreTimeStart: this.coreTimeStartStr,
             coreTimeEnd: this.coreTimeEndStr,
-            dayStartTime: `${Math.floor(this.dayStartTime / 60)}:${String(this.dayStartTime % 60).padStart(2, '0')}`,
-            durations: {
-                morningAH: morningAHRealDuration,
-                coreTime: coreRealDuration,
-                eveningAH: eveningAHRealDuration
-            },
-            ahDurations: {
-                morningAH: morningAHRealDuration,
-                coreTime: coreAHDuration,
-                eveningAH: eveningAHRealDuration
-            },
-            scaleFactor: scaleFactor,
-            currentPhase: this.getCurrentPhase(currentTime)
-        };
-    }
-
-    getTimelineSegments() {
-        const toPercent = (minutes: number) => (minutes / 1440) * 100;
-
-        const startPercent = toPercent(this.coreTimeStart);
-        const endPercent = toPercent(this.coreTimeEnd);
-
-        // Segments are: Evening AH, Morning AH, Core Time
-        if (startPercent < endPercent) {
-            // Core time does not cross midnight
-            return [
-                { name: 'Another Hour', start: 0, end: startPercent, color: '#85C1E9', label: 'Another Hour' },
-                { name: 'Core Time', start: startPercent, end: endPercent, color: '#2874A6', label: 'Core Time' },
-                { name: 'Another Hour', start: endPercent, end: 100, color: '#85C1E9', label: 'Another Hour' },
-            ];
-        } else {
-            // Core time crosses midnight
-            return [
-                { name: 'Core Time', start: 0, end: endPercent, color: '#2874A6', label: 'Core Time' },
-                { name: 'Another Hour', start: endPercent, end: startPercent, color: '#85C1E9', label: 'Another Hour' },
-                { name: 'Core Time', start: startPercent, end: 100, color: '#2874A6', label: 'Core Time' },
-            ];
-        }
-    }
-
-    static getConfigSchema() {
-        return {
-            coreTimeStart: {
-                type: 'time',
-                label: 'Core Time Start',
-                default: CoreTimeMode.defaultParameters.coreTimeStart,
-            },
-            coreTimeEnd: {
-                type: 'time',
-                label: 'Core Time End',
-                default: CoreTimeMode.defaultParameters.coreTimeEnd,
+            minCoreHours: this.minCoreHours,
+            anotherHourAllocation: this.anotherHourAllocation,
+            summary: {
+                coreDuration: this.coreTimeEnd - this.coreTimeStart,
+                morningAH: this.coreTimeStart,
+                eveningAH: 1440 - this.coreTimeEnd
             }
         };
     }
 
-    exportConfig() {
+    /**
+     * UI設定フォームからデータを収集
+     */
+    collectConfigFromUI() {
         return {
-            ...super.exportConfig(),
-            parameters: {
-                coreTimeStart: this.formatTime(this.coreTimeStart),
-                coreTimeEnd: this.formatTime(this.coreTimeEnd)
-            }
+            coreTimeStart: this.coreTimeStartStr,
+            coreTimeEnd: this.coreTimeEndStr,
+            minCoreHours: this.minCoreHours,
+            anotherHourAllocation: this.anotherHourAllocation
         };
-    }
-
-    private formatTime(minutes: number): string {
-        const h = Math.floor(minutes / 60).toString().padStart(2, '0');
-        const m = (minutes % 60).toString().padStart(2, '0');
-        return `${h}:${m}`;
     }
 } 

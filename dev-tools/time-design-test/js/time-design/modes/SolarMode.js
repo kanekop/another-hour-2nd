@@ -1,32 +1,14 @@
 // SolarMode.js - Solar-based time with fixed solar noon at 12:00
 import { BaseMode } from './BaseMode.js';
-import { SolarTimeFormatter } from '../../utils/SolarTimeFormatter.js';
 
 /**
  * Helper to get a Date object for the current moment in a specific timezone using moment-timezone.
  * This is robust and avoids issues with native Date and toLocaleString parsing.
  */
-function getNowInTimezone(timezone) {
-    const now = new Date();
-    try {
-        const formatter = new Intl.DateTimeFormat('en-US', {
-            timeZone: timezone,
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-        const parts = formatter.formatToParts(now);
-        const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
-        const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
-        const second = parseInt(parts.find(p => p.type === 'second').value, 10);
-        const date = new Date(now);
-        date.setHours(hour, minute, second, 0);
-        return date;
-    } catch (e) {
-        // Fallback: local time
-        return now;
-    }
+function getNowInTimezone(tz) {
+    // moment.tz understands IANA timezone names and creates a date object
+    // correctly representing that point in time.
+    return moment.tz(tz).toDate();
 }
 
 export class SolarMode extends BaseMode {
@@ -36,7 +18,6 @@ export class SolarMode extends BaseMode {
             'Solar Mode',
             'Time flows with the sun - solar noon is always 12:00'
         );
-        this.id = 'solar';
 
         // City presets
         this.cities = {
@@ -74,43 +55,7 @@ export class SolarMode extends BaseMode {
     }
 
     /**
-     * Get sun times for a city for a specific date.
-     * SunCalc依存を排除し、サンプル値で代用（東京の夏至を例示）
-     */
-    getSunTimes(cityKey, date) {
-        const cityData = this.getCityData(cityKey);
-        if (!cityData) return null;
-
-        // サンプル値: 東京の夏至（6月21日）
-        // 都市・季節ごとに分岐したい場合はここで分岐
-        let sunriseHour = 4, sunriseMin = 30, sunsetHour = 19, sunsetMin = 0;
-        if (cityKey === 'tokyo') {
-            sunriseHour = 4; sunriseMin = 30; sunsetHour = 19; sunsetMin = 0;
-        } else if (cityKey === 'london') {
-            sunriseHour = 4; sunriseMin = 43; sunsetHour = 21; sunsetMin = 21;
-        } else if (cityKey === 'newyork') {
-            sunriseHour = 5; sunriseMin = 25; sunsetHour = 20; sunsetMin = 30;
-        } // 必要に応じて他都市も追加
-
-        const baseDate = date ? new Date(date) : new Date();
-        const sunrise = new Date(baseDate);
-        sunrise.setHours(sunriseHour, sunriseMin, 0, 0);
-        const sunset = new Date(baseDate);
-        sunset.setHours(sunsetHour, sunsetMin, 0, 0);
-        const solarNoon = new Date(baseDate);
-        solarNoon.setHours(12, 0, 0, 0);
-
-        return {
-            sunrise,
-            sunset,
-            solarNoon,
-            daylightHours: (sunset - sunrise) / 3600000
-        };
-    }
-
-    /**
      * Calculate Another Hour time based on the spec
-     * SunCalc依存を排除し、getSunTimesの値を使う
      */
     calculate(date, timezone, config) {
         config = { ...this.getDefaultConfig(), ...config };
@@ -121,9 +66,9 @@ export class SolarMode extends BaseMode {
         const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
         const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
 
-        const timesToday = this.getSunTimes(location.key, today);
-        const timesYesterday = this.getSunTimes(location.key, yesterday);
-        const timesTomorrow = this.getSunTimes(location.key, tomorrow);
+        const timesToday = SunCalc.getTimes(today, location.lat, location.lng);
+        const timesYesterday = SunCalc.getTimes(yesterday, location.lat, location.lng);
+        const timesTomorrow = SunCalc.getTimes(tomorrow, location.lat, location.lng);
 
         // --- 2. Get Critical Timestamps (milliseconds) ---
         const nowTs = today.getTime();
@@ -200,6 +145,24 @@ export class SolarMode extends BaseMode {
     }
 
     /**
+     * Get sun times for a city for a specific date.
+     */
+    getSunTimes(cityKey, date) {
+        const cityData = this.getCityData(cityKey);
+        if (!cityData) return null;
+
+        const dateInTimezone = getNowInTimezone(cityData.tz);
+        const times = SunCalc.getTimes(dateInTimezone, cityData.lat, cityData.lng);
+
+        return {
+            sunrise: times.sunrise,
+            sunset: times.sunset,
+            solarNoon: times.solarNoon,
+            daylightHours: (times.sunset - times.sunrise) / 3600000
+        };
+    }
+
+    /**
      * Validate configuration
      */
     validate(config) {
@@ -263,15 +226,17 @@ export class SolarMode extends BaseMode {
      * Get segments for timeline display
      */
     getSegments(config) {
-        config = config || this.getConfig();
         if (!config || !config.location || !config.location.key) {
             config = this.getDefaultConfig();
         }
+
         const cityKey = config.location.key;
         const sunTimes = this.getSunTimes(cityKey, new Date());
+
         if (!sunTimes) {
             return [];
         }
+
         const segments = [];
 
         // Convert times to minutes since midnight
@@ -319,37 +284,6 @@ export class SolarMode extends BaseMode {
         }
 
         return segments;
-    }
-
-    getTimelineSegments(config) {
-        config = config || this.getConfig();
-        if (typeof this.getSegments === 'function') {
-            return this.getSegments(config);
-        }
-        return [];
-    }
-
-    getSolarInfo(date = new Date(), config = this.getConfig()) {
-        // 必要に応じて太陽情報を返す
-        return {};
-    }
-
-    static getConfigSchema() {
-        return this.prototype.configSchema || {};
-    }
-
-    getConfig() {
-        return this.config || {};
-    }
-
-    getCurrentPhase(date = new Date(), config = this.getConfig()) {
-        // SolarModeの仕様に合わせて、昼/夜/その他のフェーズ名を返す
-        return 'unknown'; // 仮実装
-    }
-
-    getScaleFactor(date = new Date(), config = this.getConfig()) {
-        // SolarModeの仕様に合わせて、現在のスケールファクターを返す
-        return 1; // 仮実装
     }
 }
 

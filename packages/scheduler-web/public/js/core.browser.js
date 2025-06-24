@@ -1,18 +1,25 @@
 /**
- * core.browser.js - Browser bundle for @another-hour/core package
+ * core.browser.js - Browser bundle for time-design-core package
  * 
- * This file imports and re-exports the core package for browser use.
- * It uses the TypeScript-compiled browser bundle from @another-hour/core.
+ * This file imports and re-exports the time-design-core package for browser use.
+ * It replaces the previous compiled bundle with direct ES module imports.
  */
 
-// Re-export everything from the built core package
-export * from '../../node_modules/@another-hour/core/dist/core.browser.js';
+// Import the time-design-core package
+// Note: This requires the package to be accessible from the browser
+// In a development environment, this should work with proper module resolution
 
-// Import specific exports needed by the application
-import { TimeDesignManager } from '../../node_modules/@another-hour/core/dist/core.browser.js';
+// Re-export everything from time-design-core for compatibility
+export * from '../../node_modules/@another-hour/time-design-core/src/index.js';
 
-// Create and export a singleton instance for existing code compatibility
-export const timeDesignManager = TimeDesignManager.getInstance();
+// Specifically export timeDesignManager instance for existing code
+export { timeDesignManager } from '../../node_modules/@another-hour/time-design-core/src/index.js';
 
-// Note: ClassicMode, CoreTimeMode, SolarMode, and WakeBasedMode are already exported
-// from the core package, so they don't need to be re-exported here
+// Legacy exports for backward compatibility
+export { 
+  ClassicMode,
+  CoreTimeMode, 
+  SolarMode,
+  WakeBasedMode,
+  TimeDesignManager 
+} from '../../node_modules/@another-hour/time-design-core/src/index.js';

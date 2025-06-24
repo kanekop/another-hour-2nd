@@ -7,8 +7,8 @@
         "start": "node dist/server.js",
         "dev": "npm run build && node dist/server.js",
         "build": "npm run build:client && npm run build:server",
-        "build:client": "esbuild src/app.ts --bundle --outfile=public/js/main.js --minify --resolve-extensions=.ts",
-        "build:server": "esbuild src/server.ts --platform=node --bundle --packages=external --outfile=dist/server.js --resolve-extensions=.ts",
+        "build:client": "esbuild src/app.ts --bundle --outfile=public/js/main.js --minify",
+        "build:server": "esbuild src/server.ts --platform=node --bundle --packages=external --outfile=dist/server.js",
         "test": "jest"
     },
     "dependencies": {

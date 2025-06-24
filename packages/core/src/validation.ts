@@ -15,31 +15,6 @@ import { TIME_CONSTANTS } from './types/constants.js';
 import { InvalidTimeConfigError } from './types/errors.js';
 
 /**
- * 汎用的な時間設定のバリデーション (テスト用)
- */
-export function validateTimeConfig(config: any): ValidationResult<any> {
-    const errors: ValidationError[] = [];
-    const warnings: ValidationWarning[] = [];
-
-    if (config.designed24Duration !== undefined) {
-        const result = validateClassicTimeConfig(config.designed24Duration);
-        if (result.errors) {
-            errors.push(...result.errors);
-        }
-        if (result.warnings) {
-            warnings.push(...result.warnings);
-        }
-    }
-
-    return {
-        isValid: errors.length === 0,
-        value: config,
-        errors: errors.length > 0 ? errors : undefined,
-        warnings: warnings.length > 0 ? warnings : undefined
-    };
-}
-
-/**
  * Classic Mode パラメータのバリデーション
  */
 export function validateClassicTimeConfig(designed24Duration: number): ValidationResult<{ designed24Duration: number }> {
@@ -76,7 +51,7 @@ export function validateClassicTimeConfig(designed24Duration: number): Validatio
 }
 
 /**
- * モードパラメータのバリデーション (テスト用)
+ * モードパラメータのバリデーション
  */
 export function validateModeParameters(
     mode: TimeDesignMode,

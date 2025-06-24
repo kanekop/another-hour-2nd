@@ -18,18 +18,11 @@ export class CoreTimeMode extends BaseMode {
     super(
       'core-time',
       'Core Time Mode',
-      'Define productive hours with Another Hour periods before and after',
-      {
-        coreTimeStart: { type: 'number', label: 'Core Time Start (minutes)', default: 480 },
-        coreTimeEnd: { type: 'number', label: 'Core Time End (minutes)', default: 1020 },
-        dayHours: { type: 'number', label: 'Day Hours', default: 12 }
-      }
+      'Define your productive hours, with Another Hour periods filling the rest of the day.', {
+      coreTimeStart: { type: 'number', label: 'Core Time Start', default: 540 }, // 9:00 AM
+      coreTimeEnd: { type: 'number', label: 'Core Time End', default: 1020 },   // 5:00 PM
+    }
     );
-    this.id = 'core-time';
-  }
-
-  static getConfigSchema() {
-    return this.prototype.configSchema || {};
   }
 
   getDefaultConfig() {
@@ -75,61 +68,100 @@ export class CoreTimeMode extends BaseMode {
 
   calculate(date, timezone, config) {
     const minutes = this.getMinutesSinceMidnight(date, timezone);
-    const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutes, segments);
+    const start = config.coreTimeStart;
+    const end = config.coreTimeEnd;
 
-    if (!activeSegment) {
-      return { hours: date.getHours(), minutes: date.getMinutes(), seconds: date.getSeconds(), scaleFactor: 1, isAnotherHour: true, segmentInfo: { type: 'another', label: 'Error' } };
+    const coreDuration = (end - start + 1440) % 1440;
+    const morningAHRealDuration = (start - 0 + 1440) % 1440;
+    const eveningAHRealDuration = (0 - end + 1440) % 1440;
+    const totalRealAADuration = morningAHRealDuration + eveningAHRealDuration;
+    const targetCoreDuration = 1440 - totalRealAADuration;
+    const scaleFactorCore = coreDuration === 0 ? 1 : targetCoreDuration / coreDuration;
+
+    let periodName, isAnotherHour, progress, remaining, scaleFactor, ahMinutes;
+
+    const inCore = start <= end
+      ? minutes >= start && minutes < end
+      : minutes >= start || minutes < end;
+
+    if (inCore) {
+      periodName = 'Core Time';
+      isAnotherHour = false;
+      const elapsed = (minutes - start + 1440) % 1440;
+      progress = coreDuration > 0 ? elapsed / coreDuration : 0;
+      remaining = coreDuration - elapsed;
+      scaleFactor = scaleFactorCore;
+      ahMinutes = morningAHRealDuration + elapsed * scaleFactorCore;
+    } else {
+      const inMorning = minutes < start && start <= end || (start > end && minutes >= end && minutes < start);
+      if (inMorning) {
+        periodName = 'Morning AH';
+        isAnotherHour = true;
+        const elapsed = (minutes - 0 + 1440) % 1440;
+        progress = morningAHRealDuration > 0 ? elapsed / morningAHRealDuration : 0;
+        remaining = morningAHRealDuration - elapsed;
+        scaleFactor = 1;
+        ahMinutes = elapsed;
+      } else {
+        periodName = 'Evening AH';
+        isAnotherHour = true;
+        const elapsed = (minutes - end + 1440) % 1440;
+        progress = eveningAHRealDuration > 0 ? elapsed / eveningAHRealDuration : 0;
+        remaining = eveningAHRealDuration - elapsed;
+        scaleFactor = 1;
+        ahMinutes = morningAHRealDuration + coreDuration * scaleFactorCore + elapsed;
+      }
     }
 
-    let displayHours, displayMinutes, displaySeconds;
-
-    const { progress, remaining } = this.calculateProgress(minutes, activeSegment);
-
-    if (activeSegment.type === 'another') {
-      const remainingTotalSeconds = remaining * 60;
-      displayHours = Math.floor(remainingTotalSeconds / 3600);
-      displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
-      displaySeconds = Math.floor(remainingTotalSeconds % 60);
-    } else { // 'designed'
-      const segmentElapsed = minutes - activeSegment.startTime;
-      const scaledElapsed = segmentElapsed * activeSegment.scaleFactor;
-      const totalDesignedMinutes = scaledElapsed;
-
-      displayHours = Math.floor(totalDesignedMinutes / 60) % 24;
-      displayMinutes = Math.floor(totalDesignedMinutes % 60);
-      displaySeconds = Math.floor((totalDesignedMinutes * 60) % 60);
+    let hours, minutesOut, seconds;
+    
+    if (isAnotherHour) {
+      // Another Hour期間は0から始まる独立した時間として表示
+      const elapsed = periodName === 'Morning AH' 
+        ? (minutes - 0 + 1440) % 1440 
+        : (minutes - end + 1440) % 1440;
+      
+      hours = Math.floor(elapsed / 60);
+      minutesOut = Math.floor(elapsed % 60);
+      seconds = Math.floor((elapsed * 60) % 60);
+    } else {
+      // Core Timeは累積時間を使用
+      hours = Math.floor(ahMinutes / 60) % 24;
+      minutesOut = Math.floor(ahMinutes % 60);
+      seconds = Math.floor((ahMinutes * 60) % 60);
     }
+
+    const duration = isAnotherHour ? (periodName === 'Morning AH' ? morningAHRealDuration : eveningAHRealDuration) : coreDuration;
 
     return {
-      hours: displayHours,
-      minutes: displayMinutes,
-      seconds: displaySeconds,
-      scaleFactor: activeSegment.scaleFactor,
-      isAnotherHour: activeSegment.type === 'another',
-      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: activeSegment.duration },
-      periodName: activeSegment.label,
+      hours,
+      minutes: minutesOut,
+      seconds,
+      scaleFactor,
+      isAnotherHour,
+      segmentInfo: {
+        type: isAnotherHour ? 'another' : 'designed',
+        label: periodName,
+        progress,
+        remaining,
+        duration,
+        // Another Hour用の追加情報
+        elapsed: isAnotherHour ? (periodName === 'Morning AH' 
+          ? (minutes - 0 + 1440) % 1440 
+          : (minutes - end + 1440) % 1440) : undefined,
+        total: isAnotherHour ? duration : undefined,
+        displayFormat: isAnotherHour ? 'fraction' : 'normal'
+      },
+      periodName,
     };
   }
 
   /**
    * Get segments for timeline display
    */
-  getTimelineSegments(config) {
-    config = config || this.getConfig();
-    if (typeof this.getSegments === 'function') {
-      return this.getSegments(config);
-    }
-    return [];
-  }
-
-  getSolarInfo() {
-    return null;
-  }
-
   getSegments(config) {
-    config = config || this.getConfig();
     const segments = this._buildSegments(config);
+
     return segments.map(segment => ({
       type: segment.type,
       label: segment.label,
@@ -155,23 +187,5 @@ export class CoreTimeMode extends BaseMode {
     }
     // Return a default or empty object if the slider isn't ready
     return {};
-  }
-
-  getConfig() {
-    return this.config || {};
-  }
-
-  getCurrentPhase(date = new Date(), config = this.getConfig()) {
-    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
-    const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutes, segments);
-    return activeSegment ? activeSegment.type : null;
-  }
-
-  getScaleFactor(date = new Date(), config = this.getConfig()) {
-    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
-    const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutes, segments);
-    return activeSegment ? activeSegment.scaleFactor : 1;
   }
 }

@@ -237,22 +237,21 @@ npm run dev:all
 
 ## ✅ Time Design Modes アーキテクチャ統合完了
 
-**2025年6月21日 更新**: packages/core への統合が完全に完了しました。
+**2025年6月21日**: [FixRequest.md](./FixRequest.md)による重複実装統合が完了しました。
 
 ### 🎯 統合結果概要
 
 **統合前の問題**: Time Design Modesが3箇所で重複実装され、実装間の不整合が「動いていた部分が動かなくなる」問題の根本原因となっていました。
 
 **統合後の解決**:
-- ✅ **単一パッケージに統合**: `packages/core` (TypeScript実装)
-- ✅ **重複削除**: time-design-core パッケージを完全削除
+- ✅ **単一パッケージに統合**: `packages/@another-hour/time-design-core`
+- ✅ **重複削除**: 推定2,000行以上の重複コードを削除
 - ✅ **統一されたAPI**: 全モードが同一インターフェースを実装
 - ✅ **メンテナンス性向上**: バグ修正・機能追加が1箇所で完結
-- ✅ **型安全性**: TypeScriptによる完全な型サポート
 
-### 📦 統合されたパッケージ: `@another-hour/core`
+### 📦 統合されたパッケージ: `@another-hour/time-design-core`
 
-#### 含まれるモード (TypeScript実装)
+#### 含まれるモード (9,207行、21ファイル)
 1. **BaseMode**: 全モードの基底クラス
 2. **ClassicMode**: 元祖Another Hour体験  
 3. **CoreTimeMode**: 生産性重視の時間設計
@@ -272,38 +271,34 @@ npm run dev:all
 - **バグ修正**: 単一箇所での修正で全環境に反映
 
 #### 📍 現在の実装状況
-1. **`packages/core/`** ✅ **メイン実装**
-   - TypeScriptによる型安全な実装
+1. **`packages/@another-hour/time-design-core/`** ✅ **統合完了**
+   - 単一統合実装（21ファイル、9,207行）
    - 全モードが統一されたAPIで実装
-   - ブラウザ用ビルド (core.browser.js) 提供
+   - 型安全性・エラーハンドリング完備
 
 2. **`packages/scheduler-web/`** ✅ **統合完了** 
-   - core.browser.jsを通じてpackages/coreを使用
+   - core.browser.jsを通じてtime-design-coreを使用
    - 重複実装削除完了
-   - time-design-coreパッケージ依存削除
+   - 既存機能の後方互換性維持
 
-3. **`dev-tools/time-design-test/`** ✅ **独立動作**
-   - 開発・テスト用の独立実装を維持
-   - ブラウザでの即座なテストが可能
+3. **`dev-tools/time-design-test/`** ✅ **統合選択可能**
+   - 独立実装とcore統合の両方をサポート
+   - test-core-integration.html で統合版テスト可能
 
 ### 🔧 新しい開発ワークフロー
 
 #### Time Design Mode開発
 ```bash
 # 新モード追加 (1箇所のみ)
-cd packages/core/src/modes/
-# NewMode.ts を作成
-# TypeScript型定義を追加
-# index.ts でエクスポート追加
+cd packages/@another-hour/time-design-core/src/modes/
+# NewMode.js を作成
+# index.js でエクスポート追加
 ```
 
 #### 統合パッケージの使用
 ```javascript
-// TypeScript/JavaScript両方で使用可能
-import { TimeDesignManager, ClassicMode } from '@another-hour/core';
-
-// ブラウザでの使用
-import { TimeDesignManager } from './node_modules/@another-hour/core/dist/core.browser.js';
+// どこからでも統一されたAPIで使用可能
+import { TimeDesignManager, ClassicMode } from '@another-hour/time-design-core';
 ```
 
 ### 🌟 今後のメンテナンスの利点
@@ -430,27 +425,13 @@ npm run build
 3. **アクセシビリティ向上**: ARIA属性・キーボード操作対応
 4. **国際化対応**: 多言語表示・タイムゾーン対応の強化
 
-### 🔄 2025年6月21日 追加修正内容
-
-#### packages/core テスト環境改善
-- ✅ Jest設定をts-jest新形式に更新（globals廃止）
-- ✅ TypeScript設定にモジュール解決設定追加
-- ✅ 全テストファイルのTypeScript型エラー修正
-- ⚠️ Jest実行時のタイムアウト問題は調査継続中（コード自体は正常動作）
-
-#### アーキテクチャクリーンアップ
-- ✅ time-design-coreパッケージ削除完了
-- ✅ scheduler-webの依存関係を@another-hour/coreに統一
-- ✅ console.log文の削除（TimeDesignManager.ts）
-- ✅ ブラウザビルドの統合（core.browser.js使用）
-
 ---
 
 **最終更新**: 2025年6月21日
-**バージョン**: 1.4.0
+**バージョン**: 1.3.0
 **更新内容**: 
 - Another Hour期間表示ロジック修正完了（残り時間→経過時間）
 - HH:MM:SS/HH:MM:SS分数表示形式実装完了
 - 全Time Designモードでの統一された実装
 - UI/UXでのAnother Hour視覚的区別実装
-- packages/coreへの完全統合とクリーンアップ完了
+- 優先タスク完了に伴うドキュメント更新

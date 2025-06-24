@@ -1,0 +1,40 @@
+{
+  "name": "@another-hour/time-design-core",
+  "version": "1.0.0",
+  "description": "Core Time Design Modes implementation for Another Hour project",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./modes": {
+      "import": "./src/modes/index.js",
+      "default": "./src/modes/index.js"
+    },
+    "./modes/*": {
+      "import": "./src/modes/*.js",
+      "default": "./src/modes/*.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "another-hour",
+    "time-design",
+    "time-modes",
+    "clock"
+  ],
+  "author": "Another Hour Team",
+  "license": "MIT",
+  "dependencies": {
+    "moment": "^2.29.4",
+    "moment-timezone": "^0.5.43",
+    "suncalc": "^1.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
