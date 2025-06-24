@@ -75,7 +75,7 @@ describe('TimeDesignManager', () => {
             expect(() => {
                 manager.setMode('unknown-mode', {
                     mode: 'unknown-mode' as any,
-                    parameters: {} as any
+                    parameters: {}
                 });
             }).toThrow("Mode 'unknown-mode' is not registered");
         });
@@ -213,7 +213,6 @@ describe('TimeDesignManager', () => {
 
             expect(() => {
                 manager.setMode(TimeDesignMode.Classic, {
-                    mode: TimeDesignMode.Classic,
                     parameters: { designed24Duration: 1380 }
                 });
             }).not.toThrow();
@@ -230,7 +229,6 @@ describe('TimeDesignManager', () => {
 
         it('should save mode configuration', () => {
             const config = {
-                mode: TimeDesignMode.Classic,
                 parameters: { designed24Duration: 1200 }
             };
 
@@ -258,9 +256,7 @@ describe('TimeDesignManager', () => {
             await newManager.initialize();
 
             const currentMode = newManager.getCurrentMode();
-            if (currentMode?.config.mode === TimeDesignMode.Classic) {
-                expect((currentMode.config.parameters as any).designed24Duration).toBe(1200);
-            }
+            expect(currentMode?.config.parameters.designed24Duration).toBe(1200);
         });
     });
 

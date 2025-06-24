@@ -225,7 +225,7 @@ describe('CoreTimeMode', () => {
             expect(debugInfo).toHaveProperty('coreTimeStart', '07:00');
             expect(debugInfo).toHaveProperty('coreTimeEnd', '22:00');
             expect(debugInfo).toHaveProperty('durations');
-            expect((debugInfo as any).durations.coreTime).toBe(900); // 15 hours
+            expect(debugInfo.durations.coreTime).toBe(900); // 15 hours
         });
     });
 }); 

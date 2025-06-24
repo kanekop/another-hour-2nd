@@ -5,30 +5,30 @@
     "description": "時間との関係を再定義する - A platform to redefine your relationship with time",
     "main": "index.js",
     "workspaces": [
-        "packages/*"
+        "packages/*",
+        "packages/@another-hour/*"
     ],
     "scripts": {
-        "dev": "npm-run-all --parallel dev:server dev:core",
-        "dev:server": "nodemon dev-tools/time-design-test/start-server.js --watch dev-tools/time-design-test/ --watch packages/core/dist",
-        "dev:core": "cd packages/core && npm run build -- --watch",
+        "dev": "npm run dev --workspace=@another-hour/scheduler-web",
         "dev:all": "npm run dev --workspaces --if-present",
-        "build": "lerna run build",
-        "build:clean": "lerna run clean && lerna run build",
-        "test": "lerna run test --stream",
-        "test:coverage": "lerna run test:coverage",
+        "build": "tsc --build",
+        "build:clean": "tsc --build --clean",
+        "build:watch": "tsc --build --watch",
+        "build:packages": "npm run build --workspaces --if-present",
+        "test": "echo \"Error: no test specified\" && exit 1",
         "lint": "npm run lint --workspaces --if-present",
-        "clean": "lerna run clean",
-        "start:scheduler": "npm run dev --workspace=@another-hour/scheduler-web",
-        "start:clock": "npm run dev --workspace=@another-hour/clock-web",
+        "scheduler": "npm run start --workspace=@another-hour/scheduler-web",
+        "dev:website": "npm run dev --workspace=@another-hour/website",
+        "build:website": "npm run build --workspace=@another-hour/website",
+        "dev:watch": "npm run dev --workspace=@another-hour/watch-app",
+        "build:watch-app": "npm run build --workspace=@another-hour/watch-app",
         "start:watch": "npm run start --workspace=@another-hour/watch-app"
     },
     "devDependencies": {
         "@types/express": "^5.0.3",
         "@types/jest": "^29.5.14",
         "@types/node": "^24.0.1",
-        "lerna": "^6.6.1",
-        "nodemon": "^3.1.4",
-        "npm-run-all": "^4.1.5",
+        "lerna": "^6.6.2",
         "typescript": "^5.8.3"
     },
     "engines": {

@@ -27,10 +27,7 @@
       "Bash(cp:*)",
       "Bash(git rm:*)",
       "Bash(tree:*)",
-      "Bash(pkill:*)",
-      "Bash(npx --package=typescript tsc --noEmit)",
-      "Bash(npx:*)",
-      "Bash(npm run test:*)"
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

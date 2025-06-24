@@ -24,11 +24,6 @@ export class WakeBasedMode extends BaseMode {
         anotherHourDuration: { type: 'number', label: 'Another Hour Duration (minutes)', min: 0, max: 720, default: 60 },
       }
     );
-    this.id = 'wake-based';
-  }
-
-  static getConfigSchema() {
-    return this.prototype.configSchema || {};
   }
 
   getDefaultConfig() {
@@ -71,10 +66,8 @@ export class WakeBasedMode extends BaseMode {
   }
 
   _buildSegments(config) {
-    config = config || this.getConfig();
-    const wakeTime = config.wakeTime || '07:00';
-    const ahDuration = config.anotherHourDuration || 60;
-    const wakeTimeMinutes = this._parseTime(wakeTime);
+    const wakeTimeMinutes = this._parseTime(config.wakeTime);
+    const ahDuration = config.anotherHourDuration;
 
     // Total available time from wake-up to midnight.
     const totalActivityMinutes = 1440 - wakeTimeMinutes;
@@ -112,10 +105,13 @@ export class WakeBasedMode extends BaseMode {
     const { progress, remaining, duration } = this.calculateProgress(realMinutes, activeSegment);
 
     if (activeSegment.type === 'another') {
-      const remainingTotalSeconds = remaining * 60;
-      displayHours = Math.floor(remainingTotalSeconds / 3600);
-      displayMinutes = Math.floor((remainingTotalSeconds % 3600) / 60);
-      displaySeconds = Math.floor(remainingTotalSeconds % 60);
+      // Another Hour期間の経過時間を計算（0から開始）
+      const segmentElapsed = realMinutes - activeSegment.startTime;
+      
+      // 0時起点の時間として計算
+      displayHours = Math.floor(segmentElapsed / 60);
+      displayMinutes = Math.floor(segmentElapsed % 60);
+      displaySeconds = Math.floor((segmentElapsed * 60) % 60);
     } else { // 'designed'
       // Elapsed real time since wake-up.
       const elapsedRealMinutesInPeriod = realMinutes - wakeTimeMinutes;
@@ -135,13 +131,26 @@ export class WakeBasedMode extends BaseMode {
     const totalActivityMinutes = 1440 - wakeTimeMinutes;
     const segmentDuration = activeSegment.label === 'Designed Day' ? totalActivityMinutes : activeSegment.duration;
 
+    // Another Hour用の追加情報を計算
+    const segmentElapsed = activeSegment.type === 'another' ? realMinutes - activeSegment.startTime : undefined;
+    
     return {
       hours: displayHours,
       minutes: displayMinutes,
       seconds: displaySeconds,
       scaleFactor: activeSegment.scaleFactor,
       isAnotherHour: activeSegment.type === 'another',
-      segmentInfo: { type: activeSegment.type, label: activeSegment.label, progress, remaining, duration: segmentDuration },
+      segmentInfo: {
+        type: activeSegment.type,
+        label: activeSegment.label,
+        progress,
+        remaining,
+        duration: segmentDuration,
+        // Another Hour用の追加情報
+        elapsed: segmentElapsed,
+        total: activeSegment.type === 'another' ? activeSegment.duration : undefined,
+        displayFormat: activeSegment.type === 'another' ? 'fraction' : 'normal'
+      },
       periodName: activeSegment.label,
     };
   }
@@ -150,10 +159,8 @@ export class WakeBasedMode extends BaseMode {
    * Get segments for timeline display
    */
   getSegments(config) {
-    config = config || this.getConfig();
-    const wakeTime = config.wakeTime || '07:00';
-    const anotherHourDuration = config.anotherHourDuration || 60;
-    const segments = this._buildSegments({ ...config, wakeTime, anotherHourDuration });
+    const segments = this._buildSegments(config);
+
     return segments.map(segment => ({
       type: segment.type,
       label: segment.label,
@@ -172,36 +179,6 @@ export class WakeBasedMode extends BaseMode {
         date: wakeTime.toDateString()
       }
     };
-  }
-
-  getConfig() {
-    return this.config || {};
-  }
-
-  getTimelineSegments(config) {
-    config = config || this.getConfig();
-    if (typeof this.getSegments === 'function') {
-      return this.getSegments(config);
-    }
-    return [];
-  }
-
-  getCurrentPhase(date = new Date(), config = this.getConfig()) {
-    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
-    const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutes, segments);
-    return activeSegment ? activeSegment.type : null;
-  }
-
-  getScaleFactor(date = new Date(), config = this.getConfig()) {
-    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
-    const segments = this._buildSegments(config);
-    const activeSegment = this.findActiveSegment(minutes, segments);
-    return activeSegment ? activeSegment.scaleFactor : 1;
-  }
-
-  getSolarInfo() {
-    return null;
   }
 }
 
