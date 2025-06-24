@@ -7,7 +7,7 @@ const STORAGE_KEYS = {
   MODE_CONFIGS: 'time-design-mode-configs'
 };
 
-class TimeDesignManager {
+export class TimeDesignManager {
   constructor() {
     this.registry = new ModeRegistry();
     this.currentMode = null;
@@ -147,6 +147,47 @@ class TimeDesignManager {
       }
       throw error;
     }
+  }
+
+  registerMode(modeInstance) {
+    this.registry.register(modeInstance);
+  }
+
+  getModeInstance(modeId) {
+    return this.registry.get(modeId);
+  }
+
+  getCurrentModeId() {
+    return this.currentMode ? this.currentMode.id : null;
+  }
+
+  calculateAnotherHourTime(date, timezone) {
+    return this.calculate(date, timezone);
+  }
+
+  getCurrentPhase(date = new Date()) {
+    if (this.currentMode && typeof this.currentMode.getCurrentPhase === 'function') {
+      return this.currentMode.getCurrentPhase(date, this.currentConfig);
+    }
+    return null;
+  }
+
+  getScaleFactor(date = new Date()) {
+    if (this.currentMode && typeof this.currentMode.getScaleFactor === 'function') {
+      return this.currentMode.getScaleFactor(date, this.currentConfig);
+    }
+    return 1;
+  }
+
+  exportCurrentConfig() {
+    return this.currentConfig || {};
+  }
+
+  getSolarInfo(date = new Date()) {
+    if (this.currentMode && typeof this.currentMode.getSolarInfo === 'function') {
+      return this.currentMode.getSolarInfo(date, this.currentConfig);
+    }
+    return null;
   }
 }
 

@@ -24,6 +24,11 @@ export class WakeBasedMode extends BaseMode {
         anotherHourDuration: { type: 'number', label: 'Another Hour Duration (minutes)', min: 0, max: 720, default: 60 },
       }
     );
+    this.id = 'wake-based';
+  }
+
+  static getConfigSchema() {
+    return this.prototype.configSchema || {};
   }
 
   getDefaultConfig() {
@@ -66,8 +71,10 @@ export class WakeBasedMode extends BaseMode {
   }
 
   _buildSegments(config) {
-    const wakeTimeMinutes = this._parseTime(config.wakeTime);
-    const ahDuration = config.anotherHourDuration;
+    config = config || this.getConfig();
+    const wakeTime = config.wakeTime || '07:00';
+    const ahDuration = config.anotherHourDuration || 60;
+    const wakeTimeMinutes = this._parseTime(wakeTime);
 
     // Total available time from wake-up to midnight.
     const totalActivityMinutes = 1440 - wakeTimeMinutes;
@@ -143,8 +150,10 @@ export class WakeBasedMode extends BaseMode {
    * Get segments for timeline display
    */
   getSegments(config) {
-    const segments = this._buildSegments(config);
-
+    config = config || this.getConfig();
+    const wakeTime = config.wakeTime || '07:00';
+    const anotherHourDuration = config.anotherHourDuration || 60;
+    const segments = this._buildSegments({ ...config, wakeTime, anotherHourDuration });
     return segments.map(segment => ({
       type: segment.type,
       label: segment.label,
@@ -163,6 +172,36 @@ export class WakeBasedMode extends BaseMode {
         date: wakeTime.toDateString()
       }
     };
+  }
+
+  getConfig() {
+    return this.config || {};
+  }
+
+  getTimelineSegments(config) {
+    config = config || this.getConfig();
+    if (typeof this.getSegments === 'function') {
+      return this.getSegments(config);
+    }
+    return [];
+  }
+
+  getCurrentPhase(date = new Date(), config = this.getConfig()) {
+    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
+    const segments = this._buildSegments(config);
+    const activeSegment = this.findActiveSegment(minutes, segments);
+    return activeSegment ? activeSegment.type : null;
+  }
+
+  getScaleFactor(date = new Date(), config = this.getConfig()) {
+    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
+    const segments = this._buildSegments(config);
+    const activeSegment = this.findActiveSegment(minutes, segments);
+    return activeSegment ? activeSegment.scaleFactor : 1;
+  }
+
+  getSolarInfo() {
+    return null;
   }
 }
 

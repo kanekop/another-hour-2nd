@@ -1,46 +1,30 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import express from 'express';
+import path from 'path';
 
-const PORT = 8080;
-const MIME_TYPES = {
-    '.html': 'text/html',
-    '.js': 'application/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon'
-};
+const app = express();
+const port = 8080;
 
-const server = http.createServer((req, res) => {
-    let filePath = '.' + req.url;
-    if (filePath === './') {
-        filePath = './index.html';
-    }
+// Get the project root directory from the current working directory where the script is run
+const projectRoot = process.cwd();
 
-    const extname = String(path.extname(filePath)).toLowerCase();
-    const mimeType = MIME_TYPES[extname] || 'application/octet-stream';
+// Define the root for the test UI and the location of the core package's distribution files
+const testUiRoot = path.join(projectRoot, 'dev-tools', 'time-design-test');
+const coreDist = path.join(projectRoot, 'packages', 'core', 'dist');
 
-    fs.readFile(filePath, (error, content) => {
-        if (error) {
-            if (error.code === 'ENOENT') {
-                res.writeHead(404, { 'Content-Type': 'text/html' });
-                res.end('<h1>404 - File Not Found</h1>', 'utf-8');
-            } else {
-                res.writeHead(500);
-                res.end('Sorry, check with the site admin for error: ' + error.code + ' ..\n');
-            }
-        } else {
-            res.writeHead(200, { 'Content-Type': mimeType });
-            res.end(content, 'utf-8');
-        }
-    });
+// Serve static files from the test UI directory (e.g., /js, /css, /index.html)
+app.use(express.static(testUiRoot));
+
+// Serve the core browser build from its dist folder, mounting it at the /dist URL path
+app.use('/dist', express.static(coreDist));
+
+// Default catch-all to serve index.html for any other request.
+// This is useful for single-page applications.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(testUiRoot, 'index.html'));
 });
 
-server.listen(PORT, () => {
-    console.log(`Time Design Test UI Server running at http://localhost:${PORT}/`);
-    console.log('Press Ctrl+C to stop the server');
+app.listen(port, () => {
+    console.log(`Development server running at http://localhost:${port}`);
+    console.log(`Serving UI from: ${testUiRoot}`);
+    console.log(`Serving core library from: ${coreDist}`);
 }); 

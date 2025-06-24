@@ -6,6 +6,15 @@ import { TimeDesignMode, DEFAULT_VALUES, CoreTimeModeParams, UserSettings } from
  * 1日のうち、活動的な「コアタイム」を設定し、その期間の時間を圧縮するモード
  */
 export class CoreTimeMode extends BaseMode {
+    static modeId = 'core-time';
+    static modeName = 'Core Time';
+    static description = 'Compresses a specific "core time" (like work hours) and leaves the rest of the day at normal speed.';
+
+    static defaultParameters = {
+        coreTimeStart: '09:00',
+        coreTimeEnd: '17:00',
+    };
+
     coreTimeStartStr: string;
     coreTimeEndStr: string;
     minCoreHours: number;
@@ -16,19 +25,20 @@ export class CoreTimeMode extends BaseMode {
 
     constructor(config: any) {
         super(config);
-        const params = config.parameters as CoreTimeModeParams;
+        const params = { ...CoreTimeMode.defaultParameters, ...config.parameters };
         const userSettings = config.userSettings as UserSettings;
 
         // デフォルト値の適用
-        this.coreTimeStartStr = params?.coreTimeStart || DEFAULT_VALUES.coreTime.coreTimeStart;
-        this.coreTimeEndStr = params?.coreTimeEnd || DEFAULT_VALUES.coreTime.coreTimeEnd;
-        this.minCoreHours = params?.minCoreHours || DEFAULT_VALUES.coreTime.minCoreHours;
-        this.anotherHourAllocation = params?.anotherHourAllocation ?? DEFAULT_VALUES.coreTime.anotherHourAllocation;
+        this.coreTimeStartStr = params.coreTimeStart;
+        this.coreTimeEndStr = params.coreTimeEnd;
+        this.minCoreHours = params.minCoreHours || DEFAULT_VALUES.coreTime.minCoreHours;
+        this.anotherHourAllocation = params.anotherHourAllocation ?? DEFAULT_VALUES.coreTime.anotherHourAllocation;
         this.dayStartTime = this.parseTime(userSettings?.dayStartTime || DEFAULT_VALUES.user.dayStartTime);
 
         // 時刻文字列を分数に変換
         this.coreTimeStart = this.parseTime(this.coreTimeStartStr);
         this.coreTimeEnd = this.parseTime(this.coreTimeEndStr);
+        this.validateConfig();
     }
 
     /**
@@ -36,6 +46,10 @@ export class CoreTimeMode extends BaseMode {
      */
     validateConfig() {
         super.validateConfig();
+
+        if (this.coreTimeStart === this.coreTimeEnd) {
+            throw new Error('Core Time start and end times cannot be the same.');
+        }
 
         const coreDuration = (this.coreTimeEnd - this.coreTimeStart + 1440) % 1440;
         if (coreDuration < this.minCoreHours * 60) {
@@ -239,5 +253,60 @@ export class CoreTimeMode extends BaseMode {
             scaleFactor: scaleFactor,
             currentPhase: this.getCurrentPhase(currentTime)
         };
+    }
+
+    getTimelineSegments() {
+        const toPercent = (minutes: number) => (minutes / 1440) * 100;
+
+        const startPercent = toPercent(this.coreTimeStart);
+        const endPercent = toPercent(this.coreTimeEnd);
+
+        // Segments are: Evening AH, Morning AH, Core Time
+        if (startPercent < endPercent) {
+            // Core time does not cross midnight
+            return [
+                { name: 'Another Hour', start: 0, end: startPercent, color: '#85C1E9', label: 'Another Hour' },
+                { name: 'Core Time', start: startPercent, end: endPercent, color: '#2874A6', label: 'Core Time' },
+                { name: 'Another Hour', start: endPercent, end: 100, color: '#85C1E9', label: 'Another Hour' },
+            ];
+        } else {
+            // Core time crosses midnight
+            return [
+                { name: 'Core Time', start: 0, end: endPercent, color: '#2874A6', label: 'Core Time' },
+                { name: 'Another Hour', start: endPercent, end: startPercent, color: '#85C1E9', label: 'Another Hour' },
+                { name: 'Core Time', start: startPercent, end: 100, color: '#2874A6', label: 'Core Time' },
+            ];
+        }
+    }
+
+    static getConfigSchema() {
+        return {
+            coreTimeStart: {
+                type: 'time',
+                label: 'Core Time Start',
+                default: CoreTimeMode.defaultParameters.coreTimeStart,
+            },
+            coreTimeEnd: {
+                type: 'time',
+                label: 'Core Time End',
+                default: CoreTimeMode.defaultParameters.coreTimeEnd,
+            }
+        };
+    }
+
+    exportConfig() {
+        return {
+            ...super.exportConfig(),
+            parameters: {
+                coreTimeStart: this.formatTime(this.coreTimeStart),
+                coreTimeEnd: this.formatTime(this.coreTimeEnd)
+            }
+        };
+    }
+
+    private formatTime(minutes: number): string {
+        const h = Math.floor(minutes / 60).toString().padStart(2, '0');
+        const m = (minutes % 60).toString().padStart(2, '0');
+        return `${h}:${m}`;
     }
 } 

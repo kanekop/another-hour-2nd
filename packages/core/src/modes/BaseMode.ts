@@ -119,13 +119,28 @@ export class BaseMode {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getDebugInfo(currentTime: Date): Record<string, any> {
+    getDebugInfo(currentTime: Date): object {
         return {
-            mode: this.config.mode,
+            mode: this.constructor.name,
+            config: this.config,
             scaleFactor: this.calculateScaleFactor(currentTime),
-            phase: this.getCurrentPhase(currentTime),
-            ahTime: this.calculateAnotherHourTime(currentTime),
-            config: this.exportConfig()
+            // currentPhase: this.getCurrentPhase(currentTime),
         };
+    }
+
+    /**
+     * Returns the segments for the timeline UI.
+     * @returns {Array} An array of segment objects.
+     */
+    getTimelineSegments(): any {
+        return [];
+    }
+
+    /**
+     * Returns the schema for the configuration panel UI.
+     * @returns {object | null}
+     */
+    getConfigSchema(): any {
+        return null;
     }
 }

@@ -6,16 +6,17 @@ import { TimeDesignMode, UserSettings, DEFAULT_VALUES } from './types/time-modes
  * シングルトンパターンで実装
  */
 export class TimeDesignManager {
+    private static instance: TimeDesignManager;
+    private modes: Map<string, typeof BaseMode> = new Map();
+    private currentMode: BaseMode | null = null;
+    private listeners: Map<string, Set<(data: any) => void>> = new Map();
+    private userSettings!: UserSettings;
+
     constructor() {
         if (TimeDesignManager.instance) {
             return TimeDesignManager.instance;
         }
-
-        this.modes = new Map();
-        this.currentMode = null;
-        this.listeners = new Map();
         this.userSettings = this.loadUserSettings();
-
         TimeDesignManager.instance = this;
     }
 
@@ -35,7 +36,7 @@ export class TimeDesignManager {
      * @param {string} modeName - モード名
      * @param {typeof BaseMode} ModeClass - モードクラス
      */
-    registerMode(modeName, ModeClass) {
+    registerMode(modeName: string, ModeClass: typeof BaseMode) {
         if (!(ModeClass.prototype instanceof BaseMode)) {
             throw new Error('Mode class must extend BaseMode');
         }
@@ -45,11 +46,21 @@ export class TimeDesignManager {
     }
 
     /**
-     * 利用可能なモードのリストを取得
-     * @returns {string[]}
+     * Retrieves metadata for all registered modes.
+     * @returns {Array<{id: string, name: string, description: string}>}
      */
-    getAvailableModes() {
-        return Array.from(this.modes.keys());
+    getAvailableModes(): Array<{ id: string; name: string; description: string }> {
+        return Array.from(this.modes.entries()).map(([id, modeClass]) => {
+            return {
+                id: id,
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                name: modeClass.modeName || 'Unnamed Mode',
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                description: modeClass.description || 'No description available.'
+            };
+        });
     }
 
     /**
@@ -57,7 +68,7 @@ export class TimeDesignManager {
      * @param {string} modeName - モード名
      * @param {Object} config - モード設定
      */
-    setMode(modeName, config) {
+    setMode(modeName: string, config: any) {
         const ModeClass = this.modes.get(modeName);
 
         if (!ModeClass) {
@@ -72,29 +83,37 @@ export class TimeDesignManager {
             });
         }
 
-        // 新しいモードを作成（ユーザー設定を含める）
-        const modeConfig = {
-            mode: modeName,
-            userSettings: this.userSettings,
-            ...config
-        };
+        // If no config is provided, build one from the mode's static default parameters.
+        let finalConfig = config;
+        if (!finalConfig) {
+            // @ts-ignore
+            const defaultParams = ModeClass.defaultParameters || {};
+            finalConfig = { parameters: defaultParams };
+        }
 
-        this.currentMode = new ModeClass(modeConfig);
+        try {
+            const modeInstance = new ModeClass(finalConfig);
+            this.currentMode = modeInstance;
 
-        // ユーザーの優先モードを更新
-        this.userSettings.preferredMode = modeName;
-        this.saveUserSettings();
+            // ユーザーの優先モードを更新
+            if (Object.values(TimeDesignMode).includes(modeName as TimeDesignMode)) {
+                this.userSettings.preferredMode = modeName as TimeDesignMode;
+            }
+            this.saveUserSettings();
 
-        // 設定を保存
-        this.saveConfiguration();
+            // 設定を保存
+            this.saveConfiguration();
 
-        // リスナーに通知
-        this.notifyListeners('mode-changed', {
-            mode: modeName,
-            config: this.currentMode.exportConfig()
-        });
+            // リスナーに通知
+            this.notifyListeners('mode-changed', {
+                mode: modeName,
+                config: this.currentMode.exportConfig()
+            });
 
-        console.log(`Mode changed to: ${modeName}`);
+            console.log(`Mode changed to: ${modeName}`);
+        } catch (error) {
+            console.error(`Failed to set mode ${modeName}:`, error);
+        }
     }
 
     /**
@@ -171,12 +190,15 @@ export class TimeDesignManager {
      * @param {string} event - イベント名
      * @param {Function} callback - コールバック関数
      */
-    addEventListener(event, callback) {
+    addEventListener(event: string, callback: (data: any) => void) {
         if (!this.listeners.has(event)) {
             this.listeners.set(event, new Set());
         }
 
-        this.listeners.get(event).add(callback);
+        const eventListeners = this.listeners.get(event);
+        if (eventListeners) {
+            eventListeners.add(callback);
+        }
     }
 
     /**
@@ -184,9 +206,10 @@ export class TimeDesignManager {
      * @param {string} event
      * @param {Function} callback
      */
-    removeEventListener(event, callback) {
-        if (this.listeners.has(event)) {
-            this.listeners.get(event).delete(callback);
+    removeEventListener(event: string, callback: (data: any) => void) {
+        const eventListeners = this.listeners.get(event);
+        if (eventListeners) {
+            eventListeners.delete(callback);
         }
     }
 
@@ -195,9 +218,10 @@ export class TimeDesignManager {
      * @param {string} event
      * @param {Object} data
      */
-    notifyListeners(event, data) {
-        if (this.listeners.has(event)) {
-            this.listeners.get(event).forEach(callback => {
+    notifyListeners(event: string, data: any) {
+        const eventListeners = this.listeners.get(event);
+        if (eventListeners) {
+            eventListeners.forEach(callback => {
                 try {
                     callback(data);
                 } catch (error) {
@@ -236,7 +260,7 @@ export class TimeDesignManager {
      * ユーザー設定を更新
      * @param {Partial<UserSettings>} updates
      */
-    updateUserSettings(updates) {
+    updateUserSettings(updates: Partial<UserSettings>) {
         this.userSettings = { ...this.userSettings, ...updates };
         this.saveUserSettings();
 
@@ -254,30 +278,28 @@ export class TimeDesignManager {
         if (!this.currentMode) return;
 
         const config = this.currentMode.exportConfig();
-        const modeKey = `another-hour-mode-${config.mode}`;
-        localStorage.setItem(modeKey, JSON.stringify(config));
+        const modeKey = `another-hour-mode-config-${config.mode}`;
 
-        // 最後に使用したモードも保存
+        localStorage.setItem(modeKey, JSON.stringify(config));
         localStorage.setItem('another-hour-last-mode', config.mode);
     }
 
     /**
      * 設定を読み込み
      * @param {string} modeName
-     * @returns {Object|null}
+     * @returns {any | null}
      */
-    loadConfiguration(modeName) {
-        const modeKey = `another-hour-mode-${modeName}`;
+    loadConfiguration(modeName: string): any | null {
+        const modeKey = `another-hour-mode-config-${modeName}`;
         const saved = localStorage.getItem(modeKey);
-
         if (saved) {
             try {
                 return JSON.parse(saved);
             } catch (error) {
-                console.error(`Failed to load configuration for ${modeName}:`, error);
+                console.error(`Failed to load configuration for mode ${modeName}:`, error);
+                return null;
             }
         }
-
         return null;
     }
 
@@ -323,19 +345,20 @@ export class TimeDesignManager {
      * @param {string} modeName
      * @returns {Object}
      */
-    getDefaultParameters(modeName) {
-        switch (modeName) {
-            case TimeDesignMode.Classic:
-                return DEFAULT_VALUES.classic;
-            case TimeDesignMode.CoreTime:
-                return DEFAULT_VALUES.coreTime;
-            case TimeDesignMode.WakeBased:
-                return DEFAULT_VALUES.wakeBased;
-            case TimeDesignMode.Solar:
-                return DEFAULT_VALUES.solar;
-            default:
-                return {};
+    getDefaultParameters(modeName: string): object {
+        if (modeName === TimeDesignMode.CoreTime) {
+            return DEFAULT_VALUES.coreTime;
         }
+        if (modeName === TimeDesignMode.Classic) {
+            return DEFAULT_VALUES.classic;
+        }
+        if (modeName === TimeDesignMode.Solar) {
+            return DEFAULT_VALUES.solar;
+        }
+        if (modeName === TimeDesignMode.WakeBased) {
+            return DEFAULT_VALUES.wakeBased;
+        }
+        return {};
     }
 
     /**

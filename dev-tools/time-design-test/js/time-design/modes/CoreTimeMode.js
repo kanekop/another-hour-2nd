@@ -18,11 +18,18 @@ export class CoreTimeMode extends BaseMode {
     super(
       'core-time',
       'Core Time Mode',
-      'Define your productive hours, with Another Hour periods filling the rest of the day.', {
-      coreTimeStart: { type: 'number', label: 'Core Time Start', default: 540 }, // 9:00 AM
-      coreTimeEnd: { type: 'number', label: 'Core Time End', default: 1020 },   // 5:00 PM
-    }
+      'Define productive hours with Another Hour periods before and after',
+      {
+        coreTimeStart: { type: 'number', label: 'Core Time Start (minutes)', default: 480 },
+        coreTimeEnd: { type: 'number', label: 'Core Time End (minutes)', default: 1020 },
+        dayHours: { type: 'number', label: 'Day Hours', default: 12 }
+      }
     );
+    this.id = 'core-time';
+  }
+
+  static getConfigSchema() {
+    return this.prototype.configSchema || {};
   }
 
   getDefaultConfig() {
@@ -108,9 +115,21 @@ export class CoreTimeMode extends BaseMode {
   /**
    * Get segments for timeline display
    */
-  getSegments(config) {
-    const segments = this._buildSegments(config);
+  getTimelineSegments(config) {
+    config = config || this.getConfig();
+    if (typeof this.getSegments === 'function') {
+      return this.getSegments(config);
+    }
+    return [];
+  }
 
+  getSolarInfo() {
+    return null;
+  }
+
+  getSegments(config) {
+    config = config || this.getConfig();
+    const segments = this._buildSegments(config);
     return segments.map(segment => ({
       type: segment.type,
       label: segment.label,
@@ -136,5 +155,23 @@ export class CoreTimeMode extends BaseMode {
     }
     // Return a default or empty object if the slider isn't ready
     return {};
+  }
+
+  getConfig() {
+    return this.config || {};
+  }
+
+  getCurrentPhase(date = new Date(), config = this.getConfig()) {
+    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
+    const segments = this._buildSegments(config);
+    const activeSegment = this.findActiveSegment(minutes, segments);
+    return activeSegment ? activeSegment.type : null;
+  }
+
+  getScaleFactor(date = new Date(), config = this.getConfig()) {
+    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
+    const segments = this._buildSegments(config);
+    const activeSegment = this.findActiveSegment(minutes, segments);
+    return activeSegment ? activeSegment.scaleFactor : 1;
   }
 }

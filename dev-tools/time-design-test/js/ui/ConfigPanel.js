@@ -1,212 +1,177 @@
-import { $ } from '../utils/dom.js';
+import { $, $$ } from '../utils/dom.js';
 import { formatDuration } from '../utils/formatters.js';
 import SolarTimeFormatter from '../utils/SolarTimeFormatter.js';
+import { CITIES } from '../utils/city-timezones.js';
 
 export class ConfigPanel {
-    constructor(element, { onSave, onReset }) {
+    constructor(element, timeDesignManager) {
+        if (!element) throw new Error("ConfigPanel requires a valid DOM element.");
         this.element = element;
-        this.onSave = onSave;
-        this.onReset = onReset;
-
-        this.contentElement = $('#configContent', this.element);
-
-        $('#saveConfigBtn', this.element).addEventListener('click', () => this.handleSave());
-        $('#resetConfigBtn', this.element).addEventListener('click', () => this.onReset());
-
+        this.timeDesignManager = timeDesignManager;
+        this.contentElement = $('.config-panel__content', this.element);
         this.addEventListeners();
     }
 
-    render(mode) {
-        if (!mode) {
-            this.contentElement.innerHTML = '<p>Select a mode to configure.</p>';
+    render(modeId, schema, currentConfig, solarInfo = null) {
+        if (!this.contentElement) return;
+
+        if (!schema || Object.keys(schema).length === 0) {
+            this.contentElement.innerHTML = '<p class="config-panel__placeholder">No configuration available for this mode.</p>';
             return;
         }
 
-        let configHtml = '';
-        switch (mode.id) {
-            case 'classic':
-                configHtml = this.generateClassicConfig(mode.config);
-                break;
-            case 'core-time':
-                configHtml = this.generateCoreTimeConfig(mode.config);
-                break;
-            case 'solar':
-                configHtml = this.generateSolarConfig(mode.config, mode.cities, mode.uiData);
-                break;
-            case 'wake-based':
-                configHtml = this.generateWakeBasedConfig(mode.config, mode.schema);
-                break;
-            default:
-                configHtml = '<p>Configuration not available for this mode.</p>';
-        }
-        this.contentElement.innerHTML = configHtml;
+        let contentHtml = '';
 
-        // Post-render initialization for complex UI elements
-        if (mode.id === 'core-time') {
-            this.initializeCoreTimeSlider(mode.config);
-        } else if (mode.id === 'solar') {
-            this.initializeSolarMode(mode.config);
+        if (modeId === 'solar') {
+            contentHtml = this.generateSolarConfig(schema, currentConfig, solarInfo);
+        } else {
+            contentHtml = this.generateGenericConfig(schema, currentConfig);
         }
+
+        this.contentElement.innerHTML = contentHtml;
+        this.addInputListeners();
     }
 
-    handleSave() {
-        const currentModeId = document.querySelector('.mode-selector__item--active')?.dataset.modeId;
-        if (!currentModeId) return;
-
-        const config = {};
-        const inputs = this.contentElement.querySelectorAll('input[id], select[id]');
-
-        inputs.forEach(input => {
-            if (input.type === 'range' || input.type === 'number') {
-                config[input.id] = parseFloat(input.value);
-            } else if (input.type === 'time') {
-                config[input.id] = input.value;
-            } else if (input.type === 'checkbox') {
-                config[input.id] = input.checked;
-            } else {
-                config[input.id] = input.value;
+    generateGenericConfig(schema, config) {
+        return Object.entries(schema).map(([key, item]) => {
+            const value = config[key] ?? item.default;
+            switch (item.type) {
+                case 'slider':
+                    return `
+                        <div class="config-group">
+                            <label for="${key}">${item.label}</label>
+                            <div class="config-slider">
+                                <input type="range" id="${key}" data-key="${key}" min="${item.min}" max="${item.max}" step="${item.step}" value="${value}">
+                                <span class="config-value-display">${value}${item.unit || ''}</span>
+                            </div>
+                        </div>`;
+                case 'time':
+                    return `
+                        <div class="config-group">
+                            <label for="${key}">${item.label}</label>
+                            <input type="time" id="${key}" data-key="${key}" value="${value}" class="config-input">
+                        </div>`;
+                default:
+                    return '';
             }
-        });
-
-        // Handle complex inputs like noUiSlider specifically
-        const coreTimeSlider = $('#coreTimeSlider', this.element);
-        if (coreTimeSlider && coreTimeSlider.noUiSlider) {
-            const values = coreTimeSlider.noUiSlider.get();
-            config.coreTimeStart = parseInt(values[0], 10);
-            config.coreTimeEnd = parseInt(values[1], 10);
-        }
-
-        const solarDayHoursSlider = $('#solar-day-hours-slider', this.element);
-        if (solarDayHoursSlider && solarDayHoursSlider.noUiSlider) {
-            config.designedDayHours = parseFloat(solarDayHoursSlider.noUiSlider.get());
-        }
-
-        // The city for solar mode is handled by its own event listener in the manager,
-        // so we don't need to read it here during a general save.
-
-        this.onSave(config);
+        }).join('');
     }
 
-    // --- Config UI Generators ---
+    generateSolarConfig(schema, config, solarInfo) {
+        const currentCityKey = Object.keys(CITIES).find(key =>
+            CITIES[key].latitude === config.location?.latitude &&
+            CITIES[key].longitude === config.location?.longitude
+        ) || 'tokyo';
 
-    generateClassicConfig(config) {
-        const duration = config.designed24Duration;
-        return `
-            <div class="config-group">
-                <label for="designed24Duration">Designed 24 Duration: <span class="config-value-display">${formatDuration(duration)}</span></label>
-                <input type="range" id="designed24Duration" min="60" max="1425" value="${duration}" step="15">
-            </div>
-        `;
-    }
-
-    generateCoreTimeConfig(config) {
-        return `
-            <div class="config-group">
-                <label>Core Time Range</label>
-                <div id="coreTimeSlider" class="config-slider"></div>
-            </div>
-        `;
-    }
-
-    generateSolarConfig(config, cities = {}, uiData = {}) {
-        const cityKey = config.location?.key || 'tokyo';
-        const cityOptions = Object.entries(cities).map(([key, city]) =>
-            `<option value="${key}" ${cityKey === key ? 'selected' : ''}>${city.name}</option>`
+        const cityOptions = Object.entries(CITIES).map(([key, city]) =>
+            `<option value="${key}" ${currentCityKey === key ? 'selected' : ''}>${city.name}</option>`
         ).join('');
 
-        const { solarInfo } = uiData;
-
-        // SolarTimeFormatterを使用してタイムゾーンを取得
-        const timezone = SolarTimeFormatter.getTimezone(config.location);
-
-        // SolarTimeFormatterを使用して太陽情報をフォーマット
+        const timezone = CITIES[currentCityKey]?.tz;
         const formatted = SolarTimeFormatter.formatSolarInfo(solarInfo, timezone);
 
-        return `
+        let html = `
             <div class="config-group">
-                <label for="solar-city">City</label>
-                <select id="solar-city">${cityOptions}</select>
+                <label for="solar-city-select">City</label>
+                <select id="solar-city-select" data-key="location" class="config-select">${cityOptions}</select>
             </div>
-            <div class="config-group info-box">
-                <p><strong>Sunrise:</strong> ${formatted.sunrise}</p>
-                <p><strong>Sunset:</strong> ${formatted.sunset}</p>
-                <p><strong>Daylight:</strong> ${formatted.daylight}</p>
-            </div>
-            <div class="config-group">
-                <label for="solar-day-hours-slider">Target Day Hours: <span>${config.designedDayHours.toFixed(1)}h</span></label>
-                <div id="solar-day-hours-slider" class="config-slider"></div>
+            <div class="info-box">
+                <div class="info-box__item">
+                    <span class="info-box__label">Sunrise</span>
+                    <span class="info-box__value">${formatted.sunrise}</span>
+                </div>
+                <div class="info-box__item">
+                    <span class="info-box__label">Sunset</span>
+                    <span class="info-box__value">${formatted.sunset}</span>
+                </div>
+                <div class="info-box__item">
+                    <span class="info-box__label">Daylight</span>
+                    <span class="info-box__value">${formatted.daylight}</span>
+                </div>
             </div>
         `;
-    }
 
-    generateWakeBasedConfig(config, schema = {}) {
-        let html = '';
-        for (const [key, item] of Object.entries(schema)) {
-            const value = config[key];
-            if (item.type === 'time') {
-                html += `
-                    <div class="config-group">
-                        <label for="${key}">${item.label}</label>
-                        <input type="time" id="${key}" value="${value}">
-                    </div>`;
-            } else if (item.type === 'number') {
-                html += `
-                    <div class="config-group">
-                        <label for="${key}">${item.label}: <span>${value} ${item.unit || ''}</span></label>
-                        <input type="range" id="${key}" min="${item.min}" max="${item.max}" value="${value}" step="${item.step || 1}">
-                    </div>`;
-            }
-        }
+        html += this.generateGenericConfig(schema, config);
         return html;
     }
 
-    // --- UI Initializers ---
-
-    initializeCoreTimeSlider(config) {
-        const slider = $('#coreTimeSlider');
-        if (!slider || typeof noUiSlider === 'undefined') return;
-
-        noUiSlider.create(slider, {
-            start: [config.coreTimeStart, config.coreTimeEnd],
-            connect: true, range: { min: 0, max: 1440 }, step: 15,
-            tooltips: {
-                to: val => this.formatMinutesForSlider(Math.round(val))
-            }
-        });
-    }
-
-    initializeSolarMode(config) {
-        const dayHoursSlider = $('#solar-day-hours-slider');
-        if (!dayHoursSlider || typeof noUiSlider === 'undefined') return;
-
-        noUiSlider.create(dayHoursSlider, {
-            start: [config.designedDayHours],
-            connect: [true, false], range: { 'min': 1, 'max': 23 }, step: 0.5,
-            tooltips: { to: value => `${Number(value).toFixed(1)}h` }
-        });
-
-        // Add listeners to update labels on slide
-        const durationLabel = dayHoursSlider.previousElementSibling.querySelector('span');
-        dayHoursSlider.noUiSlider.on('update', (values) => {
-            durationLabel.textContent = `${Number(values[0]).toFixed(1)}h`;
-        });
-    }
-
-    // Add a listener to update range value displays
     addEventListeners() {
-        this.contentElement.addEventListener('input', (e) => {
-            if (e.target.type === 'range') {
-                const display = e.target.previousElementSibling?.querySelector('.config-value-display');
+        this.element.addEventListener('input', (e) => {
+            const target = e.target;
+            if (target.matches('input[type="range"]')) {
+                const display = target.nextElementSibling;
                 if (display) {
-                    const value = Number(e.target.value);
-                    if (e.target.id === 'designed24Duration') {
-                        display.textContent = formatDuration(value);
-                    } else {
-                        display.textContent = `${value} ${e.target.dataset.unit || ''}`;
-                    }
+                    const unit = target.dataset.unit || '';
+                    display.textContent = `${target.value}${unit}`;
                 }
             }
         });
+
+        this.element.addEventListener('change', (e) => {
+            const target = e.target;
+            if (target.matches('input, select')) {
+                this.handleConfigChange(target);
+            }
+        });
+    }
+
+    addInputListeners() {
+        $$('input[type="range"]', this.contentElement).forEach(slider => {
+            const display = slider.nextElementSibling;
+            if (display) {
+                slider.addEventListener('input', () => {
+                    display.textContent = `${slider.value}${slider.dataset.unit || ''}`;
+                });
+            }
+        });
+    }
+
+    handleConfigChange(target) {
+        const key = target.dataset.key;
+        if (!key) return;
+
+        let value;
+        switch (target.type) {
+            case 'range':
+                value = parseFloat(target.value);
+                break;
+            case 'select-one':
+                if (key === 'location') {
+                    value = CITIES[target.value];
+                } else {
+                    value = target.value;
+                }
+                break;
+            default:
+                value = target.value;
+        }
+
+        this.timeDesignManager.updateModeConfig({ [key]: value });
+    }
+
+    // Deprecated methods below, will be removed after refactoring
+    handleSave() {
+        console.warn("handleSave is deprecated.");
+    }
+
+    generateClassicConfig(config) {
+        console.warn("generateClassicConfig is deprecated.");
+    }
+
+    generateCoreTimeConfig(config) {
+        console.warn("generateCoreTimeConfig is deprecated.");
+    }
+
+    generateWakeBasedConfig(config, schema = {}) {
+        console.warn("generateWakeBasedConfig is deprecated.");
+    }
+
+    initializeCoreTimeSlider(config) {
+        console.warn("initializeCoreTimeSlider is deprecated.");
+    }
+
+    initializeSolarMode(config) {
+        console.warn("initializeSolarMode is deprecated.");
     }
 
     formatMinutesForSlider(minutes) {

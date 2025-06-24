@@ -31,7 +31,7 @@ export class ModeSelector {
         this.listElement.innerHTML = modes.map(mode => `
             <li class="mode-selector__item" data-mode-id="${mode.id}" role="button" tabindex="0">
                 <h3 class="mode-selector__name">${mode.name}</h3>
-                <p class="mode-selector__description">${mode.description}</p>
+                <p class="mode-selector__description">${mode.description || ''}</p>
             </li>
         `).join('');
     }

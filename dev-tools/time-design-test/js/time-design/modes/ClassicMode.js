@@ -22,6 +22,11 @@ export class ClassicMode extends BaseMode {
         }
       }
     );
+    this.id = 'classic';
+  }
+
+  static getConfigSchema() {
+    return this.prototype.configSchema || {};
   }
 
   getDefaultConfig() {
@@ -72,6 +77,7 @@ export class ClassicMode extends BaseMode {
    * Build segments for classic mode
    */
   _buildSegments(config) {
+    config = config || this.getConfig();
     const designedDuration = config.designed24Duration;
     const anotherHourStart = designedDuration;
     const scaleFactor = designedDuration > 0 ? 1440 / designedDuration : 1;
@@ -155,8 +161,8 @@ export class ClassicMode extends BaseMode {
    * Get segments for timeline display
    */
   getSegments(config) {
+    config = config || this.getConfig();
     const segments = this._buildSegments(config);
-
     return segments.map(segment => ({
       type: segment.type,
       label: segment.label,
@@ -182,5 +188,30 @@ export class ClassicMode extends BaseMode {
         migratedFrom: 'legacy'
       }
     };
+  }
+
+  getConfig() {
+    return this.config || {};
+  }
+
+  getTimelineSegments(config) {
+    if (typeof this.getSegments === 'function') {
+      return this.getSegments(config);
+    }
+    return [];
+  }
+
+  getCurrentPhase(date = new Date(), config = this.getConfig()) {
+    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
+    const segments = this._buildSegments(config);
+    const activeSegment = this.findActiveSegment(minutes, segments);
+    return activeSegment ? activeSegment.type : null;
+  }
+
+  getScaleFactor(date = new Date(), config = this.getConfig()) {
+    const minutes = this.getMinutesSinceMidnight(date, config.timezone || 'Asia/Tokyo');
+    const segments = this._buildSegments(config);
+    const activeSegment = this.findActiveSegment(minutes, segments);
+    return activeSegment ? activeSegment.scaleFactor : 1;
   }
 }

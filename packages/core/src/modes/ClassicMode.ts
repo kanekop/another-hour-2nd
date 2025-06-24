@@ -6,12 +6,23 @@ import { TimeDesignMode, DEFAULT_VALUES } from '../types/time-modes.js';
  * 従来のDesigned 24 + Another Hour方式
  */
 export class ClassicMode extends BaseMode {
-    constructor(config) {
-        super(config);
+    static modeId = 'classic';
+    static modeName = 'Classic';
+    static description = 'A standard day divided into a scaled period and a real-time "another hour".';
 
-        // デフォルト値の適用
-        this.designed24Duration = config.parameters?.designed24Duration || DEFAULT_VALUES.classic.designed24Duration;
+    static defaultParameters = {
+        designed24Hours: 22, // Default duration in hours
+    };
+
+    private designed24Duration: number; // Stored in minutes
+    private dayStartTime: number;
+
+    constructor(config: any) {
+        super(config);
+        const params = { ...ClassicMode.defaultParameters, ...config.parameters };
+        this.designed24Duration = params.designed24Hours * 60; // Convert hours to minutes
         this.dayStartTime = this.parseDayStartTime(config.userSettings?.dayStartTime || DEFAULT_VALUES.user.dayStartTime);
+        this.validateConfig();
     }
 
     /**
@@ -20,7 +31,6 @@ export class ClassicMode extends BaseMode {
     validateConfig() {
         super.validateConfig();
 
-        // Designed 24 は 0〜24時間の範囲
         if (this.designed24Duration < 0 || this.designed24Duration > 1440) {
             throw new Error('Designed 24 duration must be between 0 and 24 hours');
         }
@@ -31,7 +41,7 @@ export class ClassicMode extends BaseMode {
      * @param {string} timeStr - HH:mm形式
      * @returns {number} 0時からの分数
      */
-    parseDayStartTime(timeStr) {
+    parseDayStartTime(timeStr: string): number {
         const [hours, minutes] = timeStr.split(':').map(Number);
         return hours * 60 + minutes;
     }
@@ -41,7 +51,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} currentTime
      * @returns {number}
      */
-    calculateScaleFactor(currentTime) {
+    calculateScaleFactor(currentTime: Date): number {
         const phase = this.getCurrentPhase(currentTime);
 
         if (phase.name === 'Designed 24') {
@@ -59,7 +69,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} currentTime
      * @returns {Object} { name: string, progress: number }
      */
-    getCurrentPhase(currentTime) {
+    getCurrentPhase(currentTime: Date): { name: string, progress: number, remainingMinutes: number } {
         const minutesSinceDayStart = this.getMinutesSinceDayStart(currentTime);
 
         if (minutesSinceDayStart < this.designed24Duration) {
@@ -90,7 +100,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} currentTime
      * @returns {number}
      */
-    getMinutesSinceDayStart(currentTime) {
+    getMinutesSinceDayStart(currentTime: Date): number {
         const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
 
         // dayStartTimeを考慮
@@ -107,7 +117,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} realTime
      * @returns {Date}
      */
-    calculateAnotherHourTime(realTime) {
+    calculateAnotherHourTime(realTime: Date): Date {
         const minutesSinceDayStart = this.getMinutesSinceDayStart(realTime);
         let ahMinutes;
 
@@ -138,7 +148,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} anotherHourTime
      * @returns {Date}
      */
-    convertToRealTime(anotherHourTime) {
+    convertToRealTime(anotherHourTime: Date): Date {
         const ahMinutes = anotherHourTime.getHours() * 60 + anotherHourTime.getMinutes();
         const minutesSinceDayStart = ahMinutes - this.dayStartTime;
 
@@ -169,7 +179,7 @@ export class ClassicMode extends BaseMode {
      * @param {Date} currentTime
      * @returns {Object}
      */
-    getDebugInfo(currentTime) {
+    getDebugInfo(currentTime: Date): object {
         const base = super.getDebugInfo(currentTime);
 
         return {
@@ -179,6 +189,37 @@ export class ClassicMode extends BaseMode {
             designed24Hours: this.designed24Duration / 60,
             anotherHourDuration: 1440 - this.designed24Duration,
             currentPhase: this.getCurrentPhase(currentTime)
+        };
+    }
+
+    getTimelineSegments() {
+        const designed24End = (this.designed24Duration / 1440) * 100;
+        return [
+            { name: 'Designed 24', start: 0, end: designed24End, color: '#3498DB', label: 'Designed 24' },
+            { name: 'Another Hour', start: designed24End, end: 100, color: '#95A5A6', label: 'Another Hour' }
+        ];
+    }
+
+    static getConfigSchema() {
+        return {
+            designed24Hours: {
+                type: 'slider',
+                label: 'Designed 24 Duration',
+                min: 1,
+                max: 23.5,
+                step: 0.5,
+                default: this.defaultParameters.designed24Hours,
+                unit: 'h'
+            }
+        };
+    }
+
+    exportConfig() {
+        return {
+            ...super.exportConfig(),
+            parameters: {
+                designed24Hours: this.designed24Duration / 60
+            }
         };
     }
 }

@@ -15,23 +15,21 @@ export * from './validation';
 export * from './types';
 
 // Time Design Modes exports
-export { TimeDesignManager } from './TimeDesignManager';
-export { BaseMode } from './modes/BaseMode';
-export { ClassicMode } from './modes/ClassicMode';
+import { TimeDesignManager } from './TimeDesignManager';
+import { BaseMode } from './modes/BaseMode';
+import { ClassicMode } from './modes/ClassicMode';
+import { CoreTimeMode } from './modes/CoreTimeMode';
+import { SolarMode } from './modes/SolarMode';
+import { WakeBasedMode } from './modes/WakeBasedMode';
+
+export {
+    TimeDesignManager,
+    BaseMode,
+    ClassicMode,
+    CoreTimeMode,
+    SolarMode,
+    WakeBasedMode
+};
 
 // Re-export types from time-modes
 export * from './types/time-modes';
-
-// Simple timeDesignManager export for compatibility
-export const timeDesignManager = {
-    initialize: () => console.log('TimeDesignManager initialized successfully'),
-    // Add other methods as needed
-};// 既存のエクスポート
-export { getCustomAhAngles } from './time-calculation.js';
-
-// Time Design Modes の新しいエクスポート
-export { TimeDesignManager } from './TimeDesignManager.js';
-export { BaseMode } from './modes/BaseMode.js';
-export { ClassicMode } from './modes/ClassicMode.js';
-
-// 注: 型定義は別途 .d.ts ファイルで提供
