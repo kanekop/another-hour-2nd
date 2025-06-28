@@ -1,6 +1,6 @@
-import { Mode } from './Mode';
+import { BaseMode } from './BaseMode';
 
-export class WakeBasedMode extends Mode {
+export class WakeBasedMode extends BaseMode {
     private wakeTime: number;
     private anotherHourDuration: number;
     private maxScaleFactor: number;

@@ -18,6 +18,9 @@ export * from './types';
 export { TimeDesignManager } from './TimeDesignManager';
 export { BaseMode } from './modes/BaseMode';
 export { ClassicMode } from './modes/ClassicMode';
+export { SolarMode } from './modes/SolarMode';
+export { CoreTimeMode } from './modes/CoreTimeMode';
+export { WakeBasedMode } from './modes/WakeBasedMode';
 
 // Re-export types from time-modes
 export * from './types/time-modes';

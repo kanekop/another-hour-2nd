@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Clock - Another Hour</title>
+    
+    <!-- 共通スタイル -->
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/css/components.css">
+    
+    <!-- Solar Clock 専用スタイル -->
+    <link rel="stylesheet" href="/css/solar-clock.css">
+    <link rel="stylesheet" href="/css/solar-animations.css">
+</head>
+<body>
+    <!-- 共通ナビゲーション -->
+    <nav id="main-nav"></nav>
+    
+    <!-- Solar Clock コンテンツ -->
+    <div id="solar-clock-app">
+        <div class="solar-container">
+            <!-- 背景グラデーション -->
+            <div class="sky-gradient" id="sky-background"></div>
+            
+            <!-- 太陽の軌道 -->
+            <div class="sun-path-wrapper">
+                <svg id="sun-path-svg" viewBox="0 0 800 400">
+                    <!-- 地平線 -->
+                    <line x1="0" y1="300" x2="800" y2="300" 
+                          class="horizon-line"/>
+                    
+                    <!-- 太陽の軌道（動的に生成） -->
+                    <path id="sun-orbit" class="sun-orbit-path"/>
+                    
+                    <!-- 太陽 -->
+                    <g id="sun-group">
+                        <circle cx="0" cy="0" r="30" class="sun"/>
+                        <circle cx="0" cy="0" r="40" class="sun-glow"/>
+                    </g>
+                </svg>
+            </div>
+            
+            <!-- 時刻表示 -->
+            <div class="time-panel">
+                <div class="solar-time">
+                    <h1 id="ah-time-display">00:00:00</h1>
+                    <p class="time-label">Solar Another Hour</p>
+                </div>
+                
+                <div class="real-time-info">
+                    <p id="real-time-display">Real: 00:00:00</p>
+                    <p id="phase-display">Day Phase: Morning</p>
+                </div>
+                
+                <div class="solar-info">
+                    <p id="sunrise-time">Sunrise: --:--</p>
+                    <p id="sunset-time">Sunset: --:--</p>
+                    <p id="location-display">Location: Loading...</p>
+                </div>
+            </div>
+            
+            <!-- 設定パネル -->
+            <div class="settings-panel">
+                <button id="location-btn" class="settings-btn">
+                    📍 Change Location
+                </button>
+                <button id="settings-btn" class="settings-btn">
+                    ⚙️ Settings
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 共通スクリプト -->
+    <script src="/js/ah-time.js"></script>
+    <script src="/js/shared/location-service.js"></script>
+    
+    <!-- Solar Clock スクリプト -->
+    <script type="module" src="/js/solar/solar-clock-ui.js"></script>
+</body>
+</html>

@@ -45,11 +45,13 @@ app.use('/vendor/@another-hour/core', express.static(path.join(__dirname, '../co
 import calendarSyncRoutes from './src/routes/calendar-sync.js';
 import stopwatchRoutes from './src/routes/stopwatch.js';
 import timerRoutes from './src/routes/timer.js';
+import solarRoutes from './src/routes/solar.js';
 
 // Use routes
 app.use('/api/calendar-sync', calendarSyncRoutes);
 app.use('/api/stopwatch', stopwatchRoutes);
 app.use('/api/timer', timerRoutes);
+app.use('/api/solar', solarRoutes);
 
 // Serve main page
 app.get('/', (req, res) => {
@@ -87,6 +89,10 @@ app.get('/calendar-sync', (req, res) => {
 
 app.get('/personalized-clock', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'pages', 'personalized-ah-clock.html'));
+});
+
+app.get('/solar', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'pages', 'solar-clock.html'));
 });
 
 // Error handling middleware
