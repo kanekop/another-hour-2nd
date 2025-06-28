@@ -23,9 +23,10 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-run = ["sh", "-c", "cd packages/scheduler-web && npm start"]
+run = ["sh", "-c", "cd packages/scheduler-web && npm install && npm start"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
+build = ["sh", "-c", "npm install"]
 
 [nix]
 channel = "stable-24_05"
