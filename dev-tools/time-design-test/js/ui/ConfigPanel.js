@@ -214,4 +214,4 @@ export class ConfigPanel {
         const m = minutes % 60;
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
-} 
+}
